@@ -79,9 +79,9 @@ claude
 
 Voortgang per fase (uit `SPEC.md` §10):
 
-- [ ] 0 Setup
-- [ ] 1 Content-fundament
-- [ ] 2 Engines + tests
+- [x] 0 Setup
+- [x] 1 Content-fundament
+- [x] 2 Engines + tests
 - [ ] 3 Oefentypes + sessie
 - [ ] 4 UI
 - [ ] 5 Audio
