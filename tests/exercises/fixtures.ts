@@ -1,5 +1,5 @@
 // Italian fixture data is OK in test-fixture files per .claude/rules/engine.md
-import type { Word, Verb, Sentence } from '../../src/content/schemas.ts'
+import type { Word, Verb, Sentence, Tense } from '../../src/content/schemas.ts'
 
 export const word_caffe: Word = {
   id: 'w_caffe',
@@ -66,5 +66,62 @@ export const sentence_s001: Sentence = {
   nl: ['Hoi, ik ben Sam.'],
   register: 'informal',
   uses: ['w_ciao', 'v_essere'],
+  audioText: null,
+}
+
+// Word with article (for article exercise)
+export const word_signora: Word = {
+  id: 'w_signora',
+  it: 'signora',
+  pos: 'noun',
+  article: 'la',
+  gender: 'f',
+  plural: null,
+  nl: ['mevrouw'],
+  register: 'formal',
+  tags: [],
+  core: false,
+  note: null,
+}
+
+// Regular -are verb (for conjugate exercise)
+export const verb_parlare: Verb = {
+  id: 'v_parlare',
+  inf: 'parlare',
+  nl: ['praten', 'spreken'],
+  conj: 'are',
+}
+
+// Presente tense (for conjugate exercise)
+export const tense_presente: Tense = {
+  id: 'presente',
+  kind: 'simple',
+  nl: 'tegenwoordige tijd',
+  endings: {
+    are: { io: 'o', tu: 'i', lui: 'a', noi: 'iamo', voi: 'ate', loro: 'ano' },
+    ere: { io: 'o', tu: 'i', lui: 'e', noi: 'iamo', voi: 'ete', loro: 'ono' },
+    ire: { io: 'o', tu: 'i', lui: 'e', noi: 'iamo', voi: 'ite', loro: 'ono' },
+    ire_isc: { io: 'isco', tu: 'isci', lui: 'isce', noi: 'iamo', voi: 'ite', loro: 'iscono' },
+  },
+}
+
+// Sentence with cloze (for cloze exercise)
+export const sentence_with_cloze: Sentence = {
+  id: 's_cloze_001',
+  it: 'Ciao, sono Sam.',
+  nl: ['Hoi, ik ben Sam.'],
+  register: 'informal',
+  uses: ['w_ciao', 'v_essere'],
+  audioText: null,
+  cloze: [{ target: 'sono', hint: 'essere' }],
+}
+
+// Longer sentence for dictation typo test
+export const sentence_long: Sentence = {
+  id: 's_long_001',
+  it: 'Buongiorno, come stai oggi?',
+  nl: ['Goedemorgen, hoe gaat het vandaag?'],
+  register: 'informal',
+  uses: [],
   audioText: null,
 }
