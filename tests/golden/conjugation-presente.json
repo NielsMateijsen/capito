@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "tense": "presente",
+  "note": "Bron van waarheid voor de conjugator-tests. Door de gebruiker te controleren; agents wijzigen dit bestand niet zonder toestemming. 'lui' = lui/lei/Lei.",
+  "cases": [
+    {
+      "verb": "parlare",
+      "conj": "are",
+      "forms": {
+        "io": "parlo",
+        "tu": "parli",
+        "lui": "parla",
+        "noi": "parliamo",
+        "voi": "parlate",
+        "loro": "parlano"
+      }
+    },
+    {
+      "verb": "mangiare",
+      "conj": "are",
+      "forms": {
+        "io": "mangio",
+        "tu": "mangi",
+        "lui": "mangia",
+        "noi": "mangiamo",
+        "voi": "mangiate",
+        "loro": "mangiano"
+      }
+    },
+    {
+      "verb": "cercare",
+      "conj": "are",
+      "forms": {
+        "io": "cerco",
+        "tu": "cerchi",
+        "lui": "cerca",
+        "noi": "cerchiamo",
+        "voi": "cercate",
+        "loro": "cercano"
+      }
+    },
+    {
+      "verb": "pagare",
+      "conj": "are",
+      "forms": {
+        "io": "pago",
+        "tu": "paghi",
+        "lui": "paga",
+        "noi": "paghiamo",
+        "voi": "pagate",
+        "loro": "pagano"
+      }
+    },
+    {
+      "verb": "costare",
+      "conj": "are",
+      "forms": {
+        "io": "costo",
+        "tu": "costi",
+        "lui": "costa",
+        "noi": "costiamo",
+        "voi": "costate",
+        "loro": "costano"
+      }
+    },
+    {
+      "verb": "prendere",
+      "conj": "ere",
+      "forms": {
+        "io": "prendo",
+        "tu": "prendi",
+        "lui": "prende",
+        "noi": "prendiamo",
+        "voi": "prendete",
+        "loro": "prendono"
+      }
+    },
+    {
+      "verb": "leggere",
+      "conj": "ere",
+      "forms": {
+        "io": "leggo",
+        "tu": "leggi",
+        "lui": "legge",
+        "noi": "leggiamo",
+        "voi": "leggete",
+        "loro": "leggono"
+      }
+    },
+    {
+      "verb": "scrivere",
+      "conj": "ere",
+      "forms": {
+        "io": "scrivo",
+        "tu": "scrivi",
+        "lui": "scrive",
+        "noi": "scriviamo",
+        "voi": "scrivete",
+        "loro": "scrivono"
+      }
+    },
+    {
+      "verb": "dormire",
+      "conj": "ire",
+      "forms": {
+        "io": "dormo",
+        "tu": "dormi",
+        "lui": "dorme",
+        "noi": "dormiamo",
+        "voi": "dormite",
+        "loro": "dormono"
+      }
+    },
+    {
+      "verb": "partire",
+      "conj": "ire",
+      "forms": {
+        "io": "parto",
+        "tu": "parti",
+        "lui": "parte",
+        "noi": "partiamo",
+        "voi": "partite",
+        "loro": "partono"
+      }
+    },
+    {
+      "verb": "finire",
+      "conj": "ire_isc",
+      "forms": {
+        "io": "finisco",
+        "tu": "finisci",
+        "lui": "finisce",
+        "noi": "finiamo",
+        "voi": "finite",
+        "loro": "finiscono"
+      }
+    },
+    {
+      "verb": "capire",
+      "conj": "ire_isc",
+      "forms": {
+        "io": "capisco",
+        "tu": "capisci",
+        "lui": "capisce",
+        "noi": "capiamo",
+        "voi": "capite",
+        "loro": "capiscono"
+      }
+    },
+    {
+      "verb": "chiamarsi",
+      "conj": "are",
+      "forms": {
+        "io": "mi chiamo",
+        "tu": "ti chiami",
+        "lui": "si chiama",
+        "noi": "ci chiamiamo",
+        "voi": "vi chiamate",
+        "loro": "si chiamano"
+      },
+      "reflexive": true
+    },
+    {
+      "verb": "essere",
+      "conj": "irregular",
+      "forms": {
+        "io": "sono",
+        "tu": "sei",
+        "lui": "è",
+        "noi": "siamo",
+        "voi": "siete",
+        "loro": "sono"
+      }
+    },
+    {
+      "verb": "avere",
+      "conj": "irregular",
+      "forms": {
+        "io": "ho",
+        "tu": "hai",
+        "lui": "ha",
+        "noi": "abbiamo",
+        "voi": "avete",
+        "loro": "hanno"
+      }
+    },
+    {
+      "verb": "andare",
+      "conj": "irregular",
+      "forms": {
+        "io": "vado",
+        "tu": "vai",
+        "lui": "va",
+        "noi": "andiamo",
+        "voi": "andate",
+        "loro": "vanno"
+      }
+    },
+    {
+      "verb": "fare",
+      "conj": "irregular",
+      "forms": {
+        "io": "faccio",
+        "tu": "fai",
+        "lui": "fa",
+        "noi": "facciamo",
+        "voi": "fate",
+        "loro": "fanno"
+      }
+    },
+    {
+      "verb": "volere",
+      "conj": "irregular",
+      "forms": {
+        "io": "voglio",
+        "tu": "vuoi",
+        "lui": "vuole",
+        "noi": "vogliamo",
+        "voi": "volete",
+        "loro": "vogliono"
+      }
+    },
+    {
+      "verb": "potere",
+      "conj": "irregular",
+      "forms": {
+        "io": "posso",
+        "tu": "puoi",
+        "lui": "può",
+        "noi": "possiamo",
+        "voi": "potete",
+        "loro": "possono"
+      }
+    },
+    {
+      "verb": "dovere",
+      "conj": "irregular",
+      "forms": {
+        "io": "devo",
+        "tu": "devi",
+        "lui": "deve",
+        "noi": "dobbiamo",
+        "voi": "dovete",
+        "loro": "devono"
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "session": {
+    "maxReviewsPerSession": 30,
+    "newCardsPerDay": 10,
+    "minOldMaterialRatio": 0.3,
+    "maxSameTypeInRow": 3
+  },
+  "backlog": {
+    "maxDueShownPerDay": 40,
+    "order": "most-overdue-first",
+    "pauseNewCardsAboveDue": 60,
+    "returnAfterDays": 7,
+    "returnMaxSessionReviews": 20
+  },
+  "lapse": {
+    "retypeCorrectAnswer": true,
+    "reinsertInSession": true,
+    "reinsertAfterCards": 4
+  },
+  "leech": {
+    "lapseThreshold": 6,
+    "showExtraContext": true
+  },
+  "grading": {
+    "correct": 4,
+    "almost": 3,
+    "hintUsed": 3,
+    "wrong": 1,
+    "flashcard": { "again": 1, "good": 4, "easy": 5 }
+  },
+  "srs": {
+    "algorithm": "sm2",
+    "startEase": 2.5,
+    "minEase": 1.3,
+    "maxIntervalDays": 180
+  },
+  "unlock": {
+    "masteryThreshold": 0.8,
+    "minRepsPerCard": 2,
+    "requireExam": false
+  },
+  "exam": {
+    "availableFromMastery": 0.6,
+    "itemCount": 15,
+    "unitShare": 0.6,
+    "passThreshold": 0.8,
+    "allowHints": false
+  },
+  "checker": {
+    "typoMinLength": 5,
+    "typoMaxDistance": 1
+  },
+  "backup": {
+    "reminderDays": 14,
+    "requestPersistentStorage": true
+  }
+}

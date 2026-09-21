@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# De stappen slaan zichzelf over totdat package-lock.json bestaat (na fase 0)
+# en gebruiken --if-present, zodat een ontbrekend script de pipeline niet breekt.
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        if: hashFiles('package-lock.json') != ''
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        if: hashFiles('package-lock.json') != ''
+        run: npm ci
+
+      - name: Typecheck
+        if: hashFiles('package-lock.json') != ''
+        run: npm run --if-present typecheck
+
+      - name: Validate content
+        if: hashFiles('package-lock.json') != ''
+        run: npm run --if-present validate
+
+      - name: Unit tests
+        if: hashFiles('package-lock.json') != ''
+        run: npm run --if-present test
+
+      - name: Build
+        if: hashFiles('package-lock.json') != ''
+        run: npm run --if-present build
+
+      - name: Install Playwright browser
+        if: hashFiles('package-lock.json') != '' && hashFiles('e2e/**') != ''
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end smoke test
+        if: hashFiles('package-lock.json') != '' && hashFiles('e2e/**') != ''
+        run: npm run --if-present test:e2e
+
+      - name: Upload Playwright report
+        if: failure() && hashFiles('e2e/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
