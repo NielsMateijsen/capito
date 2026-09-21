@@ -93,6 +93,6 @@ Voortgang per fase (uit `SPEC.md` §10):
 ## Eenmalige setup
 
 - Reponaam: `capito`. PWA-naam op je beginscherm: "Capito"
-- Node 22+, en Python met `pip install edge-tts` (voor audio)
+- Node 20.19+, en Python met `pip install edge-tts` (voor audio)
 - GitHub: zet branch protection op `main` (CI moet groen zijn) en kies bij Settings → Pages als bron "GitHub Actions"
 - Fase 6: stel `base` in `vite.config.ts` in op `/capito/` en zet de push-trigger in `deploy.yml` aan
