@@ -1,4 +1,21 @@
 {
   "schema": 1,
-  "ids": []
+  "ids": [
+    "s_u01_001",
+    "s_u01_002",
+    "s_u01_003",
+    "s_u01_004",
+    "s_u01_005",
+    "u01_greetings",
+    "v_essere",
+    "w_arrivederci",
+    "w_buonasera",
+    "w_buongiorno",
+    "w_ciao",
+    "w_grazie",
+    "w_per_favore",
+    "w_prego",
+    "w_scusi",
+    "w_signora"
+  ]
 }

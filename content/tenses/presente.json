@@ -1,0 +1,11 @@
+{
+  "id": "presente",
+  "kind": "simple",
+  "nl": "tegenwoordige tijd",
+  "endings": {
+    "are": { "io": "o", "tu": "i", "lui": "a", "noi": "iamo", "voi": "ate", "loro": "ano" },
+    "ere": { "io": "o", "tu": "i", "lui": "e", "noi": "iamo", "voi": "ete", "loro": "ono" },
+    "ire": { "io": "o", "tu": "i", "lui": "e", "noi": "iamo", "voi": "ite", "loro": "ono" },
+    "ire_isc": { "io": "isco", "tu": "isci", "lui": "isce", "noi": "iamo", "voi": "ite", "loro": "iscono" }
+  }
+}
