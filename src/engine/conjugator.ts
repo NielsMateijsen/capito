@@ -1,5 +1,7 @@
 import type { Verb, Tense } from '../content/schemas.ts'
 
+// These strings mirror the keys used in content/tenses/*.json and content/units/*.json
+// (irregular tables). They are schema identifiers, not learnable content.
 export type Person = 'io' | 'tu' | 'lui' | 'noi' | 'voi' | 'loro'
 
 const REFLEXIVE_PRONOUNS: Record<Person, string> = {

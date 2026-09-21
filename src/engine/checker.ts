@@ -10,6 +10,7 @@ const TYPO_DISABLED: ReadonlySet<ExerciseType> = new Set(['conjugation', 'articl
 
 function normalize(s: string): string {
   return s
+    .normalize("NFC")
     .trim()
     .toLowerCase()
     .replace(/’/g, "'")

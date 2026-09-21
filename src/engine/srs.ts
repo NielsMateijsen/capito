@@ -29,7 +29,7 @@ export function schedule(
 
   const base = state ?? { ease: startEase, interval: 1, due: now, reps: 0, lapses: 0 }
 
-  // Lapse
+  // Lapse — grade 1 (wrong) and grade 2 (unused, treated as lapse per SM-2)
   if (grade < 3) {
     return {
       ease: adjustEase(base.ease, grade, minEase),

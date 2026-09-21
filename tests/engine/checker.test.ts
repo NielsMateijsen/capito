@@ -6,15 +6,15 @@ const config: CheckerConfig = { typoMinLength: 5, typoMaxDistance: 1 }
 
 describe('normalization', () => {
   it('trim, lowercase, strip trailing punctuation', () => {
-    expect(check('  Ciao! ', ['ciao'], 'translation', config)).toBe('correct')
+    expect(check('  Hallo! ', ['hallo'], 'translation', config)).toBe('correct')
   })
 
   it('curly apostrophe ’ → straight apostrophe', () => {
-    expect(check('l’amico', ["l'amico"], 'translation', config)).toBe('correct')
+    expect(check('o’clock', ["o'clock"], 'translation', config)).toBe('correct')
   })
 
   it('collapse double spaces', () => {
-    expect(check('buon  giorno', ['buon giorno'], 'translation', config)).toBe('correct')
+    expect(check('goeie  dag', ['goeie dag'], 'translation', config)).toBe('correct')
   })
 })
 
@@ -26,11 +26,13 @@ describe('multiple valid answers', () => {
 
 describe('accent error', () => {
   it('missing accent → almost', () => {
-    expect(check('caffe', ['caffè'], 'translation', config)).toBe('almost')
+    // 'cafe' is the unaccented form of 'café'
+    expect(check('cafe', ['café'], 'translation', config)).toBe('almost')
   })
 
-  it('e/è exception: ambiguous unaccented form → wrong', () => {
-    expect(check('e', ['è'], 'translation', config, new Set(['e']))).toBe('wrong')
+  it('ambiguous unaccented form is in accentExceptions → wrong', () => {
+    // stripped 'à' = 'a', which is in the exception set (different meaning)
+    expect(check('a', ['à'], 'translation', config, new Set(['a']))).toBe('wrong')
   })
 })
 
@@ -44,7 +46,8 @@ describe('typo detection', () => {
   })
 
   it('distance 1, conjugation type → wrong', () => {
-    expect(check('parla', ['parlo'], 'conjugation', config)).toBe('wrong')
+    // 'spoel' vs 'speel': Levenshtein=1, both length 5, but conjugation disables typo check
+    expect(check('spoel', ['speel'], 'conjugation', config)).toBe('wrong')
   })
 
   it('distance 1, article type → wrong', () => {
@@ -56,13 +59,13 @@ describe('typo detection', () => {
   })
 
   it('answer length < typoMinLength → wrong', () => {
-    // 'ciao' has length 4 < 5, 'cao' has distance 1 but answer too short
-    expect(check('cao', ['ciao'], 'translation', config)).toBe('wrong')
+    // 'boot' has length 4 < 5, 'bool' has distance 1 but answer too short
+    expect(check('bool', ['boot'], 'translation', config)).toBe('wrong')
   })
 })
 
 describe('wrong answer', () => {
   it('completely wrong → wrong', () => {
-    expect(check('sbagliato', ['giusto'], 'translation', config)).toBe('wrong')
+    expect(check('verkeerd', ['juist'], 'translation', config)).toBe('wrong')
   })
 })

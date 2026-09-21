@@ -18,6 +18,9 @@ export function migrate(
     const fn = migrations[from]
     if (!fn) throw new Error(`No migration from schema ${from} to ${from + 1}`)
     data = fn(data)
+    if (((data['schema'] as number) ?? 0) <= from) {
+      throw new Error(`Migration from schema ${from} did not increment schema`)
+    }
   }
   return data as unknown as ProgressState
 }
