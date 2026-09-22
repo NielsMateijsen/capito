@@ -40,7 +40,7 @@ export default function GrammarScreen({ grammarId: _grammarId, doc, allCardKeys,
           <h1>{doc.frontmatter.title}</h1>
           <div
             className="grammar-body"
-            dangerouslySetInnerHTML={{ __html: marked(doc.body) as string }}
+            dangerouslySetInnerHTML={{ __html: marked.parse(doc.body) }}
           />
           <div>
             <button

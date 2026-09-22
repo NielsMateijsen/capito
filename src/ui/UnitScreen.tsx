@@ -3,6 +3,7 @@ import type { ProgressState } from '../storage/types.ts'
 import type { GrammarDoc } from '../content/loader.ts'
 import { unitMastery } from '../engine/unlock.ts'
 import { S } from './strings.nl.ts'
+import { speak } from './speak.ts'
 
 interface AppConfig {
   unlock: { minRepsPerCard: number }
@@ -20,14 +21,6 @@ interface Props {
   onEindtoets: (unitId: string) => void
   onOpenGrammar: (grammarId: string) => void
   onOpenDialogue: (dialogueId: string) => void
-}
-
-function speak(text: string) {
-  if (!window.speechSynthesis) return
-  speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'it-IT'
-  speechSynthesis.speak(u)
 }
 
 export default function UnitScreen({ unit, cardKeysByUnit, progress, config, grammarMap, onBack, onOefen, onEindtoets, onOpenGrammar, onOpenDialogue }: Props) {

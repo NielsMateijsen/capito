@@ -2,7 +2,7 @@ import type { ProgressState, Settings } from '../storage/types.ts'
 import { S } from './strings.nl.ts'
 
 interface AppConfig {
-  session: { newCardsPerDay: number }
+  session: { newCardsPerDay: number; minNewCardsPerDay: number; maxNewCardsPerDay: number }
   backup: { reminderDays: number }
 }
 
@@ -52,11 +52,11 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
           <input
             id="new-per-day"
             type="number"
-            min={1}
-            max={50}
+            min={config.session.minNewCardsPerDay}
+            max={config.session.maxNewCardsPerDay}
             value={newPerDay}
             onChange={e => {
-              const v = Math.max(1, Math.min(50, Number(e.target.value)))
+              const v = Math.max(config.session.minNewCardsPerDay, Math.min(config.session.maxNewCardsPerDay, Number(e.target.value)))
               if (!isNaN(v)) void save({ newCardsPerDay: v })
             }}
           />
@@ -78,7 +78,7 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
         <div className="settings-row">
           <span className="settings-meta">{unlockAll ? S.SETTINGS_UNLOCK_ON : S.SETTINGS_UNLOCK_OFF}</span>
           <button className="btn-secondary" onClick={() => void handleToggleUnlock()}>
-            {unlockAll ? S.SETTINGS_UNLOCK_ON : S.SETTINGS_UNLOCK_OFF}
+            {unlockAll ? S.SETTINGS_UNLOCK_DISABLE : S.SETTINGS_UNLOCK_ENABLE}
           </button>
         </div>
       </section>

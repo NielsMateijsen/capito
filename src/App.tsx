@@ -135,7 +135,7 @@ export default function App() {
   if (error) {
     return (
       <div className="app-loading">
-        <p>Fout bij laden: {error}</p>
+        <p>{S.LOAD_ERROR(error)}</p>
       </div>
     )
   }
@@ -156,7 +156,7 @@ export default function App() {
 
   if (view.screen === 'unit') {
     const unit = data.units.find(u => u.id === view.unitId)
-    if (!unit) { setView({ screen: 'home' }); return null }
+    if (!unit) return null
     return (
       <UnitScreen
         unit={unit}
@@ -189,7 +189,7 @@ export default function App() {
   if (view.screen === 'dialogue') {
     const unit = data.units.find(u => u.id === view.unitId)
     const dialogue = unit?.dialogues.find(d => d.id === view.dialogueId)
-    if (!unit || !dialogue) { setView({ screen: 'unit', unitId: view.unitId }); return null }
+    if (!unit || !dialogue) return null
     return (
       <DialogueScreen
         dialogue={dialogue}

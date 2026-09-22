@@ -35,17 +35,6 @@ export function loadTenses(): Tense[] {
   })
 }
 
-export function loadGrammar(): GrammarFrontmatter[] {
-  return Object.entries(grammarModules).map(([path, raw]) => {
-    const { data } = matter(raw as string)
-    const result = GrammarFrontmatterSchema.safeParse(data)
-    if (!result.success) {
-      throw new Error(`Invalid grammar frontmatter at ${path}: ${result.error.message}`)
-    }
-    return result.data
-  })
-}
-
 export function loadGrammarDocs(): GrammarDoc[] {
   return Object.entries(grammarModules).map(([path, raw]) => {
     const { data, content } = matter(raw as string)

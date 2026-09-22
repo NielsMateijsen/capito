@@ -8,6 +8,7 @@ import type { ReviewEntry } from '../engine/review-log.ts'
 import type { Exercise, ReviewResult } from '../exercises/types.ts'
 import { exerciseMap } from '../exercises/index.ts'
 import { S } from './strings.nl.ts'
+import { speak } from './speak.ts'
 import ReportModal from './ReportModal.tsx'
 import type { ReportEntry } from './ReportModal.tsx'
 
@@ -53,28 +54,19 @@ function buildHint(answer: string): string {
   return answer.slice(0, 3) + '…'
 }
 
-function speak(text: string) {
-  if (!window.speechSynthesis) return
-  speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'it-IT'
-  speechSynthesis.speak(u)
-}
-
 export default function SessionScreen({
   content, allCardKeys, cardToUnit, initialProgress, storage, config,
   mode = 'daily', overrideQueue, autoplayAudio = false,
   onDone,
 }: Props) {
-  const session = overrideQueue
-    ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [] }
-    : buildSession({
-        now: Date.now(),
-        allCardKeys,
-        cardToUnit,
-        progress: initialProgress,
-        config,
-      })
+  type SessionData = { queue: SessionItem[]; isReturn: boolean; maxReviews: number; newItemIds: string[] }
+  const sessionRef = useRef<SessionData | null>(null)
+  if (sessionRef.current === null) {
+    sessionRef.current = overrideQueue
+      ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [] }
+      : buildSession({ now: Date.now(), allCardKeys, cardToUnit, progress: initialProgress, config })
+  }
+  const session = sessionRef.current
 
   const [queue, setQueue] = useState<SessionItem[]>(() => [...session.queue])
   const [pos, setPos] = useState(0)
@@ -121,7 +113,13 @@ export default function SessionScreen({
   useEffect(() => {
     if (phase === 'question' && inputRef.current && exercise?.typeId !== 'flashcard') {
       inputRef.current.focus()
-    } else if (phase === 'intro' || phase === 'flashcard-reveal' || phase === 'feedback' || phase === 'lapse-retype') {
+    } else if (
+      phase === 'intro' ||
+      (phase === 'question' && exercise?.typeId === 'flashcard') ||
+      phase === 'flashcard-reveal' ||
+      phase === 'feedback' ||
+      phase === 'lapse-retype'
+    ) {
       primaryBtnRef.current?.focus()
     }
   }, [phase, exercise?.typeId])
@@ -289,6 +287,9 @@ export default function SessionScreen({
     } else if (phase === 'question' && exercise?.typeId !== 'flashcard') {
       e.preventDefault()
       void handleSubmitAnswer()
+    } else if (phase === 'question' && exercise?.typeId === 'flashcard') {
+      e.preventDefault()
+      setPhase('flashcard-reveal')
     } else if (phase === 'flashcard-reveal') {
       e.preventDefault()
       void handleFlashcardGrade('good')
@@ -313,7 +314,7 @@ export default function SessionScreen({
       <div className="end-screen">
         <h2>{S.SESSION_DONE}</h2>
         <p>{S.REVIEWED(answeredCount)}</p>
-        <button className="btn-primary" onClick={onDone}>{S.ANOTHER_ROUND}</button>
+        <button className="btn-primary" autoFocus onClick={onDone}>{S.ANOTHER_ROUND}</button>
       </div>
     )
   }

@@ -38,7 +38,7 @@ export default function HomeScreen({ units, cardKeysByUnit, progress, config, un
   return (
     <div className="home">
       <div className="home-header">
-        <h1>Capito</h1>
+        <h1>{S.APP_NAME}</h1>
       </div>
 
       <button className="btn-primary" style={{ fontSize: '1.1rem', padding: '0.8rem 1.6rem' }} onClick={onStartSession}>

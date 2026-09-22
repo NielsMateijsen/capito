@@ -1,12 +1,14 @@
 export const S = {
   START_SESSION: 'Start sessie',
   LOADING: 'Laden…',
+  LOAD_ERROR: (msg: string) => `Fout bij laden: ${msg}`,
 
   INTRO_HEADER: 'Nieuw item',
   INTRO_DONE: 'Klaar',
 
   HINT: 'Hint',
   AUDIO: '🔊',
+  SPEAK: 'Uitspreken',
   REPORT: 'Meld fout',
   CHECK: 'Controleren',
   NEXT: 'Volgende',
@@ -29,6 +31,7 @@ export const S = {
   ANOTHER_ROUND: 'Nog een ronde',
 
   REPORT_TITLE: 'Fout melden',
+  REPORT_KIND_LABEL: 'Soort melding',
   REPORT_KIND_WRONG: 'Inhoud klopt niet',
   REPORT_KIND_ALSO: 'Mijn antwoord was ook goed',
   REPORT_KIND_AUDIO: 'Audio-probleem',
@@ -40,6 +43,7 @@ export const S = {
   WELCOME_BACK: 'Welkom terug! Lichte sessie vandaag.',
 
   // Home
+  APP_NAME: 'Capito',
   TODAY: 'Vandaag',
   UNIT_LIST_HEADER: 'Eenheden',
   LOCKED: 'Vergrendeld',
@@ -60,9 +64,6 @@ export const S = {
     `Beschikbaar vanaf ${threshold}% beheersing (nu: ${current}%)`,
   BACK: '← Terug',
 
-  // Session end (also-round from home resets)
-  HOME: 'Terug naar home',
-
   // Settings screen
   SETTINGS: 'Instellingen',
   SETTINGS_LEARNING: 'Leerbeleid',
@@ -71,6 +72,8 @@ export const S = {
   SETTINGS_UNLOCK: 'Alles ontgrendelen',
   SETTINGS_UNLOCK_ON: 'Ingeschakeld',
   SETTINGS_UNLOCK_OFF: 'Uitgeschakeld',
+  SETTINGS_UNLOCK_ENABLE: 'Inschakelen',
+  SETTINGS_UNLOCK_DISABLE: 'Uitschakelen',
   SETTINGS_UNLOCK_CONFIRM: 'Hiermee worden alle units direct toegankelijk. Doorgaan?',
   SETTINGS_BACKUP: 'Back-up',
   SETTINGS_LAST_BACKUP: (date: string | undefined) => date ? `Laatste back-up: ${new Date(date).toLocaleDateString('nl-NL')}` : 'Laatste back-up: nooit',
@@ -89,6 +92,7 @@ export const S = {
   REPORTS: 'Meldingen',
   REPORTS_EMPTY: 'Geen meldingen.',
   REPORTS_EXPORT: 'Exporteer als JSON',
+  REPORTS_ANSWER: (v: string) => `Antwoord: ${v}`,
 
   // Leech screen
   LEECH: 'Lastig',

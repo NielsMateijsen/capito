@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { S } from './strings.nl.ts'
 
 export interface ReportEntry {
@@ -20,7 +20,6 @@ interface Props {
 export default function ReportModal({ itemId, userAnswer, onSubmit, onClose }: Props) {
   const [kind, setKind] = useState<ReportEntry['kind']>('wrong-content')
   const [note, setNote] = useState('')
-  const selectRef = useRef<HTMLSelectElement>(null)
 
   function handleSubmit() {
     onSubmit({
@@ -44,8 +43,8 @@ export default function ReportModal({ itemId, userAnswer, onSubmit, onClose }: P
         <h3 id="report-title">{S.REPORT_TITLE}</h3>
 
         <label>
-          <span>Soort melding</span>
-          <select ref={selectRef} value={kind} onChange={e => setKind(e.target.value as ReportEntry['kind'])} autoFocus>
+          <span>{S.REPORT_KIND_LABEL}</span>
+          <select value={kind} onChange={e => setKind(e.target.value as ReportEntry['kind'])} autoFocus>
             <option value="wrong-content">{S.REPORT_KIND_WRONG}</option>
             <option value="also-correct">{S.REPORT_KIND_ALSO}</option>
             <option value="audio">{S.REPORT_KIND_AUDIO}</option>

@@ -38,14 +38,14 @@ export default function ReportsScreen({ flags, onBack }: Props) {
           </button>
           <div className="reports-list">
             {[...flags].reverse().map((flag, i) => (
-              <div key={i} className="report-card">
+              <div key={String(flag.date ?? i)} className="report-card">
                 <div className="report-card-meta">
                   {String(flag.date ?? '—')} · {String(flag.kind ?? '—')} · {String(flag.itemId ?? '—')}
                 </div>
-                {flag.userAnswer && (
-                  <div className="report-card-answer">Antwoord: {String(flag.userAnswer)}</div>
+                {!!flag.userAnswer && (
+                  <div className="report-card-answer">{S.REPORTS_ANSWER(String(flag.userAnswer))}</div>
                 )}
-                {flag.note && <div>{String(flag.note)}</div>}
+                {!!flag.note && <div>{String(flag.note)}</div>}
               </div>
             ))}
           </div>

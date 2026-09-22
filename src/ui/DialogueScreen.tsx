@@ -1,20 +1,13 @@
 import { useState } from 'react'
 import type { Dialogue, Sentence } from '../content/schemas.ts'
 import { S } from './strings.nl.ts'
+import { speak } from './speak.ts'
 
 interface Props {
   dialogue: Dialogue
   unitDialogues: Dialogue[]
   sentences: Map<string, Sentence>
   onBack: () => void
-}
-
-function speak(text: string) {
-  if (!window.speechSynthesis) return
-  speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'it-IT'
-  speechSynthesis.speak(u)
 }
 
 export default function DialogueScreen({ dialogue, unitDialogues, sentences, onBack }: Props) {
@@ -62,7 +55,7 @@ export default function DialogueScreen({ dialogue, unitDialogues, sentences, onB
                   className="btn-secondary"
                   style={{ padding: '2px 8px' }}
                   onClick={() => speak(sentence?.it ?? line.sentence)}
-                  aria-label="Uitspreken"
+                  aria-label={S.SPEAK}
                 >
                   {S.AUDIO}
                 </button>

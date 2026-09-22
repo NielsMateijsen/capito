@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import type { Content } from '../exercises/types.ts'
 import type { ProgressState } from '../storage/types.ts'
 import { isLeech } from '../engine/session-builder.ts'
 import { S } from './strings.nl.ts'
+import { speak } from './speak.ts'
 
 interface AppConfig {
   leech: { lapseThreshold: number }
@@ -14,18 +16,21 @@ interface Props {
   onBack: () => void
 }
 
-function speak(text: string) {
-  if (!window.speechSynthesis) return
-  speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'it-IT'
-  speechSynthesis.speak(u)
-}
-
 export default function LeechScreen({ content, progress, config, onBack }: Props) {
   const leeches = Object.entries(progress.cards)
     .filter(([, state]) => isLeech(state, config.leech))
     .map(([cardKey, state]) => ({ cardKey, state }))
+
+  const exampleByItem = useMemo(() => {
+    const map = new Map<string, { it: string; nl: string[] }>()
+    for (const s of content.sentences.values()) {
+      const sentence = s as { it: string; nl: string[]; uses: string[] }
+      for (const id of sentence.uses) {
+        if (!map.has(id)) map.set(id, sentence)
+      }
+    }
+    return map
+  }, [content.sentences])
 
   return (
     <div className="leech-screen">
@@ -47,7 +52,7 @@ export default function LeechScreen({ content, progress, config, onBack }: Props
             const sentence = content.sentences.get(itemId)
             const it = word?.it ?? verb?.inf ?? sentence?.it ?? itemId
             const nl = word?.nl[0] ?? verb?.nl[0] ?? sentence?.nl[0] ?? ''
-            const example = [...content.sentences.values()].find(s => s.uses.includes(itemId))
+            const example = exampleByItem.get(itemId)
 
             return (
               <div key={cardKey} className="leech-card">
@@ -57,7 +62,7 @@ export default function LeechScreen({ content, progress, config, onBack }: Props
                     className="btn-secondary"
                     style={{ padding: '2px 8px' }}
                     onClick={() => speak(it)}
-                    aria-label="Uitspreken"
+                    aria-label={S.SPEAK}
                   >
                     {S.AUDIO}
                   </button>
@@ -73,7 +78,7 @@ export default function LeechScreen({ content, progress, config, onBack }: Props
                         className="btn-secondary"
                         style={{ padding: '2px 8px' }}
                         onClick={() => speak(example.it)}
-                        aria-label="Uitspreken"
+                        aria-label={S.SPEAK}
                       >
                         {S.AUDIO}
                       </button>
