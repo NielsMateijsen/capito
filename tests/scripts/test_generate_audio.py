@@ -63,7 +63,9 @@ SAMPLE_UNIT = {
         {"id": "w_ciao", "it": "ciao", "pos": "interjection", "nl": ["hoi"],
          "register": "informal", "core": False},
     ],
-    "verbs": [],
+    "verbs": [
+        {"id": "v_parlare", "inf": "parlare", "nl": ["spreken"], "conj": "are"},
+    ],
     "sentences": [
         {"id": "s_t_001", "it": "Ciao, sono Sam.", "nl": ["Hoi"], "register": "informal",
          "uses": ["w_ciao"], "audioText": None},
@@ -95,6 +97,13 @@ def units_dir(tmp_path):
 
 
 class TestCollectEntries:
+    def test_verb_uses_inf_field(self, units_dir):
+        entries = ga.collect_entries(units_dir)
+        verb_entries = [e for e in entries if e["id"] == "v_parlare"]
+        assert len(verb_entries) == 1
+        assert verb_entries[0]["text"] == "parlare"
+        assert verb_entries[0]["voice"] == ga.VOICE_DEFAULT
+
     def test_word_uses_it_field(self, units_dir):
         entries = ga.collect_entries(units_dir)
         word_entries = [e for e in entries if e["id"] == "w_ciao"]

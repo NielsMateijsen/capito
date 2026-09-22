@@ -20,7 +20,7 @@ except ImportError:
 
 ROOT = Path(__file__).parent.parent
 CONTENT_DIR = ROOT / "content" / "units"
-AUDIO_DIR = ROOT / "audio"
+AUDIO_DIR = ROOT / "public" / "audio"
 MANIFEST_PATH = ROOT / "src" / "generated" / "audio-manifest.json"
 
 VOICE_A = "it-IT-ElsaNeural"
@@ -43,6 +43,9 @@ def collect_entries(units_dir: Path) -> list[dict]:
 
         for word in unit.get("words", []):
             entries.append({"text": word["it"], "voice": VOICE_DEFAULT, "id": word["id"]})
+
+        for verb in unit.get("verbs", []):
+            entries.append({"text": verb["inf"], "voice": VOICE_DEFAULT, "id": verb["id"]})
 
         for sentence in unit.get("sentences", []):
             text = sentence.get("audioText") or sentence["it"]

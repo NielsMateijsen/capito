@@ -1,1 +1,92 @@
-{}
+{
+  "3f32d0fc46bc": {
+    "file": "audio/3f32d0fc46bc.mp3",
+    "ids": [
+      "w_ciao"
+    ]
+  },
+  "585dcc9de84b": {
+    "file": "audio/585dcc9de84b.mp3",
+    "ids": [
+      "w_buongiorno"
+    ]
+  },
+  "5ea994d8b27e": {
+    "file": "audio/5ea994d8b27e.mp3",
+    "ids": [
+      "w_buonasera"
+    ]
+  },
+  "9fef48b5c6b8": {
+    "file": "audio/9fef48b5c6b8.mp3",
+    "ids": [
+      "w_arrivederci"
+    ]
+  },
+  "67e5de2f6cfb": {
+    "file": "audio/67e5de2f6cfb.mp3",
+    "ids": [
+      "w_grazie"
+    ]
+  },
+  "6f45e339d207": {
+    "file": "audio/6f45e339d207.mp3",
+    "ids": [
+      "w_prego"
+    ]
+  },
+  "fa9c55b4c909": {
+    "file": "audio/fa9c55b4c909.mp3",
+    "ids": [
+      "w_per_favore"
+    ]
+  },
+  "4203d0463d16": {
+    "file": "audio/4203d0463d16.mp3",
+    "ids": [
+      "w_scusi"
+    ]
+  },
+  "471137f22d4b": {
+    "file": "audio/471137f22d4b.mp3",
+    "ids": [
+      "w_signora"
+    ]
+  },
+  "94c00be30417": {
+    "file": "audio/94c00be30417.mp3",
+    "ids": [
+      "v_essere"
+    ]
+  },
+  "a6c3e3f1280a": {
+    "file": "audio/a6c3e3f1280a.mp3",
+    "ids": [
+      "s_u01_001"
+    ]
+  },
+  "3f403d559683": {
+    "file": "audio/3f403d559683.mp3",
+    "ids": [
+      "s_u01_002"
+    ]
+  },
+  "5d85e3891a17": {
+    "file": "audio/5d85e3891a17.mp3",
+    "ids": [
+      "s_u01_003"
+    ]
+  },
+  "2d137a580685": {
+    "file": "audio/2d137a580685.mp3",
+    "ids": [
+      "s_u01_004"
+    ]
+  },
+  "573e2eb63b35": {
+    "file": "audio/573e2eb63b35.mp3",
+    "ids": [
+      "s_u01_005"
+    ]
+  }
+}
