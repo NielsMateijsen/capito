@@ -8,7 +8,7 @@ import type { ReviewEntry } from '../engine/review-log.ts'
 import type { Exercise, ReviewResult } from '../exercises/types.ts'
 import { exerciseMap } from '../exercises/index.ts'
 import { S } from './strings.nl.ts'
-import { speak } from './speak.ts'
+import { playAudio } from './speak.ts'
 import ReportModal from './ReportModal.tsx'
 import type { ReportEntry } from './ReportModal.tsx'
 
@@ -127,7 +127,7 @@ export default function SessionScreen({
   // Autoplay audio on feedback
   useEffect(() => {
     if (phase === 'feedback' && autoplayAudio && exercise) {
-      speak(getAudioText(exercise))
+      void playAudio(getAudioText(exercise))
     }
   }, [phase, autoplayAudio, exercise])
 
@@ -258,7 +258,7 @@ export default function SessionScreen({
 
   function handleAudio() {
     if (!exercise) return
-    speak(getAudioText(exercise))
+    void playAudio(getAudioText(exercise))
   }
 
   function handleAudioIntro(itemId: string) {
@@ -266,7 +266,7 @@ export default function SessionScreen({
     const verb = content.verbs.get(itemId)
     const sentence = content.sentences.get(itemId)
     const text = word?.it ?? verb?.inf ?? sentence?.it ?? ''
-    if (text) speak(text)
+    if (text) void playAudio(text)
   }
 
   async function handleReport(entry: ReportEntry) {

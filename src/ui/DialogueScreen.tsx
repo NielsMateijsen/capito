@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Dialogue, Sentence } from '../content/schemas.ts'
 import { S } from './strings.nl.ts'
-import { speak } from './speak.ts'
+import { playAudio, VOICE_A, VOICE_B } from './speak.ts'
 
 interface Props {
   dialogue: Dialogue
@@ -54,7 +54,7 @@ export default function DialogueScreen({ dialogue, unitDialogues, sentences, onB
                 <button
                   className="btn-secondary"
                   style={{ padding: '2px 8px' }}
-                  onClick={() => speak(sentence?.it ?? line.sentence)}
+                  onClick={() => void playAudio(sentence?.audioText ?? sentence?.it ?? line.sentence, line.speaker === 'A' ? VOICE_A : VOICE_B)}
                   aria-label={S.SPEAK}
                 >
                   {S.AUDIO}

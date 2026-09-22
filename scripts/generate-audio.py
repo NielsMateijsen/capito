@@ -30,7 +30,7 @@ VOICE_DEFAULT = VOICE_A
 
 def make_hash(text: str, voice: str) -> str:
     """Return 12-character hex hash of 'text|voice'."""
-    return hashlib.md5(f"{text}|{voice}".encode()).hexdigest()[:12]
+    return hashlib.sha256(f"{text}|{voice}".encode()).hexdigest()[:12]
 
 
 def collect_entries(units_dir: Path) -> list[dict]:

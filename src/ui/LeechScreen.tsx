@@ -3,7 +3,7 @@ import type { Content } from '../exercises/types.ts'
 import type { ProgressState } from '../storage/types.ts'
 import { isLeech } from '../engine/session-builder.ts'
 import { S } from './strings.nl.ts'
-import { speak } from './speak.ts'
+import { playAudio } from './speak.ts'
 
 interface AppConfig {
   leech: { lapseThreshold: number }
@@ -61,7 +61,7 @@ export default function LeechScreen({ content, progress, config, onBack }: Props
                   <button
                     className="btn-secondary"
                     style={{ padding: '2px 8px' }}
-                    onClick={() => speak(it)}
+                    onClick={() => void playAudio(it)}
                     aria-label={S.SPEAK}
                   >
                     {S.AUDIO}
@@ -77,7 +77,7 @@ export default function LeechScreen({ content, progress, config, onBack }: Props
                       <button
                         className="btn-secondary"
                         style={{ padding: '2px 8px' }}
-                        onClick={() => speak(example.it)}
+                        onClick={() => void playAudio(example.it)}
                         aria-label={S.SPEAK}
                       >
                         {S.AUDIO}

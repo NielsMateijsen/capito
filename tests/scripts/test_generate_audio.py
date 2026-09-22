@@ -40,9 +40,13 @@ class TestMakeHash:
     def test_different_voice_gives_different_hash(self):
         assert ga.make_hash("ciao", "it-IT-ElsaNeural") != ga.make_hash("ciao", "it-IT-DiegoNeural")
 
-    def test_matches_md5(self):
+    def test_matches_sha256(self):
+        # Verified against scripts/generate-audio.py and JS computeAudioKey
+        assert ga.make_hash("ciao", "it-IT-ElsaNeural") == "3f32d0fc46bc"
+
+    def test_matches_stdlib_sha256(self):
         text, voice = "ciao", "it-IT-ElsaNeural"
-        expected = hashlib.md5(f"{text}|{voice}".encode()).hexdigest()[:12]
+        expected = hashlib.sha256(f"{text}|{voice}".encode()).hexdigest()[:12]
         assert ga.make_hash(text, voice) == expected
 
 
