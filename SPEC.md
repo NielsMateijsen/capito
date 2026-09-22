@@ -39,6 +39,7 @@ Succescriteria voor de pilot (unit 1 een week gebruiken) staan in `docs/pilot.md
 
 ## 3. Techniek
 
+- **Node ≥20.19 LTS** (`.nvmrc` is de bron; `engine-strict=true` in `.npmrc`)
 - Vite + TypeScript + React
 - **zod** als enige bron van waarheid voor schema's (types worden hieruit afgeleid)
 - **Vitest** voor tests

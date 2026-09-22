@@ -79,13 +79,13 @@ claude
 
 Voortgang per fase (uit `SPEC.md` §10):
 
-- [ ] 0 Setup
-- [ ] 1 Content-fundament
-- [ ] 2 Engines + tests
-- [ ] 3 Oefentypes + sessie
-- [ ] 4 UI
-- [ ] 5 Audio
-- [ ] 6 PWA + deploy
+- [x] 0 Setup
+- [x] 1 Content-fundament
+- [x] 2 Engines + tests
+- [x] 3 Oefentypes + sessie
+- [x] 4 UI
+- [x] 5 Audio
+- [x] 6 PWA + deploy
 - [ ] 7a Pilot: unit 1 + een week gebruiken (`docs/pilot.md`)
 - [ ] 7b Units 2-10 (na positief pilotbesluit)
 - [ ] 8 Afwerking
@@ -93,6 +93,7 @@ Voortgang per fase (uit `SPEC.md` §10):
 ## Eenmalige setup
 
 - Reponaam: `capito`. PWA-naam op je beginscherm: "Capito"
-- Node 20.19+, en Python met `pip install edge-tts` (voor audio)
+- Node 20.19+ (`nvm use` pikt `.nvmrc` automatisch op); `.npmrc` blokkeert installatie op een oudere versie (`engine-strict=true`)
+- Python met `pip install edge-tts` (voor audio)
 - GitHub: zet branch protection op `main` (CI moet groen zijn) en kies bij Settings → Pages als bron "GitHub Actions"
 - Fase 6: stel `base` in `vite.config.ts` in op `/capito/` en zet de push-trigger in `deploy.yml` aan

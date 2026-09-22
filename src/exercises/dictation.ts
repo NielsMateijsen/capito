@@ -1,0 +1,23 @@
+import { check as engineCheck } from '../engine/checker.ts'
+import type { CheckerConfig } from '../engine/checker.ts'
+import type { Content, Exercise, ExerciseModule, ReviewResult } from './types.ts'
+
+const TYPE = 'dictation'
+
+function cards(content: Content): string[] {
+  return [...content.sentences.keys()].map(id => `${TYPE}:${id}`)
+}
+
+function build(cardKey: string, content: Content): Exercise {
+  const id = cardKey.slice(TYPE.length + 1)
+  const sentence = content.sentences.get(id)
+  if (!sentence) throw new Error(`Unknown sentence id: ${id}`)
+  return { cardKey, typeId: TYPE, prompt: '', answers: [sentence.it] }
+}
+
+function check(input: string, exercise: Exercise, config: CheckerConfig): ReviewResult {
+  return engineCheck(input, exercise.answers, 'translation', config)
+}
+
+const exercise: ExerciseModule = { id: TYPE, typoTolerance: true, cards, build, check }
+export default exercise

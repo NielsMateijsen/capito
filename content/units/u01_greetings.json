@@ -1,0 +1,197 @@
+{
+  "schema": 1,
+  "id": "u01_greetings",
+  "order": 1,
+  "title": "Begroeten en afscheid",
+  "canDo": [
+    "Ik kan iemand begroeten en gedag zeggen in het Italiaans",
+    "Ik kan het verschil gebruiken tussen informeel (tu) en formeel (Lei)",
+    "Ik kan zeggen wie ik ben met het werkwoord essere"
+  ],
+  "requires": [],
+  "words": [
+    {
+      "id": "w_ciao",
+      "it": "ciao",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["hoi", "doei"],
+      "register": "informal",
+      "tags": ["greeting", "farewell"],
+      "core": false,
+      "note": null
+    },
+    {
+      "id": "w_buongiorno",
+      "it": "buongiorno",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["goedemorgen", "goedendag"],
+      "register": "formal",
+      "tags": ["greeting"],
+      "core": false,
+      "note": "Gebruikt voor de middag; daarna buonasera"
+    },
+    {
+      "id": "w_buonasera",
+      "it": "buonasera",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["goedenavond"],
+      "register": "formal",
+      "tags": ["greeting"],
+      "core": false,
+      "note": "Gebruikt vanaf de late namiddag"
+    },
+    {
+      "id": "w_arrivederci",
+      "it": "arrivederci",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["tot ziens"],
+      "register": "neutral",
+      "tags": ["farewell"],
+      "core": false,
+      "note": null
+    },
+    {
+      "id": "w_grazie",
+      "it": "grazie",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["bedankt", "dank je", "dank u"],
+      "register": "neutral",
+      "tags": [],
+      "core": false,
+      "note": null
+    },
+    {
+      "id": "w_prego",
+      "it": "prego",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["graag gedaan"],
+      "register": "neutral",
+      "tags": [],
+      "core": false,
+      "note": "Ook als uitnodiging: gaat uw gang"
+    },
+    {
+      "id": "w_per_favore",
+      "it": "per favore",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["alsjeblieft", "alstublieft"],
+      "register": "neutral",
+      "tags": [],
+      "core": false,
+      "note": null
+    },
+    {
+      "id": "w_scusi",
+      "it": "scusi",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["pardon", "neemt u mij niet kwalijk"],
+      "register": "formal",
+      "tags": [],
+      "core": false,
+      "note": "Formele aanspreekvorm (Lei) van scusare; informeel: scusa"
+    },
+    {
+      "id": "w_signora",
+      "it": "signora",
+      "pos": "noun",
+      "article": "la",
+      "gender": "f",
+      "plural": null,
+      "nl": ["mevrouw"],
+      "register": "formal",
+      "tags": [],
+      "core": false,
+      "note": null
+    }
+  ],
+  "verbs": [
+    {
+      "id": "v_essere",
+      "inf": "essere",
+      "nl": ["zijn"],
+      "conj": "irregular",
+      "irregular": {
+        "presente": {
+          "io": "sono",
+          "tu": "sei",
+          "lui": "è",
+          "noi": "siamo",
+          "voi": "siete",
+          "loro": "sono"
+        }
+      }
+    }
+  ],
+  "sentences": [
+    {
+      "id": "s_u01_001",
+      "it": "Ciao, sono Sam.",
+      "nl": ["Hoi, ik ben Sam."],
+      "register": "informal",
+      "uses": ["w_ciao", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sono", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_002",
+      "it": "Buongiorno, signora.",
+      "nl": ["Goedemorgen, mevrouw."],
+      "register": "formal",
+      "uses": ["w_buongiorno", "w_signora"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_003",
+      "it": "Lei è la signora Rossi?",
+      "nl": ["Bent u mevrouw Rossi?"],
+      "register": "formal",
+      "uses": ["v_essere", "w_signora"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_004",
+      "it": "Scusi, per favore.",
+      "nl": ["Pardon, alstublieft."],
+      "register": "formal",
+      "uses": ["w_scusi", "w_per_favore"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_005",
+      "it": "Arrivederci, grazie!",
+      "nl": ["Tot ziens, bedankt!"],
+      "register": "neutral",
+      "uses": ["w_arrivederci", "w_grazie"],
+      "audioText": null
+    }
+  ],
+  "dialogues": [],
+  "grammar": [],
+  "tenses": ["presente"],
+  "review": { "status": "draft" }
+}

@@ -3,6 +3,8 @@
   "session": {
     "maxReviewsPerSession": 30,
     "newCardsPerDay": 10,
+    "minNewCardsPerDay": 1,
+    "maxNewCardsPerDay": 50,
     "minOldMaterialRatio": 0.3,
     "maxSameTypeInRow": 3
   },

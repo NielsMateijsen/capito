@@ -3,6 +3,7 @@
 Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige spec: `SPEC.md`; lees de relevante sectie of fase vóór je een feature bouwt. Overzicht voor mensen: `README.md`.
 
 ## Commando's
+- Runtime: Node ≥20.19 (`.nvmrc`); TypeScript-scripts draaien via `tsx`
 - `npm run dev` / `build` / `typecheck`
 - `npm test` (moet `vitest run` zijn, geen watch-modus)
 - `npm run validate` (content) · `npm run audio` · `npm run coverage` · `npm run reports`
