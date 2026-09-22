@@ -1,1 +1,1 @@
-{"root":["./vite.config.ts","./scripts/coverage.ts","./scripts/reports.ts","./scripts/stats.ts","./scripts/validate.ts"],"version":"5.9.3"}
+{"root":["./vite.config.ts","./scripts/coverage.ts","./scripts/reports.ts","./scripts/stats.ts","./scripts/validate.ts","./scripts/version.ts"],"version":"5.9.3"}
