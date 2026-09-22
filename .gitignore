@@ -5,6 +5,8 @@ coverage/
 playwright-report/
 test-results/
 __pycache__/
+audio/
+public/audio/
 *.pyc
 .env
 .env.*

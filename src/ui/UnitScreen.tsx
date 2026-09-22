@@ -3,7 +3,7 @@ import type { ProgressState } from '../storage/types.ts'
 import type { GrammarDoc } from '../content/loader.ts'
 import { unitMastery } from '../engine/unlock.ts'
 import { S } from './strings.nl.ts'
-import { speak } from './speak.ts'
+import { playAudio } from './speak.ts'
 
 interface AppConfig {
   unlock: { minRepsPerCard: number }
@@ -55,7 +55,7 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, gra
               <li key={w.id} className="word-item">
                 <strong>{w.it}</strong>
                 <span className="word-nl">{w.nl.join(' / ')}</span>
-                <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => speak(w.it)}>
+                <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => void playAudio(w.it)}>
                   {S.AUDIO}
                 </button>
               </li>
@@ -72,7 +72,7 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, gra
               <li key={v.id} className="word-item">
                 <strong>{v.inf}</strong>
                 <span className="word-nl">{v.nl.join(' / ')}</span>
-                <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => speak(v.inf)}>
+                <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => void playAudio(v.inf)}>
                   {S.AUDIO}
                 </button>
               </li>
