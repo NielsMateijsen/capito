@@ -16,7 +16,7 @@ for (const c of goldenFile.cases) {
       nl: [],
       conj: c.conj as 'are' | 'ere' | 'ire' | 'ire_isc' | 'irregular',
       irregular: c.conj === 'irregular'
-        ? { presente: c.forms as Record<string, string> }
+        ? { presente: c.forms as { io: string; tu: string; lui: string; noi: string; voi: string; loro: string } }
         : undefined,
       reflexive: ('reflexive' in c && c.reflexive === true) ? true : undefined,
     }

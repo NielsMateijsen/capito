@@ -191,9 +191,9 @@ describe('scoreExam()', () => {
 
   it('12 correct out of 15 → score = 0.8, passed = true', () => {
     const results = new Map<string, 'correct' | 'almost' | 'wrong'>([
-      ...Array.from({ length: 12 }, (_, i) => [`translate-nl-it:w_${i}`, 'correct' as const]),
-      ...Array.from({ length: 3 }, (_, i) => [`conjugate:v_${i}:p:io`, 'wrong' as const]),
-    ])
+      ...Array.from({ length: 12 }, (_, i) => [`translate-nl-it:w_${i}`, 'correct']),
+      ...Array.from({ length: 3 }, (_, i) => [`conjugate:v_${i}:p:io`, 'wrong']),
+    ] as [string, 'correct' | 'almost' | 'wrong'][])
     const r = scoreExam(results, CONFIG)
     expect(r.score).toBeCloseTo(0.8)
     expect(r.passed).toBe(true)
@@ -201,9 +201,9 @@ describe('scoreExam()', () => {
 
   it('11 correct out of 15 → score < 0.8, passed = false', () => {
     const results = new Map<string, 'correct' | 'almost' | 'wrong'>([
-      ...Array.from({ length: 11 }, (_, i) => [`translate-nl-it:w_${i}`, 'correct' as const]),
-      ...Array.from({ length: 4 }, (_, i) => [`conjugate:v_${i}:p:io`, 'wrong' as const]),
-    ])
+      ...Array.from({ length: 11 }, (_, i) => [`translate-nl-it:w_${i}`, 'correct']),
+      ...Array.from({ length: 4 }, (_, i) => [`conjugate:v_${i}:p:io`, 'wrong']),
+    ] as [string, 'correct' | 'almost' | 'wrong'][])
     const r = scoreExam(results, CONFIG)
     expect(r.passed).toBe(false)
   })

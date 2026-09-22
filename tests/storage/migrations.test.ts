@@ -58,7 +58,7 @@ describe('export → import roundtrip', () => {
       cv: '1',
     }]
     state.introduced = ['w_test']
-    state.settings = { audioEnabled: true }
+    state.settings = { autoplayAudio: true }
 
     const restored = importJson(exportJson(state))
     expect(restored).toEqual(state)

@@ -162,7 +162,6 @@ export function buildSession(input: SessionInput): Session {
   const todayNewCount = computeTodayNewCount(progress.reviewLog, now)
 
   // Step 3: due cards — most-overdue first, capped at maxDueShownPerDay
-  const allCardKeySet = new Set(allCardKeys)
   const dueAll = allCardKeys
     .filter(k => {
       const state = progress.cards[k]
