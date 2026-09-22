@@ -12,3 +12,4 @@ public/audio/
 .env.*
 .DS_Store
 .claude/settings.local.json
+*.tsbuildinfo
