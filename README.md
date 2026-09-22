@@ -82,7 +82,7 @@ Voortgang per fase (uit `SPEC.md` §10):
 - [x] 0 Setup
 - [x] 1 Content-fundament
 - [x] 2 Engines + tests
-- [ ] 3 Oefentypes + sessie
+- [x] 3 Oefentypes + sessie
 - [ ] 4 UI
 - [ ] 5 Audio
 - [ ] 6 PWA + deploy
