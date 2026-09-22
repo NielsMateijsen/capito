@@ -83,7 +83,7 @@ Voortgang per fase (uit `SPEC.md` §10):
 - [x] 1 Content-fundament
 - [x] 2 Engines + tests
 - [x] 3 Oefentypes + sessie
-- [ ] 4 UI
+- [x] 4 UI
 - [ ] 5 Audio
 - [ ] 6 PWA + deploy
 - [ ] 7a Pilot: unit 1 + een week gebruiken (`docs/pilot.md`)
