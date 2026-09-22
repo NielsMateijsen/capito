@@ -38,4 +38,28 @@ export const S = {
 
   LEECH_BADGE: 'Lastig',
   WELCOME_BACK: 'Welkom terug! Lichte sessie vandaag.',
+
+  // Home
+  TODAY: 'Vandaag',
+  UNIT_LIST_HEADER: 'Eenheden',
+  LOCKED: 'Vergrendeld',
+  MASTERY: (pct: number) => `${pct}% beheerst`,
+  BACKUP_BANNER: 'Maak een back-up van je voortgang zodat je geen oefendata verliest.',
+  BACKUP_BTN: 'Back-up exporteren (beschikbaar in fase 6)',
+  IOS_ADVICE: 'Voeg Capito toe aan je beginscherm voor de beste ervaring: tik op Delen → Zet op beginscherm.',
+
+  // Unit
+  UNIT_CANDO_HEADER: 'Na deze unit kun je…',
+  UNIT_WORDS_HEADER: 'Woorden',
+  UNIT_VERBS_HEADER: 'Werkwoorden',
+  UNIT_DIALOGUES_HEADER: 'Dialogen',
+  UNIT_GRAMMAR_HEADER: 'Grammatica',
+  PRACTICE_UNIT: 'Oefen deze unit',
+  EXAM: 'Eindtoets',
+  EXAM_UNAVAILABLE: (threshold: number, current: number) =>
+    `Beschikbaar vanaf ${threshold}% beheersing (nu: ${current}%)`,
+  BACK: '← Terug',
+
+  // Session end (also-round from home resets)
+  HOME: 'Terug naar home',
 }

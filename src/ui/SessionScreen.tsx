@@ -28,6 +28,8 @@ interface Props {
   initialProgress: ProgressState
   storage: ProgressStorage
   config: AppConfig
+  mode?: 'daily' | 'unit' | 'exam'
+  overrideQueue?: SessionItem[]
   onDone: () => void
 }
 
@@ -59,15 +61,19 @@ function speak(text: string) {
 }
 
 export default function SessionScreen({
-  content, allCardKeys, cardToUnit, initialProgress, storage, config, onDone,
+  content, allCardKeys, cardToUnit, initialProgress, storage, config,
+  mode = 'daily', overrideQueue,
+  onDone,
 }: Props) {
-  const session = buildSession({
-    now: Date.now(),
-    allCardKeys,
-    cardToUnit,
-    progress: initialProgress,
-    config,
-  })
+  const session = overrideQueue
+    ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [] }
+    : buildSession({
+        now: Date.now(),
+        allCardKeys,
+        cardToUnit,
+        progress: initialProgress,
+        config,
+      })
 
   const [queue, setQueue] = useState<SessionItem[]>(() => [...session.queue])
   const [pos, setPos] = useState(0)
@@ -174,7 +180,7 @@ export default function SessionScreen({
       hint: hintUsed,
       answer: res !== 'correct' ? input.slice(0, 100) : undefined,
       session: sessionId.current,
-      mode: 'daily',
+      mode,
       cv: 'dev',
     }
 
@@ -213,7 +219,7 @@ export default function SessionScreen({
       ms,
       hint: false,
       session: sessionId.current,
-      mode: 'daily',
+      mode,
       cv: 'dev',
     }
 
@@ -258,7 +264,7 @@ export default function SessionScreen({
   }
 
   async function handleReport(entry: ReportEntry) {
-    const newProgress = { ...progress, flags: [...progress.flags, entry as Record<string, unknown>] }
+    const newProgress = { ...progress, flags: [...progress.flags, entry as unknown as Record<string, unknown>] }
     await storage.save(newProgress)
     setProgress(newProgress)
   }
@@ -364,9 +370,11 @@ export default function SessionScreen({
               <button className="btn-primary" ref={primaryBtnRef} onClick={() => void handleSubmitAnswer()}>
                 {S.CHECK}
               </button>
-              <button className="btn-secondary" onClick={handleHint} disabled={hintUsed}>
-                {S.HINT}
-              </button>
+              {mode !== 'exam' && (
+                <button className="btn-secondary" onClick={handleHint} disabled={hintUsed}>
+                  {S.HINT}
+                </button>
+              )}
               <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
               <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
             </div>

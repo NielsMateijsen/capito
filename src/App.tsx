@@ -1,27 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Content } from './exercises/types.ts'
 import type { ProgressState } from './storage/types.ts'
-import { IdbProgressStorage, defaultState } from './storage/progress-store.ts'
+import type { SessionItem } from './engine/session-builder.ts'
+import type { Unit } from './content/schemas.ts'
+import { IdbProgressStorage } from './storage/progress-store.ts'
 import { loadUnits, loadTenses } from './content/loader.ts'
 import { exercises } from './exercises/index.ts'
+import { buildExamSession } from './engine/exam.ts'
 import SessionScreen from './ui/SessionScreen.tsx'
+import HomeScreen from './ui/HomeScreen.tsx'
+import UnitScreen from './ui/UnitScreen.tsx'
 import { S } from './ui/strings.nl.ts'
 import './ui/session.css'
 import appConfig from '../config/app.json'
 
-type AppPhase = 'loading' | 'ready' | 'session'
+type View =
+  | { screen: 'loading' }
+  | { screen: 'home' }
+  | { screen: 'unit'; unitId: string }
+  | { screen: 'session'; targetUnitId?: string; mode: 'daily' | 'unit' | 'exam'; overrideQueue?: SessionItem[] }
 
 interface AppData {
   content: Content
+  units: Unit[]
   allCardKeys: string[]
   cardToUnit: Map<string, string>
+  cardKeysByUnit: Map<string, string[]>
   progress: ProgressState
 }
 
 const storage = new IdbProgressStorage()
 
 export default function App() {
-  const [appPhase, setAppPhase] = useState<AppPhase>('loading')
+  const [view, setView] = useState<View>({ screen: 'loading' })
   const [data, setData] = useState<AppData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const loaded = useRef(false)
@@ -38,7 +49,6 @@ export default function App() {
         const words = new Map(units.flatMap(u => u.words.map(w => [w.id, w])))
         const verbs = new Map(units.flatMap(u => u.verbs.map(v => [v.id, v])))
         const sentences = new Map(units.flatMap(u => u.sentences.map(s => [s.id, s])))
-
         const content: Content = { words, verbs, sentences, tenses: new Map(tenses.map(t => [t.id, t])), units }
 
         const itemToUnit = new Map<string, string>()
@@ -53,9 +63,15 @@ export default function App() {
           allCardKeys.map(k => [k, itemToUnit.get(k.split(':')[1] ?? '') ?? ''])
         )
 
+        const cardKeysByUnit = new Map<string, string[]>()
+        for (const unit of units) cardKeysByUnit.set(unit.id, [])
+        for (const [key, unitId] of cardToUnit) {
+          cardKeysByUnit.get(unitId)?.push(key)
+        }
+
         const progress = await storage.load()
-        setData({ content, allCardKeys, cardToUnit, progress })
-        setAppPhase('ready')
+        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, progress })
+        setView({ screen: 'home' })
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
       }
@@ -64,12 +80,25 @@ export default function App() {
     void load()
   }, [])
 
+  async function reloadProgress(): Promise<ProgressState> {
+    const progress = await storage.load()
+    if (data) setData({ ...data, progress })
+    return progress
+  }
+
   function handleSessionDone() {
-    // Reload progress after session (it was saved during session)
-    storage.load().then(progress => {
-      if (data) setData({ ...data, progress })
-      setAppPhase('ready')
-    }).catch(() => setAppPhase('ready'))
+    reloadProgress().then(() => setView({ screen: 'home' })).catch(() => setView({ screen: 'home' }))
+  }
+
+  function handleUnitSessionDone() {
+    reloadProgress().then(() => setView({ screen: 'home' })).catch(() => setView({ screen: 'home' }))
+  }
+
+  function handleEindtoets(unitId: string) {
+    if (!data) return
+    const examKeys = buildExamSession(unitId, data.allCardKeys, data.cardToUnit, appConfig.exam)
+    const overrideQueue: SessionItem[] = examKeys.map(k => ({ kind: 'exercise' as const, cardKey: k, isNew: false }))
+    setView({ screen: 'session', mode: 'exam', targetUnitId: unitId, overrideQueue })
   }
 
   if (error) {
@@ -80,7 +109,7 @@ export default function App() {
     )
   }
 
-  if (appPhase === 'loading' || !data) {
+  if (view.screen === 'loading' || !data) {
     return (
       <div className="app-loading">
         <p>{S.LOADING}</p>
@@ -88,7 +117,23 @@ export default function App() {
     )
   }
 
-  if (appPhase === 'session') {
+  if (view.screen === 'unit') {
+    const unit = data.units.find(u => u.id === view.unitId)
+    if (!unit) { setView({ screen: 'home' }); return null }
+    return (
+      <UnitScreen
+        unit={unit}
+        cardKeysByUnit={data.cardKeysByUnit}
+        progress={data.progress}
+        config={appConfig}
+        onBack={() => setView({ screen: 'home' })}
+        onOefen={unitId => setView({ screen: 'session', mode: 'unit', targetUnitId: unitId })}
+        onEindtoets={handleEindtoets}
+      />
+    )
+  }
+
+  if (view.screen === 'session') {
     return (
       <SessionScreen
         content={data.content}
@@ -97,17 +142,21 @@ export default function App() {
         initialProgress={data.progress}
         storage={storage}
         config={appConfig}
-        onDone={handleSessionDone}
+        mode={view.mode}
+        overrideQueue={view.overrideQueue}
+        onDone={view.mode === 'unit' ? handleUnitSessionDone : handleSessionDone}
       />
     )
   }
 
   return (
-    <div className="app-ready">
-      <h1>Capito</h1>
-      <button className="btn-primary" onClick={() => setAppPhase('session')}>
-        {S.START_SESSION}
-      </button>
-    </div>
+    <HomeScreen
+      units={data.units}
+      cardKeysByUnit={data.cardKeysByUnit}
+      progress={data.progress}
+      config={appConfig}
+      onStartSession={() => setView({ screen: 'session', mode: 'daily' })}
+      onOpenUnit={unitId => setView({ screen: 'unit', unitId })}
+    />
   )
 }

@@ -255,7 +255,177 @@ body {
   margin: 0;
 }
 
-/* Report modal */
+/* ── Home screen ─────────────────────────────────────────── */
+
+.home {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-header h1 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.banner {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.banner.info {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.unit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.unit-list h2 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.unit-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.unit-card:hover:not(.unit-card--locked) {
+  background: #f5f5f5;
+}
+
+.unit-card--locked {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.unit-card-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.unit-card-meta {
+  font-size: 0.85rem;
+  color: #777;
+  white-space: nowrap;
+}
+
+.progress-bar-wrap {
+  width: 80px;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #4c8bf5;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* ── Unit screen ─────────────────────────────────────────── */
+
+.unit-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.unit-screen h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.unit-screen h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  margin: 0 0 0.4rem;
+}
+
+.cando-list,
+.word-list,
+.plain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cando-list li::before {
+  content: '\2713\0020';
+  color: #4c8bf5;
+  font-weight: 700;
+}
+
+.word-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.word-item strong {
+  min-width: 8ch;
+}
+
+.word-item .word-nl {
+  color: #555;
+  flex: 1;
+}
+
+.unit-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+
+.exam-unavailable {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+/* ── Report modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
