@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { ProgressState } from './types.ts'
 
 export type Migration = (old: Record<string, unknown>) => Record<string, unknown>
@@ -29,10 +30,26 @@ export function exportJson(state: ProgressState): string {
   return JSON.stringify(state)
 }
 
+const backupSchema = z.object({
+  schema: z.number().int().nonnegative(),
+  cards: z.record(z.unknown()),
+  reviewLog: z.array(z.unknown()),
+  introduced: z.array(z.string()),
+  unitMeta: z.record(z.unknown()),
+  flags: z.array(z.unknown()),
+  settings: z.object({}).passthrough(),
+  meta: z.object({}).passthrough(),
+})
+
 export function importJson(
   json: string,
   migrations?: MigrationMap,
   targetSchema?: number,
 ): ProgressState {
-  return migrate(JSON.parse(json) as unknown, migrations, targetSchema)
+  const parsed: unknown = JSON.parse(json)
+  const result = backupSchema.safeParse(parsed)
+  if (!result.success) {
+    throw new Error(`Ongeldig back-upbestand: ${result.error.issues[0]?.message ?? 'onbekende fout'}`)
+  }
+  return migrate(parsed, migrations, targetSchema)
 }

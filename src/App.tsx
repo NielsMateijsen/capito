@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
 import type { Content } from './exercises/types.ts'
 import type { ProgressState, Settings } from './storage/types.ts'
 import type { SessionItem } from './engine/session-builder.ts'
@@ -9,6 +10,8 @@ import { loadUnits, loadTenses, loadGrammarDocs } from './content/loader.ts'
 import { exercises } from './exercises/index.ts'
 import { buildExamSession } from './engine/exam.ts'
 import { isLeech } from './engine/session-builder.ts'
+import { exportJson } from './storage/migrations.ts'
+import { shouldRequestPersistentStorage } from './storage/persist.ts'
 import SessionScreen from './ui/SessionScreen.tsx'
 import HomeScreen from './ui/HomeScreen.tsx'
 import UnitScreen from './ui/UnitScreen.tsx'
@@ -47,6 +50,7 @@ const storage = new IdbProgressStorage()
 const unlockConfig = { ...appConfig.unlock, passThreshold: appConfig.exam.passThreshold }
 
 export default function App() {
+  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
   const [view, setView] = useState<View>({ screen: 'loading' })
   const [data, setData] = useState<AppData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +91,14 @@ export default function App() {
 
         const grammarMap = new Map(grammarDocs.map(d => [d.frontmatter.id, d]))
 
-        const progress = await storage.load()
+        let progress = await storage.load()
+
+        if (shouldRequestPersistentStorage(appConfig.backup.requestPersistentStorage, progress.meta.persistGranted)) {
+          const granted = await navigator.storage.persist()
+          progress = { ...progress, meta: { ...progress.meta, persistGranted: granted } }
+          await storage.save(progress)
+        }
+
         setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, grammarMap, progress })
         setView({ screen: 'home' })
       } catch (err) {
@@ -132,6 +143,40 @@ export default function App() {
     setView({ screen: 'home' })
   }
 
+  async function handleExport() {
+    if (!data) return
+    const state = { ...data.progress, meta: { ...data.progress.meta, build: __BUILD__.commit } }
+    const json = exportJson(state)
+    const date = new Date().toISOString().slice(0, 10)
+    const filename = `capito-backup-${date}.json`
+    const blob = new Blob([json], { type: 'application/json' })
+
+    if (navigator.canShare?.({ files: [new File([blob], filename, { type: 'application/json' })] })) {
+      try {
+        await navigator.share({ files: [new File([blob], filename, { type: 'application/json' })] })
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return
+        throw e
+      }
+    } else {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+
+    const next = { ...data.progress, meta: { ...data.progress.meta, lastExportAt: new Date().toISOString(), build: __BUILD__.commit } }
+    await storage.save(next)
+    await reloadProgress()
+  }
+
+  async function handleImport(backup: ProgressState) {
+    await storage.save(backup)
+    await reloadProgress()
+  }
+
   if (error) {
     return (
       <div className="app-loading">
@@ -154,115 +199,129 @@ export default function App() {
   const flagCount = data.progress.flags.length
   const leechCount = Object.values(data.progress.cards).filter(s => isLeech(s, appConfig.leech)).length
 
-  if (view.screen === 'unit') {
-    const unit = data.units.find(u => u.id === view.unitId)
-    if (!unit) return null
+  const banner = needRefresh ? (
+    <div className="banner update-banner">
+      <span>{S.UPDATE_BANNER}</span>
+      <button className="btn-primary" onClick={() => void updateServiceWorker(true)}>{S.UPDATE_BTN}</button>
+    </div>
+  ) : null
+
+  const screen = (() => {
+    if (view.screen === 'unit') {
+      const unit = data.units.find(u => u.id === view.unitId)
+      if (!unit) return null
+      return (
+        <UnitScreen
+          unit={unit}
+          cardKeysByUnit={data.cardKeysByUnit}
+          progress={data.progress}
+          config={appConfig}
+          grammarMap={data.grammarMap}
+          onBack={() => setView({ screen: 'home' })}
+          onOefen={unitId => setView({ screen: 'session', mode: 'unit', targetUnitId: unitId })}
+          onEindtoets={handleEindtoets}
+          onOpenGrammar={grammarId => setView({ screen: 'grammar', grammarId, fromUnitId: view.unitId })}
+          onOpenDialogue={dialogueId => setView({ screen: 'dialogue', dialogueId, unitId: view.unitId })}
+        />
+      )
+    }
+
+    if (view.screen === 'grammar') {
+      const doc = data.grammarMap.get(view.grammarId)
+      return (
+        <GrammarScreen
+          grammarId={view.grammarId}
+          doc={doc}
+          allCardKeys={data.allCardKeys}
+          onBack={() => setView({ screen: 'unit', unitId: view.fromUnitId })}
+          onDrill={queue => setView({ screen: 'session', mode: 'unit', overrideQueue: queue })}
+        />
+      )
+    }
+
+    if (view.screen === 'dialogue') {
+      const unit = data.units.find(u => u.id === view.unitId)
+      const dialogue = unit?.dialogues.find(d => d.id === view.dialogueId)
+      if (!unit || !dialogue) return null
+      return (
+        <DialogueScreen
+          dialogue={dialogue}
+          unitDialogues={unit.dialogues}
+          sentences={data.content.sentences}
+          onBack={() => setView({ screen: 'unit', unitId: view.unitId })}
+        />
+      )
+    }
+
+    if (view.screen === 'session') {
+      return (
+        <SessionScreen
+          content={data.content}
+          allCardKeys={data.allCardKeys}
+          cardToUnit={data.cardToUnit}
+          initialProgress={data.progress}
+          storage={storage}
+          config={appConfig}
+          mode={view.mode}
+          overrideQueue={view.overrideQueue}
+          autoplayAudio={autoplayAudio}
+          onDone={view.mode === 'unit' ? handleUnitSessionDone : handleSessionDone}
+        />
+      )
+    }
+
+    if (view.screen === 'settings') {
+      return (
+        <SettingsScreen
+          progress={data.progress}
+          config={appConfig}
+          onSave={handleSaveSettings}
+          onReset={handleReset}
+          onBack={() => setView({ screen: 'home' })}
+          onExport={handleExport}
+          onImport={handleImport}
+        />
+      )
+    }
+
+    if (view.screen === 'reports') {
+      return (
+        <ReportsScreen
+          flags={data.progress.flags}
+          onBack={() => setView({ screen: 'home' })}
+        />
+      )
+    }
+
+    if (view.screen === 'leech') {
+      return (
+        <LeechScreen
+          content={data.content}
+          progress={data.progress}
+          config={appConfig}
+          onBack={() => setView({ screen: 'home' })}
+        />
+      )
+    }
+
     return (
-      <UnitScreen
-        unit={unit}
+      <HomeScreen
+        units={data.units}
         cardKeysByUnit={data.cardKeysByUnit}
         progress={data.progress}
-        config={appConfig}
-        grammarMap={data.grammarMap}
-        onBack={() => setView({ screen: 'home' })}
-        onOefen={unitId => setView({ screen: 'session', mode: 'unit', targetUnitId: unitId })}
-        onEindtoets={handleEindtoets}
-        onOpenGrammar={grammarId => setView({ screen: 'grammar', grammarId, fromUnitId: view.unitId })}
-        onOpenDialogue={dialogueId => setView({ screen: 'dialogue', dialogueId, unitId: view.unitId })}
+        config={{ ...appConfig, unlock: unlockConfig }}
+        unlockAll={unlockAll}
+        flagCount={flagCount}
+        leechCount={leechCount}
+        onStartSession={() => setView({ screen: 'session', mode: 'daily' })}
+        onOpenUnit={unitId => setView({ screen: 'unit', unitId })}
+        onOpenSettings={() => setView({ screen: 'settings' })}
+        onOpenReports={() => setView({ screen: 'reports' })}
+        onOpenLeech={() => setView({ screen: 'leech' })}
+        onExport={handleExport}
       />
     )
-  }
+  })()
 
-  if (view.screen === 'grammar') {
-    const doc = data.grammarMap.get(view.grammarId)
-    return (
-      <GrammarScreen
-        grammarId={view.grammarId}
-        doc={doc}
-        allCardKeys={data.allCardKeys}
-        onBack={() => setView({ screen: 'unit', unitId: view.fromUnitId })}
-        onDrill={queue => setView({ screen: 'session', mode: 'unit', overrideQueue: queue })}
-      />
-    )
-  }
-
-  if (view.screen === 'dialogue') {
-    const unit = data.units.find(u => u.id === view.unitId)
-    const dialogue = unit?.dialogues.find(d => d.id === view.dialogueId)
-    if (!unit || !dialogue) return null
-    return (
-      <DialogueScreen
-        dialogue={dialogue}
-        unitDialogues={unit.dialogues}
-        sentences={data.content.sentences}
-        onBack={() => setView({ screen: 'unit', unitId: view.unitId })}
-      />
-    )
-  }
-
-  if (view.screen === 'session') {
-    return (
-      <SessionScreen
-        content={data.content}
-        allCardKeys={data.allCardKeys}
-        cardToUnit={data.cardToUnit}
-        initialProgress={data.progress}
-        storage={storage}
-        config={appConfig}
-        mode={view.mode}
-        overrideQueue={view.overrideQueue}
-        autoplayAudio={autoplayAudio}
-        onDone={view.mode === 'unit' ? handleUnitSessionDone : handleSessionDone}
-      />
-    )
-  }
-
-  if (view.screen === 'settings') {
-    return (
-      <SettingsScreen
-        progress={data.progress}
-        config={appConfig}
-        onSave={handleSaveSettings}
-        onReset={handleReset}
-        onBack={() => setView({ screen: 'home' })}
-      />
-    )
-  }
-
-  if (view.screen === 'reports') {
-    return (
-      <ReportsScreen
-        flags={data.progress.flags}
-        onBack={() => setView({ screen: 'home' })}
-      />
-    )
-  }
-
-  if (view.screen === 'leech') {
-    return (
-      <LeechScreen
-        content={data.content}
-        progress={data.progress}
-        config={appConfig}
-        onBack={() => setView({ screen: 'home' })}
-      />
-    )
-  }
-
-  return (
-    <HomeScreen
-      units={data.units}
-      cardKeysByUnit={data.cardKeysByUnit}
-      progress={data.progress}
-      config={{ ...appConfig, unlock: unlockConfig }}
-      unlockAll={unlockAll}
-      flagCount={flagCount}
-      leechCount={leechCount}
-      onStartSession={() => setView({ screen: 'session', mode: 'daily' })}
-      onOpenUnit={unitId => setView({ screen: 'unit', unitId })}
-      onOpenSettings={() => setView({ screen: 'settings' })}
-      onOpenReports={() => setView({ screen: 'reports' })}
-      onOpenLeech={() => setView({ screen: 'leech' })}
-    />
-  )
+  return <>{banner}{screen}</>
 }

@@ -18,7 +18,7 @@ export interface ProgressState {
   unitMeta: Record<UnitId, { examBest?: number; examAt?: string; canDo?: boolean[] }>
   flags: Flag[]
   settings: Settings
-  meta: { lastExportAt?: string; persistGranted?: boolean }
+  meta: { lastExportAt?: string; persistGranted?: boolean; build?: string }
 }
 
 export interface ProgressStorage {

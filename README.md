@@ -85,7 +85,7 @@ Voortgang per fase (uit `SPEC.md` §10):
 - [x] 3 Oefentypes + sessie
 - [x] 4 UI
 - [x] 5 Audio
-- [ ] 6 PWA + deploy
+- [x] 6 PWA + deploy
 - [ ] 7a Pilot: unit 1 + een week gebruiken (`docs/pilot.md`)
 - [ ] 7b Units 2-10 (na positief pilotbesluit)
 - [ ] 8 Afwerking

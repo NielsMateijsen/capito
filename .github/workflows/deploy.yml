@@ -1,11 +1,8 @@
 name: Deploy
 
-# Activeer de push-trigger in fase 6 door de on-sectie hieronder te vervangen:
-# on:
-#   push:
-#     branches: [main]
-#   workflow_dispatch:
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

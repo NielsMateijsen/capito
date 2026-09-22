@@ -1,4 +1,7 @@
+import { useRef, useState } from 'react'
 import type { ProgressState, Settings } from '../storage/types.ts'
+import { importJson } from '../storage/migrations.ts'
+import BackupImportModal from './BackupImportModal.tsx'
 import { S } from './strings.nl.ts'
 
 interface AppConfig {
@@ -12,13 +15,19 @@ interface Props {
   onSave: (settings: Settings) => Promise<void>
   onReset: () => Promise<void>
   onBack: () => void
+  onExport: () => Promise<void>
+  onImport: (state: ProgressState) => Promise<void>
 }
 
-export default function SettingsScreen({ progress, config, onSave, onReset, onBack }: Props) {
+export default function SettingsScreen({ progress, config, onSave, onReset, onBack, onExport, onImport }: Props) {
   const settings = (progress.settings ?? {}) as Settings
   const newPerDay = settings.newCardsPerDay ?? config.session.newCardsPerDay
   const autoplay = settings.autoplayAudio ?? false
   const unlockAll = settings.unlockAll ?? false
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [pendingBackup, setPendingBackup] = useState<ProgressState | null>(null)
 
   async function save(patch: Partial<Settings>) {
     await onSave({ ...settings, ...patch })
@@ -36,8 +45,40 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
     await onReset()
   }
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportError(null)
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const backup = importJson(reader.result as string)
+        setPendingBackup(backup)
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : S.BACKUP_IMPORT_ERROR)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  async function handleConfirmImport() {
+    if (!pendingBackup) return
+    await onImport(pendingBackup)
+    setPendingBackup(null)
+  }
+
   return (
     <div className="settings-screen">
+      {pendingBackup && (
+        <BackupImportModal
+          current={progress}
+          backup={pendingBackup}
+          onConfirm={() => void handleConfirmImport()}
+          onClose={() => setPendingBackup(null)}
+        />
+      )}
+
       <button className="btn-secondary" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
         {S.BACK}
       </button>
@@ -89,9 +130,17 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
         <p className="settings-meta">{S.SETTINGS_LAST_BACKUP(progress.meta.lastExportAt)}</p>
         <p className="settings-meta">{S.SETTINGS_STORAGE(progress.meta.persistGranted)}</p>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn-secondary" disabled>{S.SETTINGS_EXPORT}</button>
-          <button className="btn-secondary" disabled>{S.SETTINGS_IMPORT}</button>
+          <button className="btn-secondary" onClick={() => void onExport()}>{S.SETTINGS_EXPORT}</button>
+          <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}>{S.SETTINGS_IMPORT}</button>
         </div>
+        {importError && <p className="settings-error">{importError}</p>}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </section>
 
       {/* Reset */}

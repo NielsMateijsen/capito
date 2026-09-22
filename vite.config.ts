@@ -7,6 +7,7 @@ import { getBuildInfo } from './scripts/version.ts'
 const build = getBuildInfo()
 
 export default defineConfig({
+  base: '/capito/',
   plugins: [
     react(),
     VitePWA({
@@ -26,6 +27,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         lang: 'nl',
+        scope: '/capito/',
+        start_url: '/capito/',
         icons: [],
       },
     }),

@@ -1,6 +1,7 @@
 import type { Unit } from '../content/schemas.ts'
 import type { ProgressState } from '../storage/types.ts'
 import { isUnitUnlocked, unitMastery } from '../engine/unlock.ts'
+import { needsBackup } from '../storage/persist.ts'
 import { S } from './strings.nl.ts'
 
 interface AppConfig {
@@ -22,18 +23,13 @@ interface Props {
   onOpenSettings: () => void
   onOpenReports: () => void
   onOpenLeech: () => void
+  onExport: () => Promise<void>
 }
 
-function needsBackup(progress: ProgressState, reminderDays: number): boolean {
-  if (!progress.meta.lastExportAt) return true
-  const ms = Date.now() - Date.parse(progress.meta.lastExportAt)
-  return ms > reminderDays * 86_400_000
-}
-
-export default function HomeScreen({ units, cardKeysByUnit, progress, config, unlockAll = false, flagCount = 0, leechCount = 0, onStartSession, onOpenUnit, onOpenSettings, onOpenReports, onOpenLeech }: Props) {
+export default function HomeScreen({ units, cardKeysByUnit, progress, config, unlockAll = false, flagCount = 0, leechCount = 0, onStartSession, onOpenUnit, onOpenSettings, onOpenReports, onOpenLeech, onExport }: Props) {
   const sorted = [...units].sort((a, b) => a.order - b.order)
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-  const showBackup = needsBackup(progress, config.backup.reminderDays)
+  const showBackup = needsBackup(progress.meta.lastExportAt, config.backup.reminderDays)
 
   return (
     <div className="home">
@@ -48,7 +44,7 @@ export default function HomeScreen({ units, cardKeysByUnit, progress, config, un
       {showBackup && (
         <div className="banner">
           <span>{S.BACKUP_BANNER}</span>
-          <button className="btn-secondary" disabled>{S.BACKUP_BTN}</button>
+          <button className="btn-secondary" onClick={() => void onExport()}>{S.BACKUP_BTN}</button>
         </div>
       )}
 
