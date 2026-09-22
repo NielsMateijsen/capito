@@ -425,6 +425,243 @@ body {
   margin-top: 0.25rem;
 }
 
+/* ── Home nav ───────────────────────────────────────────── */
+
+.home-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 0.9rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  color: #333;
+}
+
+.nav-btn:hover {
+  background: #f5f5f5;
+}
+
+.nav-badge {
+  background: #e53935;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  min-width: 1.2em;
+  text-align: center;
+}
+
+/* ── Settings screen ─────────────────────────────────────── */
+
+.settings-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings-screen h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settings-section h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  margin: 0;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+
+.settings-row label {
+  color: #333;
+}
+
+.settings-row input[type="number"] {
+  width: 5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+.settings-meta {
+  font-size: 0.88rem;
+  color: #666;
+}
+
+.settings-version {
+  font-size: 0.82rem;
+  color: #999;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.btn-danger {
+  padding: 0.65rem 1.4rem;
+  background: #fff;
+  color: #c62828;
+  border: 1px solid #c62828;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #fff5f5;
+}
+
+/* ── Reports screen ──────────────────────────────────────── */
+
+.reports-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.reports-screen h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.report-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.report-card-meta {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.report-card-answer {
+  color: #555;
+  font-style: italic;
+}
+
+/* ── Leech screen ────────────────────────────────────────── */
+
+.leech-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.leech-screen h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.leech-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.leech-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.leech-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.leech-card-it {
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.leech-card-nl {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.leech-card-lapses {
+  font-size: 0.8rem;
+  color: #c62828;
+  font-weight: 600;
+}
+
+.leech-card-example {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.5rem;
+  font-size: 0.88rem;
+}
+
+.leech-card-example-label {
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.leech-card-example-it {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.leech-card-example-nl {
+  color: #666;
+  margin-top: 0.15rem;
+}
+
 /* ── Grammar screen ──────────────────────────────────────── */
 
 .grammar-screen {

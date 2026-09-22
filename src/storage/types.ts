@@ -2,7 +2,12 @@ import type { CardState } from '../engine/srs.ts'
 import type { ReviewEntry, CardKey } from '../engine/review-log.ts'
 
 export type Flag = Record<string, unknown>
-export type Settings = Record<string, unknown>
+
+export interface Settings {
+  newCardsPerDay?: number
+  autoplayAudio?: boolean
+  unlockAll?: boolean
+}
 export type UnitId = string
 
 export interface ProgressState {

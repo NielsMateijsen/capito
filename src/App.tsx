@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Content } from './exercises/types.ts'
-import type { ProgressState } from './storage/types.ts'
+import type { ProgressState, Settings } from './storage/types.ts'
 import type { SessionItem } from './engine/session-builder.ts'
 import type { Unit } from './content/schemas.ts'
 import type { GrammarDoc } from './content/loader.ts'
-import { IdbProgressStorage } from './storage/progress-store.ts'
+import { IdbProgressStorage, defaultState } from './storage/progress-store.ts'
 import { loadUnits, loadTenses, loadGrammarDocs } from './content/loader.ts'
 import { exercises } from './exercises/index.ts'
 import { buildExamSession } from './engine/exam.ts'
+import { isLeech } from './engine/session-builder.ts'
 import SessionScreen from './ui/SessionScreen.tsx'
 import HomeScreen from './ui/HomeScreen.tsx'
 import UnitScreen from './ui/UnitScreen.tsx'
 import GrammarScreen from './ui/GrammarScreen.tsx'
 import DialogueScreen from './ui/DialogueScreen.tsx'
+import SettingsScreen from './ui/SettingsScreen.tsx'
+import ReportsScreen from './ui/ReportsScreen.tsx'
+import LeechScreen from './ui/LeechScreen.tsx'
 import { S } from './ui/strings.nl.ts'
 import './ui/session.css'
 import appConfig from '../config/app.json'
@@ -24,6 +28,9 @@ type View =
   | { screen: 'session'; targetUnitId?: string; mode: 'daily' | 'unit' | 'exam'; overrideQueue?: SessionItem[] }
   | { screen: 'grammar'; grammarId: string; fromUnitId: string }
   | { screen: 'dialogue'; dialogueId: string; unitId: string }
+  | { screen: 'settings' }
+  | { screen: 'reports' }
+  | { screen: 'leech' }
 
 interface AppData {
   content: Content
@@ -93,7 +100,7 @@ export default function App() {
 
   async function reloadProgress(): Promise<ProgressState> {
     const progress = await storage.load()
-    if (data) setData({ ...data, progress })
+    if (data) setData(d => d ? { ...d, progress } : d)
     return progress
   }
 
@@ -112,6 +119,19 @@ export default function App() {
     setView({ screen: 'session', mode: 'exam', targetUnitId: unitId, overrideQueue })
   }
 
+  async function handleSaveSettings(settings: Settings) {
+    if (!data) return
+    const next = { ...data.progress, settings }
+    await storage.save(next)
+    await reloadProgress()
+  }
+
+  async function handleReset() {
+    await storage.save(defaultState())
+    await reloadProgress()
+    setView({ screen: 'home' })
+  }
+
   if (error) {
     return (
       <div className="app-loading">
@@ -127,6 +147,12 @@ export default function App() {
       </div>
     )
   }
+
+  const settings = (data.progress.settings ?? {}) as Settings
+  const unlockAll = settings.unlockAll === true
+  const autoplayAudio = settings.autoplayAudio === true
+  const flagCount = data.progress.flags.length
+  const leechCount = Object.values(data.progress.cards).filter(s => isLeech(s, appConfig.leech)).length
 
   if (view.screen === 'unit') {
     const unit = data.units.find(u => u.id === view.unitId)
@@ -185,7 +211,40 @@ export default function App() {
         config={appConfig}
         mode={view.mode}
         overrideQueue={view.overrideQueue}
+        autoplayAudio={autoplayAudio}
         onDone={view.mode === 'unit' ? handleUnitSessionDone : handleSessionDone}
+      />
+    )
+  }
+
+  if (view.screen === 'settings') {
+    return (
+      <SettingsScreen
+        progress={data.progress}
+        config={appConfig}
+        onSave={handleSaveSettings}
+        onReset={handleReset}
+        onBack={() => setView({ screen: 'home' })}
+      />
+    )
+  }
+
+  if (view.screen === 'reports') {
+    return (
+      <ReportsScreen
+        flags={data.progress.flags}
+        onBack={() => setView({ screen: 'home' })}
+      />
+    )
+  }
+
+  if (view.screen === 'leech') {
+    return (
+      <LeechScreen
+        content={data.content}
+        progress={data.progress}
+        config={appConfig}
+        onBack={() => setView({ screen: 'home' })}
       />
     )
   }
@@ -196,8 +255,14 @@ export default function App() {
       cardKeysByUnit={data.cardKeysByUnit}
       progress={data.progress}
       config={{ ...appConfig, unlock: unlockConfig }}
+      unlockAll={unlockAll}
+      flagCount={flagCount}
+      leechCount={leechCount}
       onStartSession={() => setView({ screen: 'session', mode: 'daily' })}
       onOpenUnit={unitId => setView({ screen: 'unit', unitId })}
+      onOpenSettings={() => setView({ screen: 'settings' })}
+      onOpenReports={() => setView({ screen: 'reports' })}
+      onOpenLeech={() => setView({ screen: 'leech' })}
     />
   )
 }

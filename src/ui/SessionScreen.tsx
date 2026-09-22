@@ -30,6 +30,7 @@ interface Props {
   config: AppConfig
   mode?: 'daily' | 'unit' | 'exam'
   overrideQueue?: SessionItem[]
+  autoplayAudio?: boolean
   onDone: () => void
 }
 
@@ -62,7 +63,7 @@ function speak(text: string) {
 
 export default function SessionScreen({
   content, allCardKeys, cardToUnit, initialProgress, storage, config,
-  mode = 'daily', overrideQueue,
+  mode = 'daily', overrideQueue, autoplayAudio = false,
   onDone,
 }: Props) {
   const session = overrideQueue
@@ -124,6 +125,13 @@ export default function SessionScreen({
       primaryBtnRef.current?.focus()
     }
   }, [phase, exercise?.typeId])
+
+  // Autoplay audio on feedback
+  useEffect(() => {
+    if (phase === 'feedback' && autoplayAudio && exercise) {
+      speak(getAudioText(exercise))
+    }
+  }, [phase, autoplayAudio, exercise])
 
   const advanceToNext = useCallback((nextQueue: SessionItem[], nextPos: number, nextAnsweredCount: number) => {
     if (nextPos >= nextQueue.length || nextAnsweredCount >= session.maxReviews) {

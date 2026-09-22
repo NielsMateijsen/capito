@@ -14,8 +14,14 @@ interface Props {
   cardKeysByUnit: Map<string, string[]>
   progress: ProgressState
   config: AppConfig
+  unlockAll?: boolean
+  flagCount?: number
+  leechCount?: number
   onStartSession: () => void
   onOpenUnit: (unitId: string) => void
+  onOpenSettings: () => void
+  onOpenReports: () => void
+  onOpenLeech: () => void
 }
 
 function needsBackup(progress: ProgressState, reminderDays: number): boolean {
@@ -24,7 +30,7 @@ function needsBackup(progress: ProgressState, reminderDays: number): boolean {
   return ms > reminderDays * 86_400_000
 }
 
-export default function HomeScreen({ units, cardKeysByUnit, progress, config, onStartSession, onOpenUnit }: Props) {
+export default function HomeScreen({ units, cardKeysByUnit, progress, config, unlockAll = false, flagCount = 0, leechCount = 0, onStartSession, onOpenUnit, onOpenSettings, onOpenReports, onOpenLeech }: Props) {
   const sorted = [...units].sort((a, b) => a.order - b.order)
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
   const showBackup = needsBackup(progress, config.backup.reminderDays)
@@ -52,10 +58,20 @@ export default function HomeScreen({ units, cardKeysByUnit, progress, config, on
         </div>
       )}
 
+      <nav className="home-nav">
+        <button className="nav-btn" onClick={onOpenSettings}>{S.NAV_SETTINGS}</button>
+        <button className="nav-btn" onClick={onOpenReports}>
+          {S.NAV_REPORTS}{flagCount > 0 && <span className="nav-badge">{flagCount}</span>}
+        </button>
+        <button className="nav-btn" onClick={onOpenLeech}>
+          {S.NAV_LEECH}{leechCount > 0 && <span className="nav-badge">{leechCount}</span>}
+        </button>
+      </nav>
+
       <div className="unit-list">
         <h2>{S.UNIT_LIST_HEADER}</h2>
         {sorted.map(unit => {
-          const unlocked = isUnitUnlocked(unit, cardKeysByUnit, progress, config.unlock)
+          const unlocked = unlockAll || isUnitUnlocked(unit, cardKeysByUnit, progress, config.unlock)
           const keys = cardKeysByUnit.get(unit.id) ?? []
           const mastery = unitMastery(keys, progress.cards, config.unlock)
           const pct = Math.round(mastery * 100)
