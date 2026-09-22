@@ -62,4 +62,13 @@ export const S = {
 
   // Session end (also-round from home resets)
   HOME: 'Terug naar home',
+
+  // Grammar screen
+  GRAMMAR_PRACTICE: 'Oefen dit',
+  GRAMMAR_NO_CONTENT: 'Grammaticatekst nog niet beschikbaar voor deze les.',
+
+  // Dialogue screen
+  DIALOGUE_NL_TOGGLE: 'Vertaling',
+  DIALOGUE_SWITCH_TO_FORMAL: 'Wissel naar formeel',
+  DIALOGUE_SWITCH_TO_INFORMAL: 'Wissel naar informeel',
 }

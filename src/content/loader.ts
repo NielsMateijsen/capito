@@ -2,6 +2,11 @@ import matter from 'gray-matter'
 import { GrammarFrontmatterSchema, TenseSchema, UnitSchema } from './schemas.ts'
 import type { GrammarFrontmatter, Tense, Unit } from './schemas.ts'
 
+export interface GrammarDoc {
+  frontmatter: GrammarFrontmatter
+  body: string
+}
+
 const unitModules = import.meta.glob('../../content/units/*.json', { eager: true })
 const tenseModules = import.meta.glob('../../content/tenses/*.json', { eager: true })
 const grammarModules = import.meta.glob('../../content/grammar/*.md', {
@@ -38,5 +43,16 @@ export function loadGrammar(): GrammarFrontmatter[] {
       throw new Error(`Invalid grammar frontmatter at ${path}: ${result.error.message}`)
     }
     return result.data
+  })
+}
+
+export function loadGrammarDocs(): GrammarDoc[] {
+  return Object.entries(grammarModules).map(([path, raw]) => {
+    const { data, content } = matter(raw as string)
+    const result = GrammarFrontmatterSchema.safeParse(data)
+    if (!result.success) {
+      throw new Error(`Invalid grammar frontmatter at ${path}: ${result.error.message}`)
+    }
+    return { frontmatter: result.data, body: content }
   })
 }

@@ -1,5 +1,6 @@
 import type { Unit } from '../content/schemas.ts'
 import type { ProgressState } from '../storage/types.ts'
+import type { GrammarDoc } from '../content/loader.ts'
 import { unitMastery } from '../engine/unlock.ts'
 import { S } from './strings.nl.ts'
 
@@ -13,9 +14,12 @@ interface Props {
   cardKeysByUnit: Map<string, string[]>
   progress: ProgressState
   config: AppConfig
+  grammarMap?: Map<string, GrammarDoc>
   onBack: () => void
   onOefen: (unitId: string) => void
   onEindtoets: (unitId: string) => void
+  onOpenGrammar: (grammarId: string) => void
+  onOpenDialogue: (dialogueId: string) => void
 }
 
 function speak(text: string) {
@@ -26,7 +30,7 @@ function speak(text: string) {
   speechSynthesis.speak(u)
 }
 
-export default function UnitScreen({ unit, cardKeysByUnit, progress, config, onBack, onOefen, onEindtoets }: Props) {
+export default function UnitScreen({ unit, cardKeysByUnit, progress, config, grammarMap, onBack, onOefen, onEindtoets, onOpenGrammar, onOpenDialogue }: Props) {
   const keys = cardKeysByUnit.get(unit.id) ?? []
   const mastery = unitMastery(keys, progress.cards, config.unlock)
   const masteryPct = Math.round(mastery * 100)
@@ -88,7 +92,13 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, onB
         <section>
           <h2>{S.UNIT_DIALOGUES_HEADER}</h2>
           <ul className="plain-list">
-            {unit.dialogues.map(d => <li key={d.id}>{d.title}</li>)}
+            {unit.dialogues.map(d => (
+              <li key={d.id}>
+                <button className="btn-secondary" style={{ textAlign: 'left', width: '100%' }} onClick={() => onOpenDialogue(d.id)}>
+                  {d.title}
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
       )}
@@ -97,7 +107,13 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, onB
         <section>
           <h2>{S.UNIT_GRAMMAR_HEADER}</h2>
           <ul className="plain-list">
-            {unit.grammar.map(g => <li key={g}>{g}</li>)}
+            {unit.grammar.map(g => (
+              <li key={g}>
+                <button className="btn-secondary" style={{ textAlign: 'left', width: '100%' }} onClick={() => onOpenGrammar(g)}>
+                  {grammarMap?.get(g)?.frontmatter.title ?? g}
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
       )}

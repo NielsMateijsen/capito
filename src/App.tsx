@@ -3,13 +3,16 @@ import type { Content } from './exercises/types.ts'
 import type { ProgressState } from './storage/types.ts'
 import type { SessionItem } from './engine/session-builder.ts'
 import type { Unit } from './content/schemas.ts'
+import type { GrammarDoc } from './content/loader.ts'
 import { IdbProgressStorage } from './storage/progress-store.ts'
-import { loadUnits, loadTenses } from './content/loader.ts'
+import { loadUnits, loadTenses, loadGrammarDocs } from './content/loader.ts'
 import { exercises } from './exercises/index.ts'
 import { buildExamSession } from './engine/exam.ts'
 import SessionScreen from './ui/SessionScreen.tsx'
 import HomeScreen from './ui/HomeScreen.tsx'
 import UnitScreen from './ui/UnitScreen.tsx'
+import GrammarScreen from './ui/GrammarScreen.tsx'
+import DialogueScreen from './ui/DialogueScreen.tsx'
 import { S } from './ui/strings.nl.ts'
 import './ui/session.css'
 import appConfig from '../config/app.json'
@@ -19,6 +22,8 @@ type View =
   | { screen: 'home' }
   | { screen: 'unit'; unitId: string }
   | { screen: 'session'; targetUnitId?: string; mode: 'daily' | 'unit' | 'exam'; overrideQueue?: SessionItem[] }
+  | { screen: 'grammar'; grammarId: string; fromUnitId: string }
+  | { screen: 'dialogue'; dialogueId: string; unitId: string }
 
 interface AppData {
   content: Content
@@ -26,10 +31,13 @@ interface AppData {
   allCardKeys: string[]
   cardToUnit: Map<string, string>
   cardKeysByUnit: Map<string, string[]>
+  grammarMap: Map<string, GrammarDoc>
   progress: ProgressState
 }
 
 const storage = new IdbProgressStorage()
+
+const unlockConfig = { ...appConfig.unlock, passThreshold: appConfig.exam.passThreshold }
 
 export default function App() {
   const [view, setView] = useState<View>({ screen: 'loading' })
@@ -45,6 +53,7 @@ export default function App() {
       try {
         const units = loadUnits()
         const tenses = loadTenses()
+        const grammarDocs = loadGrammarDocs()
 
         const words = new Map(units.flatMap(u => u.words.map(w => [w.id, w])))
         const verbs = new Map(units.flatMap(u => u.verbs.map(v => [v.id, v])))
@@ -69,8 +78,10 @@ export default function App() {
           cardKeysByUnit.get(unitId)?.push(key)
         }
 
+        const grammarMap = new Map(grammarDocs.map(d => [d.frontmatter.id, d]))
+
         const progress = await storage.load()
-        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, progress })
+        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, grammarMap, progress })
         setView({ screen: 'home' })
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
@@ -126,9 +137,39 @@ export default function App() {
         cardKeysByUnit={data.cardKeysByUnit}
         progress={data.progress}
         config={appConfig}
+        grammarMap={data.grammarMap}
         onBack={() => setView({ screen: 'home' })}
         onOefen={unitId => setView({ screen: 'session', mode: 'unit', targetUnitId: unitId })}
         onEindtoets={handleEindtoets}
+        onOpenGrammar={grammarId => setView({ screen: 'grammar', grammarId, fromUnitId: view.unitId })}
+        onOpenDialogue={dialogueId => setView({ screen: 'dialogue', dialogueId, unitId: view.unitId })}
+      />
+    )
+  }
+
+  if (view.screen === 'grammar') {
+    const doc = data.grammarMap.get(view.grammarId)
+    return (
+      <GrammarScreen
+        grammarId={view.grammarId}
+        doc={doc}
+        allCardKeys={data.allCardKeys}
+        onBack={() => setView({ screen: 'unit', unitId: view.fromUnitId })}
+        onDrill={queue => setView({ screen: 'session', mode: 'unit', overrideQueue: queue })}
+      />
+    )
+  }
+
+  if (view.screen === 'dialogue') {
+    const unit = data.units.find(u => u.id === view.unitId)
+    const dialogue = unit?.dialogues.find(d => d.id === view.dialogueId)
+    if (!unit || !dialogue) { setView({ screen: 'unit', unitId: view.unitId }); return null }
+    return (
+      <DialogueScreen
+        dialogue={dialogue}
+        unitDialogues={unit.dialogues}
+        sentences={data.content.sentences}
+        onBack={() => setView({ screen: 'unit', unitId: view.unitId })}
       />
     )
   }
@@ -154,7 +195,7 @@ export default function App() {
       units={data.units}
       cardKeysByUnit={data.cardKeysByUnit}
       progress={data.progress}
-      config={appConfig}
+      config={{ ...appConfig, unlock: unlockConfig }}
       onStartSession={() => setView({ screen: 'session', mode: 'daily' })}
       onOpenUnit={unitId => setView({ screen: 'unit', unitId })}
     />

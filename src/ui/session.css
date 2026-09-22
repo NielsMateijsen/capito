@@ -425,6 +425,120 @@ body {
   margin-top: 0.25rem;
 }
 
+/* ── Grammar screen ──────────────────────────────────────── */
+
+.grammar-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.grammar-screen h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.grammar-body {
+  line-height: 1.65;
+  font-size: 0.97rem;
+}
+
+.grammar-body h2 {
+  font-size: 1.05rem;
+  margin: 1.25rem 0 0.4rem;
+  color: #333;
+}
+
+.grammar-body p {
+  margin: 0.5rem 0;
+}
+
+.grammar-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+.grammar-body th,
+.grammar-body td {
+  border: 1px solid #ddd;
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+}
+
+.grammar-body th {
+  background: #f0f0f0;
+  font-weight: 600;
+}
+
+.grammar-no-content {
+  color: #888;
+  font-style: italic;
+  padding: 1rem 0;
+}
+
+/* ── Dialogue screen ─────────────────────────────────────── */
+
+.dialogue-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dialogue-screen h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.dialogue-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dialogue-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dialogue-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dialogue-line-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.speaker {
+  font-weight: 700;
+  min-width: 1.5ch;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.dialogue-it {
+  font-size: 1rem;
+  flex: 1;
+}
+
+.dialogue-nl {
+  font-size: 0.88rem;
+  color: #666;
+  padding-left: 2ch;
+}
+
 /* ── Report modal */
 .modal-backdrop {
   position: fixed;
