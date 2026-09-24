@@ -113,6 +113,7 @@ Alle bestanden hebben `"schema": 1`. Alle content volgt `docs/style-guide.md`.
 }
 ```
 - `uses` moet verwijzen naar woorden/werkwoorden uit de huidige of eerdere units (validator checkt dit, zodat een zin nooit onbekende stof bevat)
+- Elk item uit `uses` moet letterlijk in de zin terug te vinden zijn: een woord als `it` of meervoud, een werkwoord als infinitief of vervoegde vorm. De engine zoekt die plek zelf (voor onderstrepen en invullen); de validator geeft een fout als dat niet lukt
 - `cloze` optioneel: expliciete invulplekken
 - `audioText` optioneel: tekst voor de audio als de geschreven vorm afwijkt (cijfers, symbolen als €, afkortingen worden uitgeschreven)
 
@@ -210,6 +211,9 @@ conjugate:v_parlare:presente:noi
 article:w_casa
 cloze:s_u01_003:0
 dictation:s_u01_003
+mc-sentence:w_caffe
+mc-word:v_essere
+cloze-word:w_caffe
 ```
 De SRS (SM-2) slaat per `cardKey` op: `ease, interval, due, reps, lapses`. De score per antwoord komt uit `config/app.json` → `grading`. SRS-parameters staan in `srs.*` (`algorithm`, `startEase`, `minEase`, `maxIntervalDays`) en de typfoutdrempels in `checker.*` (`typoMinLength`, `typoMaxDistance`). Kaarten van onbekende of gedeprecateerde content worden genegeerd, niet verwijderd. De kaartstatus is afleidbaar uit de review-log (zie "Review-log").
 
@@ -228,15 +232,36 @@ De SRS (SM-2) slaat per `cardKey` op: `ease, interval, due, reps, lapses`. De sc
 Invoer: voortgang, config, ontgrendelde units. **Alle getallen komen uit `config/app.json`.**
 
 - **Mix:** minimaal `session.minOldMaterialRatio` (30%) kaarten uit eerdere units, ook bij "oefen deze unit"
-- **Nieuwe items** worden eerst getoond (zien + horen) en daarna pas getest, altijd met getypte antwoorden
+- **Nieuwe woorden en werkwoorden** doorlopen eerst de leerladder (zie "Leerladder")
 - **Sessielengte:** maximaal `session.maxReviewsPerSession` (30). Daarna een afrondscherm met de knop "Nog een ronde"
-- **Nieuwe kaarten:** maximaal `session.newCardsPerDay` per dag
-- **Types** worden door elkaar gemixt (maximaal `session.maxSameTypeInRow` achter elkaar)
+- **Nieuwe herhaalkaarten:** kaarten die vrijkomen als een item de ladder heeft afgerond (bijv. `article`, `conjugate`, `dictation`), maximaal `session.newCardsPerDay` per dag
+- **Uitgesloten types:** `session.excludedTypes` (`flashcard`, `cloze`) komen niet in de dagelijkse sessie. De kaarten blijven bestaan
+- **Volgorde:** willekeurig (met een seed, dus deterministisch testbaar), ongeacht ladderstatus. Wel geldt: een introductie staat direct voor de eerste vraag over dat item, treden van één item staan in volgorde met minstens `ladder.minGapSameItem` andere kaarten ertussen, en maximaal `session.maxSameTypeInRow` kaarten van hetzelfde type achter elkaar
 - **Achterstand:** per dag maximaal `backlog.maxDueShownPerDay` achterstallige kaarten, de meest achterstallige eerst (`backlog.order`). Boven `backlog.pauseNewCardsAboveDue` achterstallige kaarten komen er geen nieuwe kaarten bij
 - **Terugkeer na een pauze:** na `backlog.returnAfterDays` dagen afwezigheid krijg je lichte sessies (maximaal `backlog.returnMaxSessionReviews`) met een vriendelijk "welkom terug", zonder nieuwe kaarten tot de achterstand onder de drempel is
 - **Fout antwoord:** het juiste antwoord één keer overtypen (`lapse.retypeCorrectAnswer`); de kaart komt in dezelfde sessie terug (`lapse.reinsertInSession`) na `lapse.reinsertAfterCards` kaarten
 - **Leech:** na `leech.lapseThreshold` fouten wordt een kaart gemarkeerd als "lastig". Ze komt in de lijst "Lastig", krijgt extra context (voorbeeldzin + audio, `leech.showExtraContext`) en blijft in de SRS
 - **Score per antwoord** (`grading`): correct 4, bijna goed (accent/typfout) 3, hint gebruikt (`grading.hintUsed`) 3, fout 1; flashcard opnieuw 1, goed 4, makkelijk 5
+
+### Leerladder (`ladder.ts`, `sentences.ts`, `distractors.ts`)
+Elk woord en werkwoord (een **item**) doorloopt de treden uit `ladder.stages`, na een introductie:
+
+0. **Ontmoeten** (geen kaart): een zin met het item onderstreept, de vertaling, audio (`ladder.introAutoplay`), het item met lidwoord bij zelfstandige naamwoorden en een label formeel/informeel als het register niet neutraal is
+1. `mc-sentence`: Italiaanse zin met het item onderstreept, kies de Nederlandse vertaling uit `ladder.optionCount` opties
+2. `mc-word`: Nederlandse zin + Italiaanse zin met een gat, kies het ontbrekende woord (bij werkwoorden: andere vervoegingen van hetzelfde werkwoord)
+3. `cloze-word`: zelfde opzet, het woord zelf typen
+4. `translate-nl-it`: alleen het Nederlandse woord, Italiaans typen (zelfstandige naamwoorden met lidwoord)
+
+Een trede die voor een item niet bestaat (bijv. `translate-nl-it` bij werkwoorden) wordt overgeslagen. Na de laatste trede is het item **afgerond** en gaan de herhaalkaarten via de SRS.
+
+- **Trede afleiden uit de log:** een item staat op trede *n* als de log voor zijn tredekaarten *n* keer een goed antwoord op de trede van dat moment bevat, met `ladder.dropOnWrong` treden terug per fout. Afgerond blijft afgerond. Er is geen apart opgeslagen veld
+- **Tempo:** een item stijgt maximaal `ladder.maxStepsPerItemPerDay` treden per dag. Daardoor staan items in een sessie op verschillende treden
+- **Nieuwe items:** maximaal `ladder.newItemsPerDay` per dag (instelbaar in Instellingen), en alleen zolang er minder dan `ladder.maxItemsInProgress` items op de ladder staan. Volgorde: unit-volgorde, binnen een unit de volgorde waarin items voor het eerst in de zinnen voorkomen
+- **Verdeling:** eerst maximaal `ladder.reviewShare` van de sessie aan achterstallige herhalingen, dan de items op de ladder (langst niet geoefend eerst), dan nieuwe items, en de rest weer herhalingen
+- **Fout op een trede:** het item zakt, de latere treden van dat item verdwijnen uit de sessie en de lagere trede komt na `lapse.reinsertAfterCards` kaarten terug. Bij meerkeuze wordt het antwoord niet overgetypt
+- **Zinnen:** per item de zinnen waarin het voorkomt. De introductiezin is de eerste zin in de unit met dat item; daarna wisselt de zin bij elke kaart van het item (op basis van het aantal eerdere antwoorden op dat item)
+- **Afleiders** komen alleen uit bestaande content: vertalingen van andere zinnen, andere woorden van dezelfde woordsoort, of andere vormen van hetzelfde werkwoord. Volgorde van de opties is deterministisch
+- Herhaalkaarten van een item (`translate-it-nl`, `article`, `conjugate`) komen pas vrij als het item is afgerond; `dictation` als alle items uit `uses` zijn afgerond. Mastery (ontgrendelen, eindtoets) telt alleen herhaalkaarten
 
 ### Ontgrendelen (`unlock.ts`)
 Unit ontgrendeld als alle `requires` een mastery ≥ `unlock.masteryThreshold` hebben (standaard 0.8). Mastery = aandeel kaarten van de unit met `reps ≥ unlock.minRepsPerCard` en laatste antwoord goed. Met `unlock.requireExam: true` moet daarnaast de eindtoets gehaald zijn (standaard uit, want dat maakt leren traag). In instellingen: "alles ontgrendelen" (het is je eigen app).
@@ -256,11 +281,12 @@ Elk bestand exporteert:
   id: string,
   typoTolerance: boolean,
   cards(content): CardKey[],
-  build(cardKey, content): Exercise,   // prompt, verwachte antwoorden, audio
-  check(input, exercise): Result
+  build(cardKey, content, ctx?): Exercise,   // prompt, verwachte antwoorden, opties, zin, audio
+  check(input, exercise): Result,
+  requires?(cardKey, content): ItemId[]      // items die afgerond moeten zijn (standaard het item uit de key)
 }
 ```
-`index.ts` verzamelt ze automatisch. MVP-types: `flashcard` (zelf beoordelen: opnieuw/goed/makkelijk), `translate-it-nl`, `translate-nl-it`, `sentence-translate`, `conjugate`, `article`, `cloze`, `dictation`.
+`ctx.seq` is het aantal eerdere antwoorden op het item; daarmee wisselen zin en optievolgorde. `index.ts` verzamelt ze automatisch. Types: `flashcard` (zelf beoordelen: opnieuw/goed/makkelijk), `translate-it-nl`, `translate-nl-it` (met lidwoord; zonder lidwoord is "bijna goed"), `sentence-translate`, `conjugate`, `article`, `cloze`, `dictation`, `mc-sentence`, `mc-word`, `cloze-word`. Meerkeuze telt niet mee in de eindtoets.
 
 ### Voortgang (`storage/`)
 ```ts
@@ -324,10 +350,10 @@ ReviewEntry = {
 
 1. **Home:** knop "Vandaag" (te herhalen + nieuwe kaarten), unitlijst (vergrendeld/open/voortgang), back-upbanner en installatieadvies (zie "Back-up en opslag")
 2. **Unit:** kan-doelen, grammaticales, woordenlijst met audio, dialogen, knoppen "Oefen deze unit" en "Eindtoets"
-3. **Sessie:** één oefening per scherm, Enter om te controleren en door te gaan, directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout"
+3. **Sessie:** één oefening per scherm, Enter om te controleren en door te gaan, directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout". Meerkeuze met toetsen 1-4. Bij invuloefeningen staat de Nederlandse zin boven de Italiaanse zin met het gat
 4. **Grammaticales:** Markdown + knop "oefen dit"
 5. **Dialoog:** regels met audio, NL-vertaling aan/uit, wissel informeel/formeel
-6. **Instellingen:** nieuwe kaarten per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), reset, versie-info (app, commit, content)
+6. **Instellingen:** nieuwe woorden per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), reset, versie-info (app, commit, content)
 7. **Meldingen:** lijst met gemelde fouten, exporteerbaar
 8. **Lastig:** lijst met leech-kaarten
 

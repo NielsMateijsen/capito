@@ -61,5 +61,7 @@ Een vaste cast helpt om zinnen te onthouden.
 ## Structuur van een unit
 - 2-4 kan-doelen (`canDo`). Elk dialoog of zinnengroep dient minstens één kan-doel
 - Twee dialogen van 6-10 regels: dezelfde situatie, één informeel (Sam met Giulia of Marco), één formeel (Sam met signora Rossi of Luca)
-- Elk woord komt in minstens één zin voor, elk kernwoord van de unit in minstens twee
+- Elk woord en werkwoord komt in minstens drie zinnen voor (`ladder.minSentencesPerItem`), zodat de oefeningen steeds een andere zin kunnen tonen. Elk kernwoord van de unit in minstens twee
+- Items worden geleerd in de volgorde waarin ze voor het eerst in de zinnen van de unit voorkomen. De eerste zin met een item is de introductiezin: daarin is dat item het enige nieuwe item (de andere items uit `uses` zijn al eerder in de unit of in een eerdere unit gebruikt)
+- Elk item uit `uses` staat letterlijk in de zin: een woord in zijn `it`-vorm (of meervoud), een werkwoord als infinitief of vervoegde vorm uit de behandelde tijden
 - Nieuwe units hergebruiken personages en woorden uit eerdere units

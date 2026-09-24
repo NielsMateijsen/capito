@@ -27,4 +27,5 @@ Formaat en velden: zie `SPEC.md` §4. Elk bestand heeft `"schema": 1`. Inhoudeli
 ## Kwaliteit
 - Nieuwe content start met `review.status: "draft"`. Alleen de gebruiker zet dit op `reviewed`
 - Twijfel over correctheid of natuurlijkheid? Niet verzinnen: houd `draft` en noem het in je samenvatting
-- Elk woord komt in minstens één zin voor, elk kernwoord van de unit in minstens twee
+- Elk woord en werkwoord komt in minstens drie zinnen voor, elk kernwoord van de unit in minstens twee
+- De eerste zin met een item (introductiezin) bevat geen andere nieuwe items. Elk item uit `uses` staat letterlijk in de zin (zie `docs/style-guide.md`)
