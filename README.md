@@ -12,6 +12,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 
 - **Content is data, code is engine.** Woorden, zinnen, units en grammatica staan in `content/`. De code in `src/` kent geen Italiaans.
 - **Elke oefening is een "card"** met een sleutel (`conjugate:v_parlare:presente:noi`). De SRS houdt per sleutel bij wanneer je iets weer moet zien.
+- **Leerladder:** een nieuw woord of werkwoord maak je eerst mee in een zin (onderstreept, met audio, lidwoord en formeel/informeel). Daarna volgen de treden: de zin begrijpen (meerkeuze), het woord kiezen in een zin (meerkeuze), het woord typen in een zin, en zelf vertalen van NL naar IT. Elke keer staat het woord in een andere zin. Een item stijgt hooguit twee treden per dag, dus in een sessie lopen de treden door elkaar. De volgorde in een sessie is willekeurig. Na de laatste trede gaat het woord naar de gewone herhaling (zie `SPEC.md` §5 "Leerladder").
 - **Voortgang en review-log** (elk antwoord, append-only) staan lokaal in je browser (IndexedDB). De kaartstatus wordt uit de log afgeleid.
 - **Back-up:** installeer de app op je beginscherm en maak elke ~2 weken een export (de app herinnert je eraan). Zonder back-up kan de browser je data wissen.
 - **Versiestempel:** Instellingen toont app-versie, commit en content-versie. Die staan ook in elke export en foutmelding.
@@ -24,7 +25,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 | `content/tenses/` | Werkwoordstijden (nu: presente) |
 | `content/grammar/` | Grammaticales in Markdown |
 | `content/id-registry.json` | Alle ID's die ooit bestonden (niet handmatig bewerken) |
-| `src/engine/` | Conjugator, antwoordcontrole, SRS, sessie-opbouw, ontgrendelen |
+| `src/engine/` | Conjugator, antwoordcontrole, SRS, leerladder, zinnen en afleiders, sessie-opbouw, ontgrendelen |
 | `src/exercises/` | Eén bestand per oefentype, vanzelf geregistreerd |
 | `src/storage/` | Voortgang opslaan + migraties |
 | `src/ui/` | Schermen; alle tekst in `strings.nl.ts` |
@@ -32,7 +33,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 | `prompts/` | Prompts voor het genereren en reviewen van content |
 | `docs/` | `style-guide.md` (stijlgids content) en `pilot.md` (pilotweek, succescriteria, besluit) |
 | `tests/golden/` | Door mij gecontroleerde vervoegingen (bron van waarheid) |
-| `config/app.json` | Alle drempels (nieuwe kaarten per dag, ontgrendelpercentage, ...) |
+| `config/app.json` | Alle drempels (nieuwe woorden per dag, treden van de ladder, ontgrendelpercentage, ...) |
 | `.claude/` | Agent-setup (zie hieronder) |
 
 ## Commando's
