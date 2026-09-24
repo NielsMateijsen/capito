@@ -148,11 +148,54 @@
   ],
   "sentences": [
     {
+      "id": "s_u01_006",
+      "it": "Ciao, Giulia!",
+      "nl": ["Hoi, Giulia!"],
+      "register": "informal",
+      "uses": ["w_ciao"],
+      "audioText": null
+    },
+    {
       "id": "s_u01_001",
       "it": "Ciao, sono Sam.",
       "nl": ["Hoi, ik ben Sam."],
       "register": "informal",
       "uses": ["w_ciao", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sono", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_007",
+      "it": "Ciao, sei Marco?",
+      "nl": ["Hoi, ben jij Marco?", "Hoi, ben je Marco?"],
+      "register": "informal",
+      "uses": ["w_ciao", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sei", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_008",
+      "it": "Ciao, siete Giulia e Marco?",
+      "nl": ["Hoi, zijn jullie Giulia en Marco?"],
+      "register": "informal",
+      "uses": ["w_ciao", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "siete", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_009",
+      "it": "Buongiorno!",
+      "nl": ["Goedemorgen!", "Goedendag!"],
+      "register": "formal",
+      "uses": ["w_buongiorno"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_010",
+      "it": "Buongiorno, sono Sam.",
+      "nl": ["Goedemorgen, ik ben Sam.", "Goedendag, ik ben Sam."],
+      "register": "formal",
+      "uses": ["w_buongiorno", "v_essere"],
       "audioText": null,
       "cloze": [{ "target": "sono", "hint": "essere" }]
     },
@@ -174,6 +217,103 @@
       "cloze": [{ "target": "è", "hint": "essere" }]
     },
     {
+      "id": "s_u01_011",
+      "it": "Buonasera, Luca.",
+      "nl": ["Goedenavond, Luca."],
+      "register": "formal",
+      "uses": ["w_buonasera"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_012",
+      "it": "Buonasera, signora Rossi.",
+      "nl": ["Goedenavond, mevrouw Rossi."],
+      "register": "formal",
+      "uses": ["w_buonasera", "w_signora"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_013",
+      "it": "Buonasera, siamo Sam e Giulia.",
+      "nl": ["Goedenavond, wij zijn Sam en Giulia.", "Goedenavond, we zijn Sam en Giulia."],
+      "register": "formal",
+      "uses": ["w_buonasera", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "siamo", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_014",
+      "it": "Grazie!",
+      "nl": ["Bedankt!", "Dank je!", "Dank u!"],
+      "register": "neutral",
+      "uses": ["w_grazie"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_015",
+      "it": "Grazie, signora.",
+      "nl": ["Dank u, mevrouw.", "Bedankt, mevrouw."],
+      "register": "formal",
+      "uses": ["w_grazie", "w_signora"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_016",
+      "it": "Grazie, Marco!",
+      "nl": ["Dank je, Marco!", "Bedankt, Marco!"],
+      "register": "informal",
+      "uses": ["w_grazie"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_017",
+      "it": "Prego, signora.",
+      "nl": ["Graag gedaan, mevrouw.", "Gaat uw gang, mevrouw."],
+      "register": "formal",
+      "uses": ["w_prego", "w_signora"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_018",
+      "it": "Buongiorno, prego.",
+      "nl": ["Goedemorgen, zegt u het maar.", "Goedemorgen, wat mag het zijn?"],
+      "register": "formal",
+      "uses": ["w_buongiorno", "w_prego"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_019",
+      "it": "Prego, Marco!",
+      "nl": ["Graag gedaan, Marco!"],
+      "register": "informal",
+      "uses": ["w_prego"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_020",
+      "it": "Giulia, per favore!",
+      "nl": ["Giulia, alsjeblieft!"],
+      "register": "informal",
+      "uses": ["w_per_favore"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_021",
+      "it": "Signora, per favore!",
+      "nl": ["Mevrouw, alstublieft!"],
+      "register": "formal",
+      "uses": ["w_signora", "w_per_favore"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_022",
+      "it": "Scusi, signora.",
+      "nl": ["Pardon, mevrouw.", "Neemt u mij niet kwalijk, mevrouw."],
+      "register": "formal",
+      "uses": ["w_scusi", "w_signora"],
+      "audioText": null
+    },
+    {
       "id": "s_u01_004",
       "it": "Scusi, per favore.",
       "nl": ["Pardon, alstublieft."],
@@ -182,11 +322,36 @@
       "audioText": null
     },
     {
+      "id": "s_u01_023",
+      "it": "Scusi, Lei è la signora Rossi?",
+      "nl": ["Pardon, bent u mevrouw Rossi?"],
+      "register": "formal",
+      "uses": ["w_scusi", "v_essere", "w_signora"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_024",
+      "it": "Arrivederci, signora!",
+      "nl": ["Tot ziens, mevrouw!"],
+      "register": "formal",
+      "uses": ["w_arrivederci", "w_signora"],
+      "audioText": null
+    },
+    {
       "id": "s_u01_005",
       "it": "Arrivederci, grazie!",
       "nl": ["Tot ziens, bedankt!"],
       "register": "neutral",
       "uses": ["w_arrivederci", "w_grazie"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_025",
+      "it": "Arrivederci, Luca!",
+      "nl": ["Tot ziens, Luca!"],
+      "register": "neutral",
+      "uses": ["w_arrivederci"],
       "audioText": null
     }
   ],
