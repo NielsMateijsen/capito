@@ -34,7 +34,7 @@
       "register": "formal",
       "tags": ["greeting"],
       "core": false,
-      "note": "Gebruikt voor de middag; daarna buonasera"
+      "note": "Tot in de (vroege) middag; daarna buonasera"
     },
     {
       "id": "w_buonasera",
@@ -82,11 +82,11 @@
       "article": null,
       "gender": null,
       "plural": null,
-      "nl": ["graag gedaan"],
+      "nl": ["graag gedaan", "zegt u het maar"],
       "register": "neutral",
       "tags": [],
       "core": false,
-      "note": "Ook als uitnodiging: gaat uw gang"
+      "note": "Ook: zegt u het maar, gaat uw gang"
     },
     {
       "id": "w_per_favore",
@@ -108,7 +108,7 @@
       "article": null,
       "gender": null,
       "plural": null,
-      "nl": ["pardon", "neemt u mij niet kwalijk"],
+      "nl": ["pardon", "sorry", "neemt u mij niet kwalijk"],
       "register": "formal",
       "tags": [],
       "core": false,
@@ -202,7 +202,7 @@
     {
       "id": "s_u01_002",
       "it": "Buongiorno, signora.",
-      "nl": ["Goedemorgen, mevrouw."],
+      "nl": ["Goedemorgen, mevrouw.", "Goedendag, mevrouw."],
       "register": "formal",
       "uses": ["w_buongiorno", "w_signora"],
       "audioText": null
@@ -316,7 +316,7 @@
     {
       "id": "s_u01_004",
       "it": "Scusi, per favore.",
-      "nl": ["Pardon, alstublieft."],
+      "nl": ["Pardon, mag ik even?"],
       "register": "formal",
       "uses": ["w_scusi", "w_per_favore"],
       "audioText": null
