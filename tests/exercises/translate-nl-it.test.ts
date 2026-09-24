@@ -38,7 +38,24 @@ describe('translate-nl-it.build()', () => {
     const content = makeContent({ words: [word_caffe_accent] })
     const ex = translateNlIt.build('translate-nl-it:w_caffe_accent', content)
     expect(ex.prompt).toBe('koffie')
-    expect(ex.answers).toEqual(['caffè'])
+  })
+
+  it('asks for the article with a noun', () => {
+    const content = makeContent({ words: [word_caffe_accent] })
+    const ex = translateNlIt.build('translate-nl-it:w_caffe_accent', content)
+    expect(ex.answers).toEqual(['il caffè'])
+    expect(ex.withArticle).toBe(true)
+  })
+
+  it('joins an elided article without a space', () => {
+    const word = { ...word_caffe_accent, id: 'w_amica', it: 'amica', article: "l'", gender: 'f' as const }
+    const ex = translateNlIt.build('translate-nl-it:w_amica', makeContent({ words: [word] }))
+    expect(ex.answers).toEqual(["l'amica"])
+  })
+
+  it('does not ask for an article with a non-noun', () => {
+    const ex = translateNlIt.build('translate-nl-it:w_ciao', makeContent({ words: [word_ciao] }))
+    expect(ex.withArticle).toBe(false)
   })
 
   it('throws for unknown word id', () => {
@@ -59,6 +76,14 @@ describe('translate-nl-it.check()', () => {
     const content = makeContent({ words: [word_ciao] })
     const ex = translateNlIt.build('translate-nl-it:w_ciao', content)
     expect(translateNlIt.check('fout', ex, config)).toBe('wrong')
+  })
+
+  it('noun with article → "correct", without article → "almost"', () => {
+    const content = makeContent({ words: [word_caffe_accent] })
+    const ex = translateNlIt.build('translate-nl-it:w_caffe_accent', content)
+    expect(translateNlIt.check('il caffè', ex, config)).toBe('correct')
+    expect(translateNlIt.check('caffè', ex, config)).toBe('almost')
+    expect(translateNlIt.check('la caffè', ex, config)).toBe('wrong')
   })
 })
 

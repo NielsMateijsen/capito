@@ -6,7 +6,20 @@
     "minNewCardsPerDay": 1,
     "maxNewCardsPerDay": 50,
     "minOldMaterialRatio": 0.3,
-    "maxSameTypeInRow": 3
+    "maxSameTypeInRow": 3,
+    "excludedTypes": ["flashcard", "cloze", "mc-sentence", "mc-word"]
+  },
+  "ladder": {
+    "stages": ["mc-sentence", "mc-word", "cloze-word", "translate-nl-it"],
+    "maxStepsPerItemPerDay": 2,
+    "dropOnWrong": 1,
+    "newItemsPerDay": 5,
+    "maxItemsInProgress": 15,
+    "reviewShare": 0.4,
+    "minGapSameItem": 2,
+    "optionCount": 4,
+    "minSentencesPerItem": 3,
+    "introAutoplay": true
   },
   "backlog": {
     "maxDueShownPerDay": 40,

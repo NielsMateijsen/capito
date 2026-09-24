@@ -4,9 +4,14 @@ import {
   isLeech,
   gradeFromResult,
   lapseReinsertAt,
+  replanAfterWrong,
+  scheduleChains,
   type SessionBuilderConfig,
   type SessionInput,
+  type SessionItem,
 } from '../../src/engine/session-builder.ts'
+import { seededRandom } from '../../src/engine/distractors.ts'
+import type { LadderItem } from '../../src/engine/ladder.ts'
 import type { ProgressState } from '../../src/storage/types.ts'
 import type { CardState } from '../../src/engine/srs.ts'
 import type { ReviewEntry } from '../../src/engine/review-log.ts'
@@ -14,12 +19,30 @@ import type { ReviewEntry } from '../../src/engine/review-log.ts'
 const NOW = 1_700_000_000_000
 const DAY = 86_400_000
 
+const STAGES = ['mc-sentence', 'mc-word', 'cloze-word', 'translate-nl-it']
+
 const CONFIG: SessionBuilderConfig = {
-  session: { maxReviewsPerSession: 30, newCardsPerDay: 10, minOldMaterialRatio: 0.3, maxSameTypeInRow: 3 },
+  session: { maxReviewsPerSession: 30, newCardsPerDay: 10, minOldMaterialRatio: 0.3, maxSameTypeInRow: 3, excludedTypes: ['flashcard', 'mc-sentence', 'mc-word'] },
   backlog: { maxDueShownPerDay: 40, pauseNewCardsAboveDue: 60, returnAfterDays: 7, returnMaxSessionReviews: 20 },
   lapse: { retypeCorrectAnswer: true, reinsertInSession: true, reinsertAfterCards: 4 },
   leech: { lapseThreshold: 6, showExtraContext: true },
   grading: { correct: 4, almost: 3, hintUsed: 3, wrong: 1, flashcard: { again: 1, good: 4, easy: 5 } },
+  ladder: {
+    stages: STAGES,
+    maxStepsPerItemPerDay: 2,
+    dropOnWrong: 1,
+    newItemsPerDay: 5,
+    maxItemsInProgress: 15,
+    reviewShare: 0.4,
+    minGapSameItem: 2,
+    optionCount: 4,
+    minSentencesPerItem: 3,
+    introAutoplay: true,
+  },
+}
+
+function ladderItem(itemId: string): LadderItem {
+  return { itemId, stageKeys: STAGES.map(t => `${t}:${itemId}`) }
 }
 
 function makeCard(due: number): CardState {
@@ -40,12 +63,12 @@ function makeProgress(overrides: Partial<ProgressState> = {}): ProgressState {
   }
 }
 
-function makeEntry(key: string, t: number): ReviewEntry {
+function makeEntry(key: string, t: number, result: ReviewEntry['result'] = 'correct'): ReviewEntry {
   return {
     t: new Date(t).toISOString(),
     key,
-    result: 'correct',
-    grade: 4,
+    result,
+    grade: result === 'wrong' ? 1 : 4,
     ms: 1000,
     hint: false,
     session: 'test-session',
@@ -98,7 +121,8 @@ describe('due card selection', () => {
 // ─── Ordering ────────────────────────────────────────────────────────────────
 
 describe('backlog order', () => {
-  it('places most-overdue card before less-overdue card', () => {
+  it('selects the most-overdue cards when the backlog is capped', () => {
+    const cfg: SessionBuilderConfig = { ...CONFIG, backlog: { ...CONFIG.backlog, maxDueShownPerDay: 1 } }
     const session = buildSession(makeInput({
       allCardKeys: ['translate-it-nl:w_a', 'translate-it-nl:w_b'],
       progress: makeProgress({
@@ -107,9 +131,9 @@ describe('backlog order', () => {
           'translate-it-nl:w_b': makeCard(NOW - 3 * DAY),    // 3 days overdue
         },
       }),
+      config: cfg,
     }))
-    const keys = exerciseKeys(session)
-    expect(keys.indexOf('translate-it-nl:w_b')).toBeLessThan(keys.indexOf('translate-it-nl:w_a'))
+    expect(exerciseKeys(session)).toEqual(['translate-it-nl:w_b'])
   })
 })
 
@@ -251,21 +275,32 @@ describe('session.minOldMaterialRatio', () => {
 
 // ─── maxSameTypeInRow ────────────────────────────────────────────────────────
 
+function longestRun(keys: string[]): number {
+  let best = 0
+  let run = 0
+  for (let i = 0; i < keys.length; i++) {
+    run = i > 0 && cardType(keys[i]) === cardType(keys[i - 1]) ? run + 1 : 1
+    best = Math.max(best, run)
+  }
+  return best
+}
+
 describe('session.maxSameTypeInRow', () => {
-  it('inserts a different-type card after 3 consecutive same-type cards', () => {
-    // 4 translate-it-nl + 1 article; after mixing the article should break the run of 3
+  it('never puts more than 3 cards of one type in a row when that is possible', () => {
+    // 4 translate-it-nl + 1 article: only T T T A T (or similar) is valid
     const ttKeys = Array.from({ length: 4 }, (_, i) => `translate-it-nl:w_tt_${i}`)
     const arKey = 'article:w_ar_0'
     const cards: ProgressState['cards'] = Object.fromEntries(
       [...ttKeys, arKey].map(k => [k, makeCard(NOW - DAY)])
     )
-    const session = buildSession(makeInput({
-      allCardKeys: [...ttKeys, arKey],
-      progress: makeProgress({ cards }),
-    }))
-    const exercises = exerciseKeys(session)
-    // The 4th item (index 3) must not be type 'translate-it-nl'
-    expect(cardType(exercises[3])).not.toBe('translate-it-nl')
+    for (let seed = 0; seed < 50; seed++) {
+      const session = buildSession(makeInput({
+        allCardKeys: [...ttKeys, arKey],
+        progress: makeProgress({ cards }),
+        seed,
+      }))
+      expect(longestRun(exerciseKeys(session))).toBeLessThanOrEqual(3)
+    }
   })
 })
 
@@ -285,52 +320,215 @@ describe('session.maxReviewsPerSession', () => {
   })
 })
 
-// ─── Intro items ─────────────────────────────────────────────────────────────
+// ─── Learning ladder ─────────────────────────────────────────────────────────
 
-describe('intro items', () => {
-  it('prepends an intro item for new unseen content', () => {
-    const session = buildSession(makeInput({
-      allCardKeys: ['translate-it-nl:w_new'],
-    }))
-    const introItems = session.queue.filter(item => item.kind === 'intro')
-    expect(introItems).toHaveLength(1)
-    expect(introItems[0]).toMatchObject({ kind: 'intro', itemId: 'w_new' })
+function ladderInput(itemIds: string[], overrides: Partial<SessionInput> = {}): SessionInput {
+  const items = itemIds.map(ladderItem)
+  const reviewKeys = itemIds.map(id => `translate-it-nl:${id}`)
+  const { allCardKeys: extra = [], ...rest } = overrides
+  return makeInput({
+    allCardKeys: [...items.flatMap(i => i.stageKeys), ...reviewKeys, ...extra],
+    ladderItems: items,
+    ...rest,
+  })
+}
+
+function ids(n: number, prefix = 'w'): string[] {
+  return Array.from({ length: n }, (_, i) => `${prefix}_${i}`)
+}
+
+function passes(itemId: string, stageCount: number, t: number): ReviewEntry[] {
+  return STAGES.slice(0, stageCount).map((type, i) => makeEntry(`${type}:${itemId}`, t + i))
+}
+
+describe('learning ladder', () => {
+  it('puts the intro of a new item directly before its first stage', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const session = buildSession(ladderInput(['w_a', 'w_b'], { seed }))
+      session.queue.forEach((item, i) => {
+        if (item.kind !== 'intro') return
+        expect(session.queue[i + 1]).toMatchObject({ kind: 'exercise', cardKey: `mc-sentence:${item.itemId}` })
+      })
+    }
   })
 
-  it('intro item appears before its exercise item', () => {
-    const session = buildSession(makeInput({
-      allCardKeys: ['translate-it-nl:w_new'],
-    }))
-    const introIdx = session.queue.findIndex(item => item.kind === 'intro')
-    const exerciseIdx = session.queue.findIndex(item => item.kind === 'exercise')
-    expect(introIdx).toBeLessThan(exerciseIdx)
+  it('gives a new item at most maxStepsPerItemPerDay stages', () => {
+    const keys = exerciseKeys(buildSession(ladderInput(['w_a'])))
+    expect(keys).toEqual(['mc-sentence:w_a', 'mc-word:w_a'])
   })
 
-  it('no intro for item already in progress.introduced', () => {
-    const session = buildSession(makeInput({
-      allCardKeys: ['translate-it-nl:w_seen'],
-      progress: makeProgress({ introduced: ['w_seen'] }),
-    }))
-    const introItems = session.queue.filter(item => item.kind === 'intro')
-    expect(introItems).toHaveLength(0)
+  it('introduces at most ladder.newItemsPerDay items', () => {
+    const session = buildSession(ladderInput(ids(8)))
+    expect(session.newItemIds).toHaveLength(CONFIG.ladder.newItemsPerDay)
+    expect(session.newItemIds).toEqual(['w_0', 'w_1', 'w_2', 'w_3', 'w_4'])
   })
 
-  it('newItemIds lists item IDs of new unseen content', () => {
-    const session = buildSession(makeInput({
-      allCardKeys: ['translate-it-nl:w_new'],
-    }))
-    expect(session.newItemIds).toContain('w_new')
+  it('counts items started earlier today against the daily limit', () => {
+    const log = ['w_0', 'w_1', 'w_2'].flatMap(id => passes(id, 1, NOW - 1000))
+    const session = buildSession(ladderInput(ids(8), { progress: makeProgress({ reviewLog: log }) }))
+    expect(session.newItemIds).toEqual(['w_3', 'w_4'])
   })
 
-  it('no duplicate intros for multiple cards of the same item', () => {
-    // translate-it-nl:w_x and article:w_x share itemId 'w_x'
-    const session = buildSession(makeInput({
-      allCardKeys: ['translate-it-nl:w_x', 'article:w_x'],
+  it('adds no new items when ladder.maxItemsInProgress is reached', () => {
+    const cfg = { ...CONFIG, ladder: { ...CONFIG.ladder, maxItemsInProgress: 2 } }
+    const log = ['w_0', 'w_1'].flatMap(id => passes(id, 1, NOW - 2 * DAY))
+    const session = buildSession(ladderInput(ids(5), { config: cfg, progress: makeProgress({ reviewLog: log }) }))
+    expect(session.newItemIds).toEqual([])
+  })
+
+  it('continues an item from the stage derived from the log', () => {
+    const log = passes('w_a', 2, NOW - DAY)
+    const session = buildSession(ladderInput(['w_a'], { progress: makeProgress({ reviewLog: log }) }))
+    expect(session.newItemIds).toEqual([])
+    expect(exerciseKeys(session)).toEqual(['cloze-word:w_a', 'translate-nl-it:w_a'])
+  })
+
+  it('drops an item back after a wrong answer', () => {
+    const log = [...passes('w_a', 2, NOW - DAY), makeEntry('cloze-word:w_a', NOW - DAY + 10, 'wrong')]
+    const session = buildSession(ladderInput(['w_a'], { progress: makeProgress({ reviewLog: log }) }))
+    expect(exerciseKeys(session)).toEqual(['mc-word:w_a', 'cloze-word:w_a'])
+  })
+
+  it('skips an item that already climbed maxStepsPerItemPerDay stages today', () => {
+    const log = passes('w_a', 2, NOW - 1000)
+    const session = buildSession(ladderInput(['w_a'], { progress: makeProgress({ reviewLog: log }) }))
+    expect(exerciseKeys(session)).toEqual([])
+  })
+
+  it('mixes items on different stages in one session', () => {
+    const log = [...passes('w_a', 2, NOW - DAY), ...passes('w_b', 1, NOW - DAY)]
+    const keys = exerciseKeys(buildSession(ladderInput(['w_a', 'w_b', 'w_c'], { progress: makeProgress({ reviewLog: log }) })))
+    expect(keys).toEqual(expect.arrayContaining(['cloze-word:w_a', 'mc-word:w_b', 'mc-sentence:w_c']))
+  })
+
+  it('keeps review cards of an unfinished item out of the session', () => {
+    const log = passes('w_a', 1, NOW - DAY)
+    const session = buildSession(ladderInput(['w_a'], { progress: makeProgress({ reviewLog: log }) }))
+    expect(exerciseKeys(session)).not.toContain('translate-it-nl:w_a')
+  })
+
+  it('releases review cards once the item has finished the ladder', () => {
+    const log = passes('w_a', 4, NOW - 3 * DAY)
+    const session = buildSession(ladderInput(['w_a'], { progress: makeProgress({ reviewLog: log }) }))
+    expect(exerciseKeys(session)).toContain('translate-it-nl:w_a')
+    expect(session.ladderStages).not.toHaveProperty('w_a')
+  })
+
+  it('uses cardRequires to gate cards on several items', () => {
+    const log = passes('w_a', 4, NOW - 3 * DAY)
+    const dictation = 'dictation:s_1'
+    const session = buildSession(ladderInput(['w_a', 'w_b'], {
+      allCardKeys: [dictation],
+      cardRequires: new Map([[dictation, ['w_a', 'w_b']]]),
+      progress: makeProgress({ reviewLog: log }),
     }))
-    const introItems = session.queue.filter(item => item.kind === 'intro')
-    const introIds = introItems.map(i => (i as { kind: 'intro'; itemId: string }).itemId)
-    const unique = new Set(introIds)
-    expect(unique.size).toBe(introIds.length)
+    expect(exerciseKeys(session)).not.toContain(dictation)
+  })
+
+  it('never uses excluded types as review cards', () => {
+    const session = buildSession(makeInput({
+      allCardKeys: ['flashcard:w_a', 'translate-it-nl:w_a'],
+      progress: makeProgress({ cards: { 'flashcard:w_a': makeCard(NOW - DAY), 'translate-it-nl:w_a': makeCard(NOW - DAY) } }),
+    }))
+    expect(exerciseKeys(session)).toEqual(['translate-it-nl:w_a'])
+  })
+
+  it('adds no new items on a return after a pause', () => {
+    const log = [makeEntry('translate-it-nl:w_old', NOW - 8 * DAY)]
+    const session = buildSession(ladderInput(['w_a'], { progress: makeProgress({ reviewLog: log }) }))
+    expect(session.isReturn).toBe(true)
+    expect(session.newItemIds).toEqual([])
+  })
+
+  it('reserves ladder.reviewShare of the session for due reviews', () => {
+    const items = ids(15)
+    const log = items.flatMap(id => passes(id, 1, NOW - DAY))
+    const dueKeys = Array.from({ length: 20 }, (_, i) => `article:w_old_${i}`)
+    const cards = Object.fromEntries(dueKeys.map(k => [k, makeCard(NOW - DAY)]))
+    const session = buildSession(ladderInput(items, {
+      allCardKeys: dueKeys,
+      progress: makeProgress({ reviewLog: log, cards }),
+    }))
+    const keys = exerciseKeys(session)
+    expect(keys).toHaveLength(CONFIG.session.maxReviewsPerSession)
+    expect(keys.filter(k => k.startsWith('article:')).length).toBeGreaterThanOrEqual(12)
+  })
+
+  it('keeps ladder.minGapSameItem cards between two stages of one item', () => {
+    const dueKeys = Array.from({ length: 6 }, (_, i) => `article:w_old_${i}`)
+    const cards = Object.fromEntries(dueKeys.map(k => [k, makeCard(NOW - DAY)]))
+    for (let seed = 0; seed < 30; seed++) {
+      const keys = exerciseKeys(buildSession(ladderInput(['w_a', 'w_b', 'w_c'], {
+        allCardKeys: dueKeys,
+        progress: makeProgress({ cards }),
+        seed,
+      })))
+      for (const id of ['w_a', 'w_b', 'w_c']) {
+        const gap = keys.indexOf(`mc-word:${id}`) - keys.indexOf(`mc-sentence:${id}`) - 1
+        expect(gap).toBeGreaterThanOrEqual(CONFIG.ladder.minGapSameItem)
+      }
+    }
+  })
+})
+
+// ─── Random order ────────────────────────────────────────────────────────────
+
+describe('random order', () => {
+  const dueKeys = Array.from({ length: 12 }, (_, i) => `${i % 2 ? 'article' : 'translate-it-nl'}:w_${i}`)
+  const cards = Object.fromEntries(dueKeys.map(k => [k, makeCard(NOW - DAY)]))
+  const input = (seed: number) => makeInput({ allCardKeys: dueKeys, progress: makeProgress({ cards }), seed })
+
+  it('is the same for the same seed', () => {
+    expect(exerciseKeys(buildSession(input(7)))).toEqual(exerciseKeys(buildSession(input(7))))
+  })
+
+  it('differs between seeds', () => {
+    const orders = new Set([1, 2, 3, 4, 5].map(seed => exerciseKeys(buildSession(input(seed))).join()))
+    expect(orders.size).toBeGreaterThan(1)
+  })
+})
+
+describe('scheduleChains()', () => {
+  it('keeps the order within a chain', () => {
+    const chain: SessionItem[] = [
+      { kind: 'intro', itemId: 'w_a' },
+      { kind: 'exercise', cardKey: 'mc-sentence:w_a', isNew: true },
+      { kind: 'exercise', cardKey: 'mc-word:w_a', isNew: true },
+    ]
+    const others: SessionItem[][] = ids(4).map(id => [{ kind: 'exercise', cardKey: `article:${id}`, isNew: false }])
+    const out = scheduleChains([chain, ...others], seededRandom(3), 2, 3)
+    const positions = chain.map(c => out.indexOf(c))
+    expect(positions[1]).toBe(positions[0] + 1)
+    expect(positions[2]).toBeGreaterThan(positions[1])
+    expect(out).toHaveLength(7)
+  })
+})
+
+// ─── replanAfterWrong ────────────────────────────────────────────────────────
+
+describe('replanAfterWrong()', () => {
+  const stages = { w_a: STAGES.map(t => `${t}:w_a`) }
+  const ex = (cardKey: string): SessionItem => ({ kind: 'exercise', cardKey, isNew: false })
+  const queue = [ex('mc-word:w_a'), ex('article:w_1'), ex('cloze-word:w_a'), ex('article:w_2'), ex('article:w_3'), ex('article:w_4')]
+
+  it('removes later stages of the item and brings the lower stage back', () => {
+    const next = replanAfterWrong(queue, 0, 'mc-word:w_a', stages, CONFIG)
+    const keys = next.map(i => (i as { cardKey: string }).cardKey)
+    expect(keys).not.toContain('cloze-word:w_a')
+    expect(keys.indexOf('mc-sentence:w_a')).toBe(4)
+  })
+
+  it('reinserts the same card for a card that is not on the ladder', () => {
+    const next = replanAfterWrong(queue, 1, 'article:w_1', stages, CONFIG)
+    const keys = next.map(i => (i as { cardKey: string }).cardKey)
+    expect(keys.filter(k => k === 'article:w_1')).toHaveLength(2)
+    expect(keys).toContain('cloze-word:w_a')
+  })
+
+  it('does not reinsert when lapse.reinsertInSession is off', () => {
+    const cfg = { ...CONFIG, lapse: { ...CONFIG.lapse, reinsertInSession: false } }
+    const next = replanAfterWrong(queue, 0, 'mc-word:w_a', stages, cfg)
+    expect(next.map(i => (i as { cardKey: string }).cardKey)).not.toContain('mc-sentence:w_a')
   })
 })
 
