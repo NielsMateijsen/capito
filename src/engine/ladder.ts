@@ -2,6 +2,7 @@ import type { ReviewEntry } from './review-log.ts'
 
 export interface LadderConfig {
   stages: string[]
+  passResults: string[]
   maxStepsPerItemPerDay: number
   dropOnWrong: number
   newItemsPerDay: number
@@ -29,10 +30,10 @@ export interface ItemLadderState {
   lastSeen?: number
 }
 
-const PASS: ReadonlySet<ReviewEntry['result']> = new Set(['correct', 'almost', 'good', 'easy'])
+const FAIL: ReadonlySet<ReviewEntry['result']> = new Set(['wrong', 'again'])
 
-export function isPass(result: ReviewEntry['result']): boolean {
-  return PASS.has(result)
+export function isFail(result: ReviewEntry['result']): boolean {
+  return FAIL.has(result)
 }
 
 export function dayStartMs(now: number): number {
@@ -50,10 +51,11 @@ export function ladderItems(itemOrder: string[], stages: string[], cardKeys: Ite
 export function computeLadder(
   log: ReviewEntry[],
   items: LadderItem[],
-  config: Pick<LadderConfig, 'dropOnWrong'>,
+  config: Pick<LadderConfig, 'dropOnWrong' | 'passResults'>,
   now: number,
 ): Map<string, ItemLadderState> {
   const todayStart = dayStartMs(now)
+  const pass = new Set(config.passResults)
   const states = new Map<string, ItemLadderState>()
   const keyToItem = new Map<string, string>()
   for (const item of items) {
@@ -62,20 +64,25 @@ export function computeLadder(
   }
 
   for (const entry of log) {
-    const itemId = keyToItem.get(entry.key)
-    if (itemId === undefined) continue
-    const state = states.get(itemId)!
-    if (state.graduated) continue
+    if (entry.mode === 'exam') continue
+    const state = states.get(entry.key.split(':')[1])
+    if (!state || state.graduated) continue
     const t = Date.parse(entry.t)
+    // Practised before the ladder existed: its first answer is not on the first stage
+    if (!state.started && entry.key !== state.stageKeys[0]) {
+      Object.assign(state, { started: true, graduated: true, level: state.stageKeys.length, firstSeen: t, lastSeen: t })
+      continue
+    }
+    if (!keyToItem.has(entry.key)) continue
     state.started = true
     state.firstSeen ??= t
     state.lastSeen = t
-    if (isPass(entry.result)) {
+    if (pass.has(entry.result)) {
       if (entry.key !== state.stageKeys[state.level]) continue
       state.level++
       if (t >= todayStart) state.stepsToday++
       if (state.level >= state.stageKeys.length) state.graduated = true
-    } else {
+    } else if (isFail(entry.result)) {
       state.level = Math.max(0, state.level - config.dropOnWrong)
     }
   }

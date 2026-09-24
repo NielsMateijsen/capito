@@ -11,6 +11,7 @@
   },
   "ladder": {
     "stages": ["mc-sentence", "mc-word", "cloze-word", "translate-nl-it"],
+    "passResults": ["correct", "good", "easy"],
     "maxStepsPerItemPerDay": 2,
     "dropOnWrong": 1,
     "newItemsPerDay": 5,

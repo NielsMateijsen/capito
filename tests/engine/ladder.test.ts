@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { computeLadder, isGraduated, isPass, ladderItems } from '../../src/engine/ladder.ts'
+import { computeLadder, isFail, isGraduated, ladderItems } from '../../src/engine/ladder.ts'
 import type { ReviewEntry } from '../../src/engine/review-log.ts'
 
 const NOW = 1_700_000_000_000
 const DAY = 86_400_000
 const STAGES = ['mc-sentence', 'mc-word', 'cloze-word', 'translate-nl-it']
-const CONFIG = { dropOnWrong: 1 }
+const CONFIG = { dropOnWrong: 1, passResults: ['correct', 'good', 'easy'] }
 
-function entry(key: string, t: number, result: ReviewEntry['result'] = 'correct'): ReviewEntry {
-  return { t: new Date(t).toISOString(), key, result, grade: 4, ms: 1, hint: false, session: 's', mode: 'daily', cv: 'x' }
+function entry(key: string, t: number, result: ReviewEntry['result'] = 'correct', mode: ReviewEntry['mode'] = 'daily'): ReviewEntry {
+  return { t: new Date(t).toISOString(), key, result, grade: 4, ms: 1, hint: false, session: 's', mode, cv: 'x' }
 }
 
 const item = { itemId: 'w_a', stageKeys: STAGES.map(s => `${s}:w_a`) }
@@ -39,8 +39,8 @@ describe('computeLadder()', () => {
   })
 
   it('ignores a correct answer on a stage other than the current one', () => {
-    const log = [entry('mc-word:w_a', NOW - DAY)]
-    expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')!.level).toBe(0)
+    const log = [entry('mc-sentence:w_a', NOW - DAY), entry('cloze-word:w_a', NOW - DAY + 1)]
+    expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')!.level).toBe(1)
   })
 
   it('drops dropOnWrong levels on a wrong answer, never below 0', () => {
@@ -52,6 +52,25 @@ describe('computeLadder()', () => {
     expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')!.level).toBe(1)
     const log2 = [entry('mc-sentence:w_a', NOW - DAY, 'wrong')]
     expect(computeLadder(log2, [item], CONFIG, NOW).get('w_a')!.level).toBe(0)
+  })
+
+  it('neither climbs nor drops on an answer outside passResults that is not wrong', () => {
+    const log = [entry('mc-sentence:w_a', NOW - DAY), entry('mc-word:w_a', NOW - DAY + 1, 'almost')]
+    expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')!.level).toBe(1)
+  })
+
+  it('ignores exam answers', () => {
+    const log = [
+      entry('mc-sentence:w_a', NOW - DAY),
+      entry('translate-nl-it:w_a', NOW - DAY + 1, 'wrong', 'exam'),
+      entry('mc-word:w_a', NOW - DAY + 2, 'correct', 'exam'),
+    ]
+    expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')!.level).toBe(1)
+  })
+
+  it('treats an item practised before the ladder existed as graduated', () => {
+    const log = [entry('translate-it-nl:w_a', NOW - 9 * DAY), entry('translate-nl-it:w_a', NOW - 8 * DAY, 'wrong')]
+    expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')).toMatchObject({ graduated: true, started: true })
   })
 
   it('graduates after the last stage and stays graduated', () => {
@@ -88,10 +107,10 @@ describe('isGraduated()', () => {
   })
 })
 
-describe('isPass()', () => {
-  it('passes correct, almost, good and easy', () => {
-    expect(['correct', 'almost', 'good', 'easy'].every(r => isPass(r as ReviewEntry['result']))).toBe(true)
-    expect(isPass('wrong')).toBe(false)
-    expect(isPass('again')).toBe(false)
+describe('isFail()', () => {
+  it('fails only wrong and again', () => {
+    expect(isFail('wrong')).toBe(true)
+    expect(isFail('again')).toBe(true)
+    expect(['correct', 'almost', 'good', 'easy'].some(r => isFail(r as ReviewEntry['result']))).toBe(false)
   })
 })

@@ -29,6 +29,7 @@ const CONFIG: SessionBuilderConfig = {
   grading: { correct: 4, almost: 3, hintUsed: 3, wrong: 1, flashcard: { again: 1, good: 4, easy: 5 } },
   ladder: {
     stages: STAGES,
+    passResults: ['correct', 'good', 'easy'],
     maxStepsPerItemPerDay: 2,
     dropOnWrong: 1,
     newItemsPerDay: 5,
@@ -496,6 +497,48 @@ describe('random order', () => {
   })
 })
 
+describe('scheduleChains() properties', () => {
+  it('outputs every item exactly once and keeps each chain in order, for many random inputs', () => {
+    const types = ['article', 'translate-it-nl', 'cloze-word', 'mc-word']
+    for (let seed = 0; seed < 200; seed++) {
+      const rand = seededRandom(seed)
+      const chains: SessionItem[][] = []
+      const count = 1 + Math.floor(rand() * 12)
+      for (let c = 0; c < count; c++) {
+        const id = `w_${c}`
+        const len = 1 + Math.floor(rand() * 3)
+        const chain: SessionItem[] = rand() < 0.4 ? [{ kind: 'intro', itemId: id }] : []
+        for (let i = 0; i < len; i++) chain.push({ kind: 'exercise', cardKey: `${types[Math.floor(rand() * types.length)]}:${id}:${i}`, isNew: false })
+        chains.push(chain)
+      }
+      const out = scheduleChains(chains, seededRandom(seed + 1000), 2, 3)
+      const all = chains.flat()
+      expect(out).toHaveLength(all.length)
+      expect(new Set(out)).toEqual(new Set(all))
+      for (const chain of chains) {
+        const positions = chain.map(item => out.indexOf(item))
+        expect([...positions].sort((a, b) => a - b)).toEqual(positions)
+      }
+    }
+  })
+})
+
+describe('unit practice with the ladder', () => {
+  it('fills the target budget and adds at most the needed share of other-unit material', () => {
+    const items = ids(15)
+    const log = items.flatMap(id => passes(id, 1, NOW - DAY))
+    const otherKeys = Array.from({ length: 20 }, (_, i) => `article:w_other_${i}`)
+    const cards = Object.fromEntries(otherKeys.map(k => [k, makeCard(NOW - DAY)]))
+    const input = ladderInput(items, { allCardKeys: otherKeys, progress: makeProgress({ reviewLog: log, cards }), targetUnitId: 'u01' })
+    const cardToUnit = new Map(input.allCardKeys.map(k => [k, k.includes('w_other') ? 'u00' : 'u01'] as [string, string]))
+    const keys = exerciseKeys(buildSession({ ...input, cardToUnit }))
+    const other = keys.filter(k => cardToUnit.get(k) === 'u00').length
+    expect(keys.length).toBeLessThanOrEqual(CONFIG.session.maxReviewsPerSession)
+    expect(keys.length - other).toBe(Math.floor(CONFIG.session.maxReviewsPerSession * (1 - CONFIG.session.minOldMaterialRatio)))
+    expect(other / keys.length).toBeGreaterThanOrEqual(CONFIG.session.minOldMaterialRatio - 0.01)
+  })
+})
+
 describe('scheduleChains()', () => {
   it('keeps the order within a chain', () => {
     const chain: SessionItem[] = [
@@ -541,6 +584,13 @@ describe('replanAfterWrong()', () => {
     const next = replanAfterWrong(withIntro, 0, 'article:w_1', stages, CONFIG)
     const introAt = next.findIndex(i => i.kind === 'intro')
     expect(next[introAt + 1]).toMatchObject({ cardKey: 'mc-sentence:w_b' })
+  })
+
+  it('always reinserts after the current card, even with reinsertAfterCards 0', () => {
+    const cfg = { ...CONFIG, lapse: { ...CONFIG.lapse, reinsertAfterCards: 0 } }
+    const next = replanAfterWrong(queue, 1, 'article:w_1', stages, cfg)
+    expect(next[1]).toBe(queue[1])
+    expect(next[2]).toMatchObject({ cardKey: 'article:w_1' })
   })
 
   it('does not reinsert when lapse.reinsertInSession is off', () => {

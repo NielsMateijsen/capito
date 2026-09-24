@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Content } from '../exercises/types.ts'
 import type { ProgressState, ProgressStorage } from '../storage/types.ts'
 import type { Session, SessionBuilderConfig, SessionItem } from '../engine/session-builder.ts'
@@ -101,7 +101,7 @@ export default function SessionScreen({
   const [progress, setProgress] = useState<ProgressState>(initialProgress)
   const [showReport, setShowReport] = useState(false)
   const [startTime, setStartTime] = useState(Date.now())
-  const [exercise, setExercise] = useState<Exercise | null>(null)
+  const submittingRef = useRef(false)
 
   const sessionId = useRef(crypto.randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
@@ -110,29 +110,27 @@ export default function SessionScreen({
 
   const currentItem = queue[pos] as SessionItem | undefined
   const currentKey = currentItem?.kind === 'exercise' ? currentItem.cardKey : null
-  const isChoice = !!exercise?.options
 
-  // Build exercise when the current card changes (not when later cards are replanned)
-  useEffect(() => {
-    if (!currentItem || currentItem.kind !== 'exercise') {
-      setExercise(null)
-      return
-    }
-    const typeId = currentItem.cardKey.split(':')[0]
-    const mod = exerciseMap.get(typeId)
-    if (!mod) { setExercise(null); return }
-    const itemId = itemIdFromKey(currentItem.cardKey)
+  // Built during render so a key press never hits the previous card. Deliberately not rebuilt
+  // when progress changes: the sentence must stay the same while the answer is shown.
+  const exercise = useMemo<Exercise | null>(() => {
+    if (!currentKey) return null
+    const mod = exerciseMap.get(currentKey.split(':')[0])
+    if (!mod) return null
+    const itemId = itemIdFromKey(currentKey)
     const seq = progress.reviewLog.filter(e => itemIdFromKey(e.key) === itemId).length
     try {
-      setExercise(mod.build(currentItem.cardKey, content, { seq, optionCount: config.ladder.optionCount }))
+      return mod.build(currentKey, content, { seq, optionCount: config.ladder.optionCount })
     } catch {
-      setExercise(null)
+      return null
     }
-    setInput('')
-    setHintUsed(false)
-    setResult(null)
-    setStartTime(Date.now())
   }, [pos, currentKey, content])
+  const isChoice = !!exercise?.options
+
+  // A card that cannot be built (e.g. content changed) is skipped instead of blocking the session
+  useEffect(() => {
+    if (phase === 'question' && currentKey && !exercise) advanceToNext(queue, pos + 1, answeredCount)
+  }, [phase, currentKey, exercise])
 
   // Focus management
   useEffect(() => {
@@ -202,18 +200,25 @@ export default function SessionScreen({
   }
 
   async function handleSubmitAnswer(answer: string = input) {
-    if (!currentItem || currentItem.kind !== 'exercise' || !exercise) return
+    if (!currentItem || currentItem.kind !== 'exercise' || !exercise || submittingRef.current) return
     const typeId = currentItem.cardKey.split(':')[0]
     const mod = exerciseMap.get(typeId)
     if (!mod) return
+    submittingRef.current = true
+    try {
+      await submitAnswer(answer, currentItem.cardKey, mod.check(answer.trim(), exercise, config.checker))
+    } finally {
+      submittingRef.current = false
+    }
+  }
 
-    const res = mod.check(answer.trim(), exercise, config.checker)
+  async function submitAnswer(answer: string, cardKey: string, res: ReviewResult) {
     const grade = gradeFromResult(res, hintUsed, config.grading)
     const ms = Date.now() - startTime
 
     const entry: ReviewEntry = {
       t: new Date().toISOString(),
-      key: currentItem.cardKey,
+      key: cardKey,
       result: res,
       grade,
       ms,
@@ -229,7 +234,7 @@ export default function SessionScreen({
     setResult(res)
 
     if (res === 'wrong') {
-      setQueue(replanAfterWrong(queue, pos, currentItem.cardKey, session.ladderStages, config))
+      setQueue(replanAfterWrong(queue, pos, cardKey, session.ladderStages, config))
     }
     setPhase('feedback')
   }
@@ -241,17 +246,24 @@ export default function SessionScreen({
   }
 
   async function handleFlashcardGrade(grade: 'again' | 'good' | 'easy') {
-    if (!currentItem || currentItem.kind !== 'exercise' || !exercise) return
+    if (!currentItem || currentItem.kind !== 'exercise' || !exercise || submittingRef.current) return
     const mod = exerciseMap.get('flashcard')
     if (!mod) return
+    submittingRef.current = true
+    try {
+      await gradeFlashcard(currentItem.cardKey, mod.check(grade, exercise, config.checker))
+    } finally {
+      submittingRef.current = false
+    }
+  }
 
-    const res = mod.check(grade, exercise, config.checker)
+  async function gradeFlashcard(cardKey: string, res: ReviewResult) {
     const numGrade = gradeFromResult(res, false, config.grading)
     const ms = Date.now() - startTime
 
     const entry: ReviewEntry = {
       t: new Date().toISOString(),
-      key: currentItem.cardKey,
+      key: cardKey,
       result: res,
       grade: numGrade,
       ms,

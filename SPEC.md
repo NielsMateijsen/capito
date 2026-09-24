@@ -235,7 +235,7 @@ Invoer: voortgang, config, ontgrendelde units. **Alle getallen komen uit `config
 - **Nieuwe woorden en werkwoorden** doorlopen eerst de leerladder (zie "Leerladder")
 - **Sessielengte:** maximaal `session.maxReviewsPerSession` (30). Daarna een afrondscherm met de knop "Nog een ronde"
 - **Nieuwe herhaalkaarten:** kaarten die vrijkomen als een item de ladder heeft afgerond (bijv. `article`, `conjugate`, `dictation`), maximaal `session.newCardsPerDay` per dag
-- **Uitgesloten types:** `session.excludedTypes` (`flashcard`, `cloze`) komen niet in de dagelijkse sessie. De kaarten blijven bestaan
+- **Uitgesloten types:** `session.excludedTypes` komen niet als herhaalkaart in de sessie: `flashcard` en `cloze` (de kaarten blijven bestaan), en `mc-sentence` en `mc-word` (die bestaan alleen als trede op de ladder)
 - **Volgorde:** willekeurig (met een seed, dus deterministisch testbaar), ongeacht ladderstatus. Wel geldt: een introductie staat direct voor de eerste vraag over dat item, treden van één item staan in volgorde met minstens `ladder.minGapSameItem` andere kaarten ertussen, en maximaal `session.maxSameTypeInRow` kaarten van hetzelfde type achter elkaar
 - **Achterstand:** per dag maximaal `backlog.maxDueShownPerDay` achterstallige kaarten, de meest achterstallige eerst (`backlog.order`). Boven `backlog.pauseNewCardsAboveDue` achterstallige kaarten komen er geen nieuwe kaarten bij
 - **Terugkeer na een pauze:** na `backlog.returnAfterDays` dagen afwezigheid krijg je lichte sessies (maximaal `backlog.returnMaxSessionReviews`) met een vriendelijk "welkom terug", zonder nieuwe kaarten tot de achterstand onder de drempel is
@@ -254,7 +254,7 @@ Elk woord en werkwoord (een **item**) doorloopt de treden uit `ladder.stages`, n
 
 Een trede die voor een item niet bestaat (bijv. `translate-nl-it` bij werkwoorden) wordt overgeslagen. Na de laatste trede is het item **afgerond** en gaan de herhaalkaarten via de SRS.
 
-- **Trede afleiden uit de log:** een item staat op trede *n* als de log voor zijn tredekaarten *n* keer een goed antwoord op de trede van dat moment bevat, met `ladder.dropOnWrong` treden terug per fout. Afgerond blijft afgerond. Er is geen apart opgeslagen veld
+- **Trede afleiden uit de log:** een item stijgt een trede bij een antwoord uit `ladder.passResults` (standaard alleen goed, dus "bijna goed", bijvoorbeeld zonder lidwoord, laat het item op zijn trede staan) op de trede van dat moment, en zakt `ladder.dropOnWrong` treden bij een fout. Afgerond blijft afgerond. Antwoorden uit de eindtoets tellen niet mee. Een item waarvan het eerste antwoord niet op de eerste trede staat, is geoefend vóór de ladder bestond en geldt als afgerond. Er is geen apart opgeslagen veld
 - **Tempo:** een item stijgt maximaal `ladder.maxStepsPerItemPerDay` treden per dag. Daardoor staan items in een sessie op verschillende treden
 - **Nieuwe items:** maximaal `ladder.newItemsPerDay` per dag (instelbaar in Instellingen), en alleen zolang er minder dan `ladder.maxItemsInProgress` items op de ladder staan. Volgorde: unit-volgorde, binnen een unit de volgorde waarin items voor het eerst in de zinnen voorkomen
 - **Verdeling:** eerst maximaal `ladder.reviewShare` van de sessie aan achterstallige herhalingen, dan de items op de ladder (langst niet geoefend eerst), dan nieuwe items, en de rest weer herhalingen

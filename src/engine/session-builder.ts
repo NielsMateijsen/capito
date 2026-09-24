@@ -292,7 +292,7 @@ export function replanAfterWrong(
     back = stages[Math.max(0, idx - config.ladder.dropOnWrong)]
   }
   if (!config.lapse.reinsertInSession) return next
-  let at = Math.min(lapseReinsertAt(pos, config.lapse), next.length)
+  let at = Math.min(Math.max(pos + 1, lapseReinsertAt(pos, config.lapse)), next.length)
   while (at < next.length && next[at - 1]?.kind === 'intro') at++
   return [...next.slice(0, at), exercise(back, false), ...next.slice(at)]
 }
@@ -382,7 +382,7 @@ export function buildSession(input: SessionInput): Session {
     chains.push(kept)
   }
   const dueTarget = due.filter(inTarget)
-  const reserved = Math.min(dueTarget.length, Math.floor(maxReviews * lc.reviewShare))
+  const reserved = Math.min(dueTarget.length, Math.floor(budget * lc.reviewShare))
   dueTarget.slice(0, reserved).forEach(k => take([exercise(k, false)]))
   inProgressChains.forEach(take)
   newItemChains.forEach(take)
