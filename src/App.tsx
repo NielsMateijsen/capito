@@ -9,7 +9,10 @@ import { IdbProgressStorage, defaultState } from './storage/progress-store.ts'
 import { loadUnits, loadTenses, loadGrammarDocs } from './content/loader.ts'
 import { exercises } from './exercises/index.ts'
 import { buildExamSession } from './engine/exam.ts'
-import { isLeech } from './engine/session-builder.ts'
+import { cardType, isLeech } from './engine/session-builder.ts'
+import { ladderItems as buildLadderItems } from './engine/ladder.ts'
+import type { LadderItem } from './engine/ladder.ts'
+import { ladderItemOrder } from './engine/sentences.ts'
 import { exportJson } from './storage/migrations.ts'
 import { shouldRequestPersistentStorage } from './storage/persist.ts'
 import { createNavigator } from './ui/navigation.ts'
@@ -42,6 +45,8 @@ interface AppData {
   allCardKeys: string[]
   cardToUnit: Map<string, string>
   cardKeysByUnit: Map<string, string[]>
+  ladderItems: LadderItem[]
+  cardRequires: Map<string, string[]>
   grammarMap: Map<string, GrammarDoc>
   progress: ProgressState
 }
@@ -95,10 +100,19 @@ export default function App() {
           allCardKeys.map(k => [k, itemToUnit.get(k.split(':')[1] ?? '') ?? ''])
         )
 
+        // Mastery counts review cards only: stage-only and excluded types never get enough reps
+        const excludedTypes = new Set(appConfig.session.excludedTypes)
         const cardKeysByUnit = new Map<string, string[]>()
         for (const unit of units) cardKeysByUnit.set(unit.id, [])
         for (const [key, unitId] of cardToUnit) {
-          cardKeysByUnit.get(unitId)?.push(key)
+          if (!excludedTypes.has(cardType(key))) cardKeysByUnit.get(unitId)?.push(key)
+        }
+
+        const ladderItems = buildLadderItems(ladderItemOrder(content), appConfig.ladder.stages, allCardKeys)
+        const cardRequires = new Map<string, string[]>()
+        for (const e of exercises) {
+          if (!e.requires) continue
+          for (const key of e.cards(content)) cardRequires.set(key, e.requires(key, content))
         }
 
         const grammarMap = new Map(grammarDocs.map(d => [d.frontmatter.id, d]))
@@ -111,7 +125,7 @@ export default function App() {
           await storage.save(progress)
         }
 
-        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, grammarMap, progress })
+        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, ladderItems, cardRequires, grammarMap, progress })
         nav.start(HOME)
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
@@ -204,6 +218,10 @@ export default function App() {
   const settings = (data.progress.settings ?? {}) as Settings
   const unlockAll = settings.unlockAll === true
   const autoplayAudio = settings.autoplayAudio === true
+  const sessionConfig = {
+    ...appConfig,
+    ladder: { ...appConfig.ladder, newItemsPerDay: settings.newCardsPerDay ?? appConfig.ladder.newItemsPerDay },
+  }
   const flagCount = data.progress.flags.length
   const leechCount = Object.values(data.progress.cards).filter(s => isLeech(s, appConfig.leech)).length
 
@@ -267,9 +285,12 @@ export default function App() {
           content={data.content}
           allCardKeys={data.allCardKeys}
           cardToUnit={data.cardToUnit}
+          ladderItems={data.ladderItems}
+          cardRequires={data.cardRequires}
+          targetUnitId={view.targetUnitId}
           initialProgress={data.progress}
           storage={storage}
-          config={appConfig}
+          config={sessionConfig}
           mode={view.mode}
           overrideQueue={view.overrideQueue}
           autoplayAudio={autoplayAudio}

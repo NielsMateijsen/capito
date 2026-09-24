@@ -5,7 +5,8 @@ import BackupImportModal from './BackupImportModal.tsx'
 import { S } from './strings.nl.ts'
 
 interface AppConfig {
-  session: { newCardsPerDay: number; minNewCardsPerDay: number; maxNewCardsPerDay: number }
+  session: { minNewCardsPerDay: number; maxNewCardsPerDay: number }
+  ladder: { newItemsPerDay: number }
   backup: { reminderDays: number }
 }
 
@@ -21,7 +22,8 @@ interface Props {
 
 export default function SettingsScreen({ progress, config, onSave, onReset, onBack, onExport, onImport }: Props) {
   const settings = (progress.settings ?? {}) as Settings
-  const newPerDay = settings.newCardsPerDay ?? config.session.newCardsPerDay
+  // Stored as newCardsPerDay (existing settings field); it sets the number of new ladder items per day
+  const newPerDay = settings.newCardsPerDay ?? config.ladder.newItemsPerDay
   const autoplay = settings.autoplayAudio ?? false
   const unlockAll = settings.unlockAll ?? false
 

@@ -352,6 +352,14 @@ describe('learning ladder', () => {
     }
   })
 
+  it('introduces new items in learning order, whatever the seed', () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const session = buildSession(ladderInput(ids(5), { seed }))
+      const intros = session.queue.filter(i => i.kind === 'intro').map(i => (i as { itemId: string }).itemId)
+      expect(intros).toEqual(ids(5))
+    }
+  })
+
   it('gives a new item at most maxStepsPerItemPerDay stages', () => {
     const keys = exerciseKeys(buildSession(ladderInput(['w_a'])))
     expect(keys).toEqual(['mc-sentence:w_a', 'mc-word:w_a'])
@@ -523,6 +531,16 @@ describe('replanAfterWrong()', () => {
     const keys = next.map(i => (i as { cardKey: string }).cardKey)
     expect(keys.filter(k => k === 'article:w_1')).toHaveLength(2)
     expect(keys).toContain('cloze-word:w_a')
+  })
+
+  it('never puts the reinserted card between an intro and its first question', () => {
+    const withIntro: SessionItem[] = [
+      ex('article:w_1'), ex('article:w_2'), ex('article:w_3'),
+      { kind: 'intro', itemId: 'w_b' }, ex('mc-sentence:w_b'), ex('article:w_4'),
+    ]
+    const next = replanAfterWrong(withIntro, 0, 'article:w_1', stages, CONFIG)
+    const introAt = next.findIndex(i => i.kind === 'intro')
+    expect(next[introAt + 1]).toMatchObject({ cardKey: 'mc-sentence:w_b' })
   })
 
   it('does not reinsert when lapse.reinsertInSession is off', () => {

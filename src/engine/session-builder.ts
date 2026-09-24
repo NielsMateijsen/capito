@@ -209,8 +209,15 @@ export function scheduleChains(chains: SessionItem[][], rand: () => number, minG
     () => true,
   ]
 
+  // New items keep their learning order: an intro chain waits until earlier intro chains have started
+  const introChains = pending.filter(p => p.items[0].kind === 'intro')
+  const introAllowed = (p: { items: SessionItem[]; pos: number }) => {
+    if (p.pos > 0 || p.items[0].kind !== 'intro') return true
+    return introChains.slice(0, introChains.indexOf(p)).every(q => q.pos > 0)
+  }
+
   for (;;) {
-    const open = pending.filter(p => p.pos < p.items.length)
+    const open = pending.filter(p => p.pos < p.items.length && introAllowed(p))
     if (open.length === 0) break
     let candidates = open
     for (const tier of tiers) {
@@ -285,7 +292,8 @@ export function replanAfterWrong(
     back = stages[Math.max(0, idx - config.ladder.dropOnWrong)]
   }
   if (!config.lapse.reinsertInSession) return next
-  const at = Math.min(lapseReinsertAt(pos, config.lapse), next.length)
+  let at = Math.min(lapseReinsertAt(pos, config.lapse), next.length)
+  while (at < next.length && next[at - 1]?.kind === 'intro') at++
   return [...next.slice(0, at), exercise(back, false), ...next.slice(at)]
 }
 

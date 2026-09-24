@@ -1,31 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Content } from '../exercises/types.ts'
 import type { ProgressState, ProgressStorage } from '../storage/types.ts'
-import type { SessionItem } from '../engine/session-builder.ts'
-import { buildSession, gradeFromResult, isLeech, lapseReinsertAt } from '../engine/session-builder.ts'
+import type { Session, SessionBuilderConfig, SessionItem } from '../engine/session-builder.ts'
+import { buildSession, gradeFromResult, isLeech, itemIdFromKey, replanAfterWrong } from '../engine/session-builder.ts'
+import type { LadderItem } from '../engine/ladder.ts'
 import { rebuildCards } from '../engine/review-log.ts'
 import type { ReviewEntry } from '../engine/review-log.ts'
+import type { SrsConfig } from '../engine/srs.ts'
+import type { CheckerConfig } from '../engine/checker.ts'
+import { introSentence } from '../engine/sentences.ts'
+import { withArticle } from '../engine/plurals.ts'
 import type { Exercise, ReviewResult } from '../exercises/types.ts'
 import { exerciseMap } from '../exercises/index.ts'
 import { S } from './strings.nl.ts'
 import { playAudio } from './speak.ts'
 import ReportModal from './ReportModal.tsx'
 import type { ReportEntry } from './ReportModal.tsx'
+import SentenceText from './SentenceText.tsx'
 
-interface AppConfig {
-  session: { maxReviewsPerSession: number; newCardsPerDay: number; minOldMaterialRatio: number; maxSameTypeInRow: number }
-  backlog: { maxDueShownPerDay: number; pauseNewCardsAboveDue: number; returnAfterDays: number; returnMaxSessionReviews: number }
-  lapse: { retypeCorrectAnswer: boolean; reinsertInSession: boolean; reinsertAfterCards: number }
-  leech: { lapseThreshold: number; showExtraContext: boolean }
-  grading: { correct: number; almost: number; hintUsed: number; wrong: number; flashcard: { again: number; good: number; easy: number } }
-  srs: { startEase: number; minEase: number; maxIntervalDays: number }
-  checker: { typoMinLength: number; typoMaxDistance: number }
-}
+type AppConfig = SessionBuilderConfig & { srs: SrsConfig; checker: CheckerConfig }
 
 interface Props {
   content: Content
   allCardKeys: string[]
   cardToUnit: Map<string, string>
+  ladderItems?: LadderItem[]
+  cardRequires?: Map<string, string[]>
+  targetUnitId?: string
   initialProgress: ProgressState
   storage: ProgressStorage
   config: AppConfig
@@ -44,6 +45,7 @@ type Phase =
   | 'done'
 
 function getAudioText(exercise: Exercise): string {
+  if (exercise.audio) return exercise.audio
   if (exercise.typeId === 'flashcard' || exercise.typeId === 'translate-it-nl') {
     return exercise.prompt
   }
@@ -54,17 +56,35 @@ function buildHint(answer: string): string {
   return answer.slice(0, 3) + '…'
 }
 
+function questionLabel(typeId: string): string | undefined {
+  if (typeId === 'mc-sentence') return S.MC_SENTENCE_QUESTION
+  if (typeId === 'mc-word') return S.MC_WORD_QUESTION
+  if (typeId === 'cloze-word') return S.CLOZE_WORD_QUESTION
+  return undefined
+}
+
 export default function SessionScreen({
-  content, allCardKeys, cardToUnit, initialProgress, storage, config,
+  content, allCardKeys, cardToUnit, ladderItems, cardRequires, targetUnitId,
+  initialProgress, storage, config,
   mode = 'daily', overrideQueue, autoplayAudio = false,
   onDone,
 }: Props) {
-  type SessionData = { queue: SessionItem[]; isReturn: boolean; maxReviews: number; newItemIds: string[] }
-  const sessionRef = useRef<SessionData | null>(null)
+  const sessionRef = useRef<Session | null>(null)
   if (sessionRef.current === null) {
+    const now = Date.now()
     sessionRef.current = overrideQueue
-      ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [] }
-      : buildSession({ now: Date.now(), allCardKeys, cardToUnit, progress: initialProgress, config })
+      ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [], ladderStages: {} }
+      : buildSession({
+          now,
+          seed: now,
+          allCardKeys,
+          cardToUnit,
+          progress: initialProgress,
+          config,
+          targetUnitId: mode === 'unit' ? targetUnitId : undefined,
+          ladderItems,
+          cardRequires,
+        })
   }
   const session = sessionRef.current
 
@@ -86,10 +106,13 @@ export default function SessionScreen({
   const sessionId = useRef(crypto.randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
   const primaryBtnRef = useRef<HTMLButtonElement>(null)
+  const screenRef = useRef<HTMLDivElement>(null)
 
   const currentItem = queue[pos] as SessionItem | undefined
+  const currentKey = currentItem?.kind === 'exercise' ? currentItem.cardKey : null
+  const isChoice = !!exercise?.options
 
-  // Build exercise when item changes
+  // Build exercise when the current card changes (not when later cards are replanned)
   useEffect(() => {
     if (!currentItem || currentItem.kind !== 'exercise') {
       setExercise(null)
@@ -98,8 +121,10 @@ export default function SessionScreen({
     const typeId = currentItem.cardKey.split(':')[0]
     const mod = exerciseMap.get(typeId)
     if (!mod) { setExercise(null); return }
+    const itemId = itemIdFromKey(currentItem.cardKey)
+    const seq = progress.reviewLog.filter(e => itemIdFromKey(e.key) === itemId).length
     try {
-      setExercise(mod.build(currentItem.cardKey, content))
+      setExercise(mod.build(currentItem.cardKey, content, { seq, optionCount: config.ladder.optionCount }))
     } catch {
       setExercise(null)
     }
@@ -107,22 +132,24 @@ export default function SessionScreen({
     setHintUsed(false)
     setResult(null)
     setStartTime(Date.now())
-  }, [pos, queue, content])
+  }, [pos, currentKey, content])
 
   // Focus management
   useEffect(() => {
-    if (phase === 'question' && inputRef.current && exercise?.typeId !== 'flashcard') {
+    if (phase === 'question' && inputRef.current && exercise?.typeId !== 'flashcard' && !isChoice) {
       inputRef.current.focus()
+    } else if (phase === 'question' && isChoice) {
+      screenRef.current?.focus()
     } else if (
       phase === 'intro' ||
-      (phase === 'question' && exercise?.typeId === 'flashcard') ||
+      phase === 'question' ||
       phase === 'flashcard-reveal' ||
       phase === 'feedback' ||
       phase === 'lapse-retype'
     ) {
       primaryBtnRef.current?.focus()
     }
-  }, [phase, exercise?.typeId])
+  }, [phase, exercise?.typeId, isChoice])
 
   // Autoplay audio on feedback
   useEffect(() => {
@@ -130,6 +157,13 @@ export default function SessionScreen({
       void playAudio(getAudioText(exercise))
     }
   }, [phase, autoplayAudio, exercise])
+
+  const introItemId = phase === 'intro' && currentItem?.kind === 'intro' ? currentItem.itemId : null
+
+  // Autoplay audio on intro
+  useEffect(() => {
+    if (introItemId && config.ladder.introAutoplay) handleAudioIntro(introItemId)
+  }, [introItemId])
 
   const advanceToNext = useCallback((nextQueue: SessionItem[], nextPos: number, nextAnsweredCount: number) => {
     if (nextPos >= nextQueue.length || nextAnsweredCount >= session.maxReviews) {
@@ -167,13 +201,13 @@ export default function SessionScreen({
     advanceToNext(queue, pos + 1, answeredCount)
   }
 
-  async function handleSubmitAnswer() {
+  async function handleSubmitAnswer(answer: string = input) {
     if (!currentItem || currentItem.kind !== 'exercise' || !exercise) return
     const typeId = currentItem.cardKey.split(':')[0]
     const mod = exerciseMap.get(typeId)
     if (!mod) return
 
-    const res = mod.check(input.trim(), exercise, config.checker)
+    const res = mod.check(answer.trim(), exercise, config.checker)
     const grade = gradeFromResult(res, hintUsed, config.grading)
     const ms = Date.now() - startTime
 
@@ -184,28 +218,26 @@ export default function SessionScreen({
       grade,
       ms,
       hint: hintUsed,
-      answer: res !== 'correct' ? input.slice(0, 100) : undefined,
+      answer: res !== 'correct' ? answer.slice(0, 100) : undefined,
       session: sessionId.current,
       mode,
       cv: 'dev',
     }
 
-    const saved = await saveEntry(entry, progress)
-    const newCount = answeredCount + 1
-    setAnsweredCount(newCount)
+    await saveEntry(entry, progress)
+    setAnsweredCount(answeredCount + 1)
     setResult(res)
 
-    // Lapse reinsert
-    let nextQueue = queue
-    if (res === 'wrong' && config.lapse.reinsertInSession) {
-      const at = Math.min(lapseReinsertAt(pos, config.lapse), queue.length)
-      const extra: SessionItem = { kind: 'exercise', cardKey: currentItem.cardKey, isNew: false }
-      nextQueue = [...queue.slice(0, at), extra, ...queue.slice(at)]
-      setQueue(nextQueue)
+    if (res === 'wrong') {
+      setQueue(replanAfterWrong(queue, pos, currentItem.cardKey, session.ladderStages, config))
     }
-
-    void saved
     setPhase('feedback')
+  }
+
+  function handleChoose(option: string) {
+    if (phase !== 'question' || !isChoice) return
+    setInput(option)
+    void handleSubmitAnswer(option)
   }
 
   async function handleFlashcardGrade(grade: 'again' | 'good' | 'easy') {
@@ -229,15 +261,14 @@ export default function SessionScreen({
       cv: 'dev',
     }
 
-    const saved = await saveEntry(entry, progress)
+    await saveEntry(entry, progress)
     const newCount = answeredCount + 1
     setAnsweredCount(newCount)
-    void saved
     advanceToNext(queue, pos + 1, newCount)
   }
 
   function handleFeedbackNext() {
-    if (result === 'wrong' && config.lapse.retypeCorrectAnswer) {
+    if (result === 'wrong' && config.lapse.retypeCorrectAnswer && !isChoice) {
       setPhase('lapse-retype')
       setInput('')
     } else {
@@ -262,10 +293,10 @@ export default function SessionScreen({
   }
 
   function handleAudioIntro(itemId: string) {
+    const match = introSentence(itemId, content)
     const word = content.words.get(itemId)
     const verb = content.verbs.get(itemId)
-    const sentence = content.sentences.get(itemId)
-    const text = word?.it ?? verb?.inf ?? sentence?.it ?? ''
+    const text = match ? (match.sentence.audioText ?? match.sentence.it) : (word?.it ?? verb?.inf ?? '')
     if (text) void playAudio(text)
   }
 
@@ -276,14 +307,25 @@ export default function SessionScreen({
   }
 
   function handleScreenKeyDown(e: React.KeyboardEvent) {
-    if (e.key !== 'Enter') return
     if (e.target instanceof HTMLTextAreaElement) return
     if (e.target instanceof HTMLSelectElement) return
     if (showReport) return
 
+    if (phase === 'question' && isChoice && /^[1-9]$/.test(e.key)) {
+      const option = exercise?.options?.[Number(e.key) - 1]
+      if (option !== undefined) {
+        e.preventDefault()
+        handleChoose(option)
+      }
+      return
+    }
+
+    if (e.key !== 'Enter') return
     if (phase === 'intro') {
       e.preventDefault()
       void handleIntroNext()
+    } else if (phase === 'question' && isChoice) {
+      return
     } else if (phase === 'question' && exercise?.typeId !== 'flashcard') {
       e.preventDefault()
       void handleSubmitAnswer()
@@ -321,13 +363,55 @@ export default function SessionScreen({
 
   const cardState = currentItem?.kind === 'exercise' ? progress.cards[currentItem.cardKey] : undefined
   const isLeechy = cardState !== undefined && isLeech(cardState, config.leech) && config.leech.showExtraContext
+  const sentence = exercise?.sentence
+  const label = exercise ? questionLabel(exercise.typeId) : undefined
+
+  function renderPrompt(ex: Exercise) {
+    if (ex.sentence?.mode === 'gap') {
+      return (
+        <>
+          <div className="sentence-nl">{ex.sentence.nl}</div>
+          <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="gap" />
+        </>
+      )
+    }
+    if (ex.sentence?.mode === 'highlight') {
+      return <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="highlight" />
+    }
+    return <div className="card-prompt">{ex.prompt}</div>
+  }
+
+  function renderOptions(ex: Exercise, answered: boolean) {
+    const itOptions = ex.typeId !== 'mc-sentence'
+    return (
+      <div className="choice-list">
+        {ex.options!.map((option, i) => {
+          const isAnswer = ex.answers.includes(option)
+          const isPicked = option === input
+          const state = !answered ? '' : isAnswer ? 'correct' : isPicked ? 'wrong' : 'dim'
+          return (
+            <button
+              key={option}
+              className={`choice ${state}`}
+              disabled={answered}
+              lang={itOptions ? 'it' : undefined}
+              onClick={() => handleChoose(option)}
+            >
+              <span className="choice-key">{i + 1}</span>
+              <span>{option}</span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
-    <div className="session" onKeyDown={handleScreenKeyDown} onKeyUp={handleFlashcardKey} tabIndex={-1}>
+    <div className="session" ref={screenRef} onKeyDown={handleScreenKeyDown} onKeyUp={handleFlashcardKey} tabIndex={-1}>
       {session.isReturn && <div className="welcome-back">{S.WELCOME_BACK}</div>}
 
       <div className="session-progress">
-        {answeredCount} / {Math.min(queue.length, session.maxReviews)}
+        {answeredCount} / {Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)}
       </div>
 
       <div className="card">
@@ -336,14 +420,25 @@ export default function SessionScreen({
           const { itemId } = currentItem
           const word = content.words.get(itemId)
           const verb = content.verbs.get(itemId)
-          const sentence = content.sentences.get(itemId)
-          const it = word?.it ?? verb?.inf ?? sentence?.it ?? itemId
-          const nl = word?.nl[0] ?? verb?.nl[0] ?? sentence?.nl[0] ?? ''
+          const match = introSentence(itemId, content)
+          const itemIt = word ? withArticle(word) : (verb?.inf ?? itemId)
+          const itemNl = (word?.nl ?? verb?.nl ?? []).join(', ')
+          const register = word?.register === 'formal' ? S.REGISTER_FORMAL : word?.register === 'informal' ? S.REGISTER_INFORMAL : null
           return (
             <>
               <div className="card-header">{S.INTRO_HEADER}</div>
-              <div className="intro-italian">{it}</div>
-              {nl && <div className="intro-nl">{nl}</div>}
+              {match && (
+                <div className="intro-sentence">
+                  <SentenceText className="intro-sentence-it" text={match.sentence.it} span={match.span} mode="highlight" />
+                  <div className="intro-sentence-nl">{match.sentence.nl[0]}</div>
+                </div>
+              )}
+              <div className="intro-item">
+                <div className="intro-italian" lang="it">{itemIt}</div>
+                {itemNl && <div className="intro-nl">{itemNl}</div>}
+                {register && <span className={`register-badge ${word?.register}`}>{register}</span>}
+                {word?.note && <div className="card-hint-text">{word.note}</div>}
+              </div>
               <div className="action-row">
                 <button className="btn-primary" ref={primaryBtnRef} onClick={() => void handleIntroNext()}>
                   {S.INTRO_DONE}
@@ -356,13 +451,31 @@ export default function SessionScreen({
           )
         })()}
 
-        {/* ── QUESTION (typed) ── */}
-        {phase === 'question' && exercise && exercise.typeId !== 'flashcard' && (
+        {/* ── QUESTION (multiple choice) ── */}
+        {phase === 'question' && exercise && isChoice && (
           <>
             <div className="card-header">
+              {label}
               {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
             </div>
-            <div className="card-prompt">{exercise.prompt}</div>
+            {renderPrompt(exercise)}
+            {renderOptions(exercise, false)}
+            <div className="action-row">
+              {sentence?.mode !== 'gap' && <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>}
+              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
+            </div>
+          </>
+        )}
+
+        {/* ── QUESTION (typed) ── */}
+        {phase === 'question' && exercise && !isChoice && exercise.typeId !== 'flashcard' && (
+          <>
+            <div className="card-header">
+              {label}
+              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
+            </div>
+            {renderPrompt(exercise)}
+            {exercise.withArticle && <div className="card-hint-text">{S.WITH_ARTICLE}</div>}
             {exercise.hint && <div className="card-hint-text">{exercise.hint}</div>}
             <input
               ref={inputRef}
@@ -384,7 +497,7 @@ export default function SessionScreen({
                   {S.HINT}
                 </button>
               )}
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
+              {sentence?.mode !== 'gap' && <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>}
               <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
             </div>
           </>
@@ -432,17 +545,25 @@ export default function SessionScreen({
         {/* ── FEEDBACK ── */}
         {phase === 'feedback' && exercise && result && (
           <>
-            <input
-              className={`answer-input ${result}`}
-              type="text"
-              value={input}
-              readOnly
-            />
+            {sentence && (
+              <>
+                {sentence.mode === 'gap' && <div className="sentence-nl">{sentence.nl}</div>}
+                <SentenceText className="card-prompt" text={sentence.it} span={sentence.span} mode="highlight" />
+              </>
+            )}
+            {isChoice ? renderOptions(exercise, true) : (
+              <input
+                className={`answer-input ${result}`}
+                type="text"
+                value={input}
+                readOnly
+              />
+            )}
             <div className="feedback">
               <div className={`feedback-label ${result}`}>
                 {result === 'correct' ? S.CORRECT : result === 'almost' ? S.ALMOST : S.WRONG}
               </div>
-              {(result === 'almost' || result === 'wrong') && (
+              {!isChoice && (result === 'almost' || result === 'wrong') && (
                 <div className="feedback-answer">
                   {S.CORRECT_ANSWER} <strong>{exercise.answers[0]}</strong>
                 </div>
