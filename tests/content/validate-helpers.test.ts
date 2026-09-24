@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { topoSort, buildKnownIds, findDuplicateIds } from '../../src/content/validate-helpers.ts'
+import { topoSort, buildKnownIds, findDuplicateIds, checkLadderContent } from '../../src/content/validate-helpers.ts'
+import { makeContent } from '../exercises/helpers.ts'
+import { ladderSentences, ladderUnit, tense_presente, verb_essere, word_ciao, word_signora } from '../exercises/fixtures.ts'
 import type { Unit } from '../../src/content/schemas.ts'
 
 function makeUnit(id: string, requires: string[] = [], wordIds: string[] = []): Unit {
@@ -77,5 +79,42 @@ describe('buildKnownIds', () => {
 
     expect(known.get('u02')!.has('w_ciao')).toBe(true)
     expect(known.get('u02')!.has('w_grazie')).toBe(true)
+  })
+})
+
+// ─── checkLadderContent ──────────────────────────────────────────────────────
+
+describe('checkLadderContent()', () => {
+  const cfg = { minSentencesPerItem: 3, optionCount: 4 }
+  const content = (sentences = ladderSentences) =>
+    makeContent({
+      words: [word_ciao, word_signora],
+      verbs: [verb_essere],
+      sentences,
+      tenses: [tense_presente],
+      units: [{ ...ladderUnit, sentences }],
+    })
+
+  it('passes the ladder fixture except for items with too few sentences', () => {
+    const { errors, warnings } = checkLadderContent(content(), cfg)
+    expect(errors).toEqual([])
+    expect(warnings).toEqual([`${word_ciao.id}: in 2 sentence(s), expected at least 3`])
+  })
+
+  it('reports an item in uses that is not in the sentence', () => {
+    const broken = [...ladderSentences, { ...ladderSentences[0], id: 's_bad', uses: [word_signora.id] }]
+    expect(checkLadderContent(content(broken), cfg).errors).toEqual([
+      `s_bad: "${word_signora.id}" is in uses but cannot be found in the sentence`,
+    ])
+  })
+
+  it('warns when an intro sentence introduces two items', () => {
+    const { warnings } = checkLadderContent(content(ladderSentences.slice(1)), cfg)
+    expect(warnings).toContain(`${word_ciao.id}: intro sentence s_l_002 also introduces ${verb_essere.id}`)
+  })
+
+  it('warns when there are fewer sentences than multiple-choice options', () => {
+    const { warnings } = checkLadderContent(content(ladderSentences.slice(0, 2)), cfg)
+    expect(warnings).toContain('only 2 sentences; multiple choice needs 4')
   })
 })

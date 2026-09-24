@@ -6,8 +6,10 @@ import {
   TenseSchema,
   UnitSchema,
 } from '../src/content/schemas.ts'
-import type { Unit } from '../src/content/schemas.ts'
-import { topoSort, buildKnownIds, findDuplicateIds } from '../src/content/validate-helpers.ts'
+import type { Tense, Unit } from '../src/content/schemas.ts'
+import type { Content } from '../src/exercises/types.ts'
+import { topoSort, buildKnownIds, findDuplicateIds, checkLadderContent } from '../src/content/validate-helpers.ts'
+import appConfig from '../config/app.json' with { type: 'json' }
 
 const ROOT = resolve(import.meta.dirname, '..')
 const CONTENT = join(ROOT, 'content')
@@ -77,6 +79,7 @@ if (units.length === 0 && existsSync(UNITS_DIR) && readdirSync(UNITS_DIR).filter
 }
 
 // 2. Load and validate tense schemas
+const tenses: Tense[] = []
 if (existsSync(TENSES_DIR)) {
   for (const f of readdirSync(TENSES_DIR).filter(f => f.endsWith('.json'))) {
     const path = join(TENSES_DIR, f)
@@ -86,6 +89,7 @@ if (existsSync(TENSES_DIR)) {
     if (!result.success) {
       result.error.issues.forEach(i => error(`${i.path.join('.')}: ${i.message}`))
     } else {
+      tenses.push(result.data)
       console.log('  ✓ valid')
     }
   }
@@ -152,6 +156,20 @@ if (units.length > 0) {
     }
     if (usesOk) console.log('  ✓ all uses references valid')
   }
+
+  // 7b. learning ladder: items findable in sentences, enough sentences, one new item per intro sentence
+  console.log('\n[learning ladder]')
+  const content: Content = {
+    words: new Map(units.flatMap(u => u.words.map(w => [w.id, w] as const))),
+    verbs: new Map(units.flatMap(u => u.verbs.map(v => [v.id, v] as const))),
+    sentences: new Map(units.flatMap(u => u.sentences.map(s => [s.id, s] as const))),
+    tenses: new Map(tenses.map(t => [t.id, t] as const)),
+    units,
+  }
+  const ladderCheck = checkLadderContent(content, appConfig.ladder)
+  ladderCheck.errors.forEach(error)
+  ladderCheck.warnings.forEach(warn)
+  if (ladderCheck.errors.length === 0 && ladderCheck.warnings.length === 0) console.log('  ✓ all items fit the learning ladder')
 
   // 8. grammar file references
   console.log('\n[grammar file references]')
