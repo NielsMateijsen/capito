@@ -5,6 +5,7 @@ Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige s
 ## Commando's
 - Runtime: Node ≥20.19 (`.nvmrc`); TypeScript-scripts draaien via `tsx`
 - `npm run dev` / `build` / `typecheck`
+- `npm run preview` (bouwt eerst, daarna preview; `preview:phone` ook bereikbaar op het lokale netwerk)
 - `npm test` (moet `vitest run` zijn, geen watch-modus)
 - `npm run validate` (content) · `npm run audio` · `npm run coverage` · `npm run reports`
 - `npm run stats -- <export.json>` (statistieken uit een back-up, voor de pilot)

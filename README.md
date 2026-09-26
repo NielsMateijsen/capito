@@ -38,7 +38,15 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 
 ## Commando's
 
-`npm run dev` · `build` · `typecheck` · `test` · `validate` · `audio` · `coverage` · `reports` · `stats` · `test:e2e`
+`npm run dev` · `build` · `preview` · `preview:phone` · `typecheck` · `test` · `validate` · `audio` · `coverage` · `reports` · `stats` · `test:e2e`
+
+### De app testen
+
+- **`npm run preview`**: bouwt de huidige code en start de app zoals hij online draait (met PWA en service worker). Gebruik dit standaard om te testen.
+- **`npm run preview:phone`**: hetzelfde, maar ook bereikbaar vanaf je telefoon op hetzelfde wifi-netwerk (open het `Network`-adres uit de terminal). Alleen op een vertrouwd netwerk gebruiken.
+- **`npm run dev`**: snelle ontwikkelversie die direct ververst bij elke wijziging, zonder service worker.
+
+Start de app nooit met alleen `npx vite preview`: dat toont de laatste build, niet de huidige code. Staat de app al open na een nieuwe build, tik dan op de update-banner. Welke versie draait, zie je onder Instellingen → Versie-info (commit).
 
 ## Agent-setup: wie doet wat
 
