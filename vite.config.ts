@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { getBuildInfo } from './scripts/version.ts'
@@ -40,5 +41,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     passWithNoTests: true,
+    // e2e/ is run by Playwright (npm run test:e2e), not by Vitest
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })

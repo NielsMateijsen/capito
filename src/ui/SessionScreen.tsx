@@ -378,7 +378,7 @@ export default function SessionScreen({
 
   if (phase === 'done') {
     return (
-      <div className="end-screen">
+      <div className="end-screen" data-testid="session" data-phase="done" data-answered={answeredCount}>
         <h2>{S.SESSION_DONE}</h2>
         <p>{S.REVIEWED(answeredCount)}</p>
         <button className="btn-primary" autoFocus onClick={onDone}>{S.ANOTHER_ROUND}</button>
@@ -432,7 +432,20 @@ export default function SessionScreen({
   }
 
   return (
-    <div className="session" ref={screenRef} onKeyDown={handleScreenKeyDown} onKeyUp={handleFlashcardKey} tabIndex={-1}>
+    // data-* attributes let the e2e session driver follow the flow (see e2e/README.md)
+    <div
+      className="session"
+      ref={screenRef}
+      onKeyDown={handleScreenKeyDown}
+      onKeyUp={handleFlashcardKey}
+      tabIndex={-1}
+      data-testid="session"
+      data-phase={phase}
+      data-pos={pos}
+      data-mode={mode}
+      data-card-key={currentKey ?? undefined}
+      data-exercise-type={exercise?.typeId}
+    >
       {session.isReturn && <div className="welcome-back">{S.WELCOME_BACK}</div>}
 
       <div className="session-progress">
