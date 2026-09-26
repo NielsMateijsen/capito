@@ -61,6 +61,7 @@ function questionLabel(typeId: string): string | undefined {
   if (typeId === 'mc-sentence') return S.MC_SENTENCE_QUESTION
   if (typeId === 'mc-word') return S.MC_WORD_QUESTION
   if (typeId === 'cloze-word') return S.CLOZE_WORD_QUESTION
+  if (typeId === 'dictation') return S.DICTATION_QUESTION
   return undefined
 }
 
