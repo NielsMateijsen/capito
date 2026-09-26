@@ -34,7 +34,7 @@ Uitgangspunt voor alle units. Pas dit bestand aan als je iets anders wilt; agent
 
 ## Personages en decor
 Een vaste cast helpt om zinnen te onthouden.
-- **Sam**: Nederlander uit Utrecht, verblijft een tijd in Bologna. Sam is de leerder
+- **Sam**: Nederlander uit Utrecht, verblijft een tijd in Bologna. Sam is de leerder en een man (in dialogen rol B, stem Diego)
 - **Giulia** en **Marco**: vrienden van Sam (informeel, tu)
 - **Signora Rossi**: verhuurster (formeel, Lei)
 - **Luca**: barista en receptionist (formeel of informeel, afhankelijk van de situatie)
