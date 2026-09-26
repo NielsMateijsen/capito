@@ -31,7 +31,8 @@ interface Props {
   initialProgress: ProgressState
   storage: ProgressStorage
   config: AppConfig
-  mode?: 'daily' | 'unit' | 'exam'
+  /** 'test' tries out exercise types without saving answers or introductions. */
+  mode?: 'daily' | 'unit' | 'exam' | 'test'
   overrideQueue?: SessionItem[]
   autoplayAudio?: boolean
   onDone: () => void
@@ -193,6 +194,10 @@ export default function SessionScreen({
 
   async function handleIntroNext() {
     if (!currentItem || currentItem.kind !== 'intro') return
+    if (mode === 'test') {
+      advanceToNext(queue, pos + 1, answeredCount)
+      return
+    }
     const itemId = currentItem.itemId
     const newIntroduced = progress.introduced.includes(itemId)
       ? progress.introduced
@@ -217,23 +222,21 @@ export default function SessionScreen({
   }
 
   async function submitAnswer(answer: string, cardKey: string, res: ReviewResult) {
-    const grade = gradeFromResult(res, hintUsed, config.grading)
-    const ms = Date.now() - startTime
-
-    const entry: ReviewEntry = {
-      t: new Date().toISOString(),
-      key: cardKey,
-      result: res,
-      grade,
-      ms,
-      hint: hintUsed,
-      answer: res !== 'correct' ? answer.slice(0, 100) : undefined,
-      session: sessionId.current,
-      mode,
-      cv: 'dev',
+    if (mode !== 'test') {
+      const entry: ReviewEntry = {
+        t: new Date().toISOString(),
+        key: cardKey,
+        result: res,
+        grade: gradeFromResult(res, hintUsed, config.grading),
+        ms: Date.now() - startTime,
+        hint: hintUsed,
+        answer: res !== 'correct' ? answer.slice(0, 100) : undefined,
+        session: sessionId.current,
+        mode,
+        cv: 'dev',
+      }
+      await saveEntry(entry, progress)
     }
-
-    await saveEntry(entry, progress)
     setAnsweredCount(answeredCount + 1)
     setResult(res)
 
@@ -262,22 +265,20 @@ export default function SessionScreen({
   }
 
   async function gradeFlashcard(cardKey: string, res: ReviewResult) {
-    const numGrade = gradeFromResult(res, false, config.grading)
-    const ms = Date.now() - startTime
-
-    const entry: ReviewEntry = {
-      t: new Date().toISOString(),
-      key: cardKey,
-      result: res,
-      grade: numGrade,
-      ms,
-      hint: false,
-      session: sessionId.current,
-      mode,
-      cv: 'dev',
+    if (mode !== 'test') {
+      const entry: ReviewEntry = {
+        t: new Date().toISOString(),
+        key: cardKey,
+        result: res,
+        grade: gradeFromResult(res, false, config.grading),
+        ms: Date.now() - startTime,
+        hint: false,
+        session: sessionId.current,
+        mode,
+        cv: 'dev',
+      }
+      await saveEntry(entry, progress)
     }
-
-    await saveEntry(entry, progress)
     const newCount = answeredCount + 1
     setAnsweredCount(newCount)
     advanceToNext(queue, pos + 1, newCount)

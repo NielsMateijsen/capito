@@ -7,8 +7,9 @@ import type { Unit } from './content/schemas.ts'
 import type { GrammarDoc } from './content/loader.ts'
 import { IdbProgressStorage, defaultState } from './storage/progress-store.ts'
 import { loadUnits, loadTenses, loadGrammarDocs } from './content/loader.ts'
-import { exercises } from './exercises/index.ts'
+import { exercises, exerciseMap } from './exercises/index.ts'
 import { buildExamSession } from './engine/exam.ts'
+import { buildTestQueue } from './engine/test-session.ts'
 import { cardType, isLeech } from './engine/session-builder.ts'
 import { ladderItems as buildLadderItems } from './engine/ladder.ts'
 import type { LadderItem } from './engine/ladder.ts'
@@ -32,7 +33,7 @@ type View =
   | { screen: 'loading' }
   | { screen: 'home' }
   | { screen: 'unit'; unitId: string }
-  | { screen: 'session'; targetUnitId?: string; mode: 'daily' | 'unit' | 'exam'; overrideQueue?: SessionItem[] }
+  | { screen: 'session'; targetUnitId?: string; mode: 'daily' | 'unit' | 'exam' | 'test'; overrideQueue?: SessionItem[] }
   | { screen: 'grammar'; grammarId: string; fromUnitId: string }
   | { screen: 'dialogue'; dialogueId: string; unitId: string }
   | { screen: 'settings' }
@@ -150,6 +151,21 @@ export default function App() {
     const examKeys = buildExamSession(unitId, data.allCardKeys, data.cardToUnit, appConfig.exam)
     const overrideQueue: SessionItem[] = examKeys.map(k => ({ kind: 'exercise' as const, cardKey: k, isNew: false }))
     nav.navigate({ screen: 'session', mode: 'exam', targetUnitId: unitId, overrideQueue })
+  }
+
+  function handleTestSession() {
+    if (!data) return
+    const content = data.content
+    const canBuild = (key: string) => {
+      try {
+        exerciseMap.get(cardType(key))?.build(key, content, { seq: 0, optionCount: appConfig.ladder.optionCount })
+        return true
+      } catch {
+        return false
+      }
+    }
+    const overrideQueue = buildTestQueue(exercises.map(e => e.id), data.allCardKeys, canBuild, data.ladderItems[0]?.itemId)
+    nav.navigate({ screen: 'session', mode: 'test', overrideQueue })
   }
 
   async function handleSaveSettings(settings: Settings) {
@@ -310,6 +326,7 @@ export default function App() {
           onBack={() => nav.back(HOME)}
           onExport={handleExport}
           onImport={handleImport}
+          onTestSession={handleTestSession}
         />
       )
     }

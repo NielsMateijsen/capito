@@ -16,6 +16,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 - **Voortgang en review-log** (elk antwoord, append-only) staan lokaal in je browser (IndexedDB). De kaartstatus wordt uit de log afgeleid.
 - **Back-up:** installeer de app op je beginscherm en maak elke ~2 weken een export (de app herinnert je eraan). Zonder back-up kan de browser je data wissen.
 - **Versiestempel:** Instellingen toont app-versie, commit en content-versie. Die staan ook in elke export en foutmelding.
+- **Oefentypes testen:** Instellingen → Testen start een sessie met één kaart van elk oefentype. Die antwoorden worden niet opgeslagen.
 
 ## Mappen
 

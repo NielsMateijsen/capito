@@ -18,9 +18,10 @@ interface Props {
   onBack: () => void
   onExport: () => Promise<void>
   onImport: (state: ProgressState) => Promise<void>
+  onTestSession: () => void
 }
 
-export default function SettingsScreen({ progress, config, onSave, onReset, onBack, onExport, onImport }: Props) {
+export default function SettingsScreen({ progress, config, onSave, onReset, onBack, onExport, onImport, onTestSession }: Props) {
   const settings = (progress.settings ?? {}) as Settings
   const newItemsPerDay = settings.newItemsPerDay ?? config.ladder.newItemsPerDay
   const newPerDay = settings.newCardsPerDay ?? config.session.newCardsPerDay
@@ -157,6 +158,15 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
+      </section>
+
+      {/* Testen */}
+      <section className="settings-section">
+        <h2>{S.SETTINGS_TEST}</h2>
+        <p className="settings-meta">{S.SETTINGS_TEST_INFO}</p>
+        <div>
+          <button className="btn-secondary" onClick={onTestSession}>{S.SETTINGS_TEST_START}</button>
+        </div>
       </section>
 
       {/* Reset */}

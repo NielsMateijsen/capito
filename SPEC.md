@@ -275,6 +275,9 @@ Per unit beschikbaar vanaf mastery `exam.availableFromMastery` (0.6).
 - Daarna vraagt de app bij elk kan-doel (`canDo`) "Kan ik dit nu?" (ja / nog niet). Het antwoord wordt bewaard in `unitMeta`
 - Antwoorden komen in de review-log met `mode: "exam"`
 
+### Testsessie (`mode: test`)
+Via Instellingen → Testen: één kaart per oefentype (de eerste die te bouwen is, ook uitgesloten types), met één intro vooraf (`buildTestQueue` in `src/engine/test-session.ts`). Bedoeld om oefenschermen te controleren. Antwoorden en intro's worden niet opgeslagen en komen niet in de review-log; meldingen wel.
+
 ### Oefentypes (`src/exercises/*.ts`)
 Elk bestand exporteert:
 ```ts
@@ -355,7 +358,7 @@ ReviewEntry = {
 3. **Sessie:** één oefening per scherm, Enter om te controleren en door te gaan, directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout". Meerkeuze met toetsen 1-4. Bij invuloefeningen staat de Nederlandse zin boven de Italiaanse zin met het gat
 4. **Grammaticales:** Markdown + knop "oefen dit"
 5. **Dialoog:** regels met audio, NL-vertaling aan/uit, wissel informeel/formeel
-6. **Instellingen:** nieuwe woorden per dag, nieuwe herhaalkaarten per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), reset, versie-info (app, commit, content)
+6. **Instellingen:** nieuwe woorden per dag, nieuwe herhaalkaarten per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), testsessie met alle oefentypes, reset, versie-info (app, commit, content)
 7. **Meldingen:** lijst met gemelde fouten, exporteerbaar
 8. **Lastig:** lijst met leech-kaarten
 
