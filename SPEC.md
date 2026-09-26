@@ -276,7 +276,7 @@ Per unit beschikbaar vanaf mastery `exam.availableFromMastery` (0.6).
 - Antwoorden komen in de review-log met `mode: "exam"`
 
 ### Testsessie (`mode: test`)
-Via Instellingen → Testen: één kaart per oefentype (de eerste die te bouwen is, ook uitgesloten types), met één intro vooraf (`buildTestQueue` in `src/engine/test-session.ts`). Bedoeld om oefenschermen te controleren. Antwoorden en intro's worden niet opgeslagen en komen niet in de review-log; meldingen wel.
+Via Instellingen → Testen: één kaart per oefentype (de eerste die te bouwen is, ook uitgesloten types), met één intro vooraf (`buildTestQueue` in `src/engine/test-session.ts`). Bedoeld om oefenschermen te controleren, met de hand en door de rooktest (`e2e/`). Antwoorden en intro's worden niet opgeslagen en komen niet in de review-log; meldingen wel. Elke kaart komt precies één keer: een fout antwoord toont feedback en overtypen, maar zet de kaart niet opnieuw in de sessie (anders drukken herhaalde kaarten de laatste types weg).
 
 ### Oefentypes (`src/exercises/*.ts`)
 Elk bestand exporteert:
@@ -374,6 +374,7 @@ ReviewEntry = {
 | `npm run reports` | Leest geëxporteerde meldingen leesbaar uit, om aan Claude te geven |
 | `npm run stats -- <export.json>` | Leest een back-up en toont per dag de sessies, mediane sessieduur, aantal antwoorden en % goed, eindtoetsresultaten en de meest gemiste kaarten. Wordt gebruikt voor de pilot |
 | `npm test` | Vitest |
+| `npm run test:e2e` | Playwright-rooktest tegen de productiebuild (Chromium, 360 px): starten, navigeren, instellingen, elk oefentype via de testsessie, dagelijkse sessie, unit, meldingen. Opbouw en onderhoud: `e2e/README.md`. Draait ook in CI |
 
 **Meldingen:** `{ itemId, kind: "wrong-content" | "also-correct" | "audio", userAnswer, note, date, build }`. Exporteer, geef ze aan Claude Code, laat het de content fixen.
 

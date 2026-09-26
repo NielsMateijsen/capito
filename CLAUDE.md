@@ -9,7 +9,7 @@ Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige s
 - `npm test` (moet `vitest run` zijn, geen watch-modus)
 - `npm run validate` (content) · `npm run audio` · `npm run coverage` · `npm run reports`
 - `npm run stats -- <export.json>` (statistieken uit een back-up, voor de pilot)
-- `npm run test:e2e` (Playwright)
+- `npm run test:e2e` (Playwright-rooktest, ~1 min; opbouw en onderhoud in `e2e/README.md`)
 
 ## Harde regels
 1. Geen Italiaanse woorden of zinnen in `src/`. Alleen in `content/`. UI-teksten alleen in `src/ui/strings.nl.ts`.
@@ -28,6 +28,7 @@ Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige s
 ## Definition of done
 - `typecheck`, `validate` en `test` zijn groen (de Stop-hook controleert dit)
 - Nieuwe logica is getest, nieuwe content valideert
+- Raakt de wijziging een scherm of flow: `npm run test:e2e` is groen en `e2e/` is bijgewerkt (niet in de Stop-hook, zelf draaien)
 - `README.md` en/of `SPEC.md` zijn bijgewerkt als structuur of afspraken veranderden
 - Kleine, duidelijke commit op een branch
 - Bij een nieuw of gewijzigd opslagformaat: schema-versie, migratie, migratietest en een werkende export/import-roundtrip

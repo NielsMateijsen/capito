@@ -31,6 +31,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 | `src/storage/` | Voortgang opslaan + migraties |
 | `src/ui/` | Schermen; alle tekst in `strings.nl.ts` |
 | `scripts/` | validate, audio, coverage, reports |
+| `e2e/` | Playwright-rooktest per functionaliteit (zie `e2e/README.md`) |
 | `prompts/` | Prompts voor het genereren en reviewen van content |
 | `docs/` | `style-guide.md` (stijlgids content) en `pilot.md` (pilotweek, succescriteria, besluit) |
 | `tests/golden/` | Door mij gecontroleerde vervoegingen (bron van waarheid) |
@@ -46,6 +47,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 - **`npm run preview`**: bouwt de huidige code en start de app zoals hij online draait (met PWA en service worker). Gebruik dit standaard om te testen.
 - **`npm run preview:phone`**: hetzelfde, maar ook bereikbaar vanaf je telefoon op hetzelfde wifi-netwerk (open het `Network`-adres uit de terminal). Alleen op een vertrouwd netwerk gebruiken.
 - **`npm run dev`**: snelle ontwikkelversie die direct ververst bij elke wijziging, zonder service worker.
+- **`npm run test:e2e`**: rooktest die de app bouwt en de belangrijkste flows automatisch doorklikt (ook elk oefentype). Duurt ongeveer een minuut. Eerste keer: `npx playwright install chromium`. Hoe je hem bijwerkt als de app verandert: `e2e/README.md`.
 
 Start de app nooit met alleen `npx vite preview`: dat toont de laatste build, niet de huidige code. Staat de app al open na een nieuwe build, tik dan op de update-banner. Welke versie draait, zie je onder Instellingen → Versie-info (commit).
 
@@ -54,7 +56,7 @@ Start de app nooit met alleen `npx vite preview`: dat toont de laatste build, ni
 | Onderdeel | Bestand | Doel |
 |---|---|---|
 | Afspraken | `CLAUDE.md` | Regels, commando's en werkwijze die elke sessie geladen zijn |
-| Regels per map | `.claude/rules/` | Extra regels voor `content/`, `src/engine/` en `src/ui/` |
+| Regels per map | `.claude/rules/` | Extra regels voor `content/`, `src/engine/`, `src/ui/` en `e2e/` |
 | Hooks | `.claude/hooks/` | `guard` blokkeert gevaarlijke acties, `post-edit` valideert content, `stop-check` draait typecheck + validate + test voordat Claude stopt |
 | Permissions | `.claude/settings.json` | Wat zonder vragen mag en wat nooit |
 | Subagents | `.claude/agents/` | `content-generator`, `content-reviewer` (alleen lezen), `code-reviewer` (alleen lezen) |
