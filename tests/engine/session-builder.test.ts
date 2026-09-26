@@ -22,7 +22,7 @@ const DAY = 86_400_000
 const STAGES = ['mc-sentence', 'mc-word', 'cloze-word', 'translate-nl-it']
 
 const CONFIG: SessionBuilderConfig = {
-  session: { maxReviewsPerSession: 30, newCardsPerDay: 10, minOldMaterialRatio: 0.3, maxSameTypeInRow: 3, excludedTypes: ['flashcard', 'mc-sentence', 'mc-word'] },
+  session: { maxReviewsPerSession: 30, newCardsPerDay: 10, minOldMaterialRatio: 0.3, maxSameTypeInRow: 3, excludedTypes: ['flashcard', 'mc-sentence', 'mc-word'], timeZone: 'UTC' },
   backlog: { maxDueShownPerDay: 40, pauseNewCardsAboveDue: 60, returnAfterDays: 7, returnMaxSessionReviews: 20 },
   lapse: { retypeCorrectAnswer: true, reinsertInSession: true, reinsertAfterCards: 4 },
   leech: { lapseThreshold: 6, showExtraContext: true },

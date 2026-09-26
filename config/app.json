@@ -7,7 +7,8 @@
     "maxNewCardsPerDay": 50,
     "minOldMaterialRatio": 0.3,
     "maxSameTypeInRow": 3,
-    "excludedTypes": ["flashcard", "cloze", "mc-sentence", "mc-word"]
+    "excludedTypes": ["flashcard", "cloze", "mc-sentence", "mc-word"],
+    "timeZone": "Europe/Amsterdam"
   },
   "ladder": {
     "stages": ["mc-sentence", "mc-word", "cloze-word", "translate-nl-it"],

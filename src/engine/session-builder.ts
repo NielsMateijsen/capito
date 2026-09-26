@@ -13,6 +13,7 @@ export interface SessionBuilderConfig {
     minOldMaterialRatio: number
     maxSameTypeInRow: number
     excludedTypes: string[]
+    timeZone: string
   }
   backlog: {
     maxDueShownPerDay: number
@@ -77,8 +78,8 @@ export function itemIdFromKey(cardKey: string): string {
   return cardKey.split(':')[1]
 }
 
-function computeTodayNewCount(reviewLog: ReviewEntry[], now: number, counts: (key: string) => boolean): number {
-  const todayStart = dayStartMs(now)
+function computeTodayNewCount(reviewLog: ReviewEntry[], now: number, timeZone: string, counts: (key: string) => boolean): number {
+  const todayStart = dayStartMs(now, timeZone)
   const firstSeen = new Map<string, number>()
   for (const entry of reviewLog) {
     if (!counts(entry.key)) continue
@@ -302,7 +303,7 @@ export function buildSession(input: SessionInput): Session {
   const { session: sc, backlog: bc, ladder: lc } = config
   const requires = input.cardRequires ?? new Map<string, string[]>()
   const rand = seededRandom(input.seed ?? now)
-  const todayStart = dayStartMs(now)
+  const todayStart = dayStartMs(now, sc.timeZone)
 
   // Return after a pause
   const lastSessionAt = computeLastSessionAt(progress.reviewLog)
@@ -312,7 +313,7 @@ export function buildSession(input: SessionInput): Session {
 
   // Ladder state, derived from the log
   const items = input.ladderItems ?? []
-  const ladder = computeLadder(progress.reviewLog, items, lc, now)
+  const ladder = computeLadder(progress.reviewLog, items, { ...lc, timeZone: sc.timeZone }, now)
   const stageKeySet = new Set(items.flatMap(i => i.stageKeys))
   const inTarget = (k: string) => targetUnitId === undefined || cardToUnit.get(k) === targetUnitId
   const itemInTarget = (s: ItemLadderState) => inTarget(s.stageKeys[0])
@@ -333,7 +334,7 @@ export function buildSession(input: SessionInput): Session {
   const due = dueAll.slice(0, bc.maxDueShownPerDay)
   const blockedNew = isReturn || totalDue >= bc.pauseNewCardsAboveDue
 
-  const todayNewCount = computeTodayNewCount(progress.reviewLog, now, k => !stageKeySet.has(k))
+  const todayNewCount = computeTodayNewCount(progress.reviewLog, now, sc.timeZone, k => !stageKeySet.has(k))
   const newCardSlots = blockedNew ? 0 : Math.max(0, sc.newCardsPerDay - todayNewCount)
   const newReviewCards = reviewPool.filter(k => progress.cards[k] === undefined).slice(0, newCardSlots)
 

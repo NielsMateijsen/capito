@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { computeLadder, isFail, isGraduated, ladderItems } from '../../src/engine/ladder.ts'
+import { computeLadder, dayStartMs, isFail, isGraduated, ladderItems } from '../../src/engine/ladder.ts'
 import type { ReviewEntry } from '../../src/engine/review-log.ts'
 
 const NOW = 1_700_000_000_000
 const DAY = 86_400_000
 const STAGES = ['mc-sentence', 'mc-word', 'cloze-word', 'translate-nl-it']
-const CONFIG = { dropOnWrong: 1, passResults: ['correct', 'good', 'easy'] }
+const CONFIG = { dropOnWrong: 1, passResults: ['correct', 'good', 'easy'], timeZone: 'UTC' }
 
 function entry(key: string, t: number, result: ReviewEntry['result'] = 'correct', mode: ReviewEntry['mode'] = 'daily'): ReviewEntry {
   return { t: new Date(t).toISOString(), key, result, grade: 4, ms: 1, hint: false, session: 's', mode, cv: 'x' }
@@ -88,6 +88,14 @@ describe('computeLadder()', () => {
     expect(computeLadder(log, [item], CONFIG, NOW).get('w_a')!.stepsToday).toBe(1)
   })
 
+  it('counts steps today by the configured time zone', () => {
+    // 00:30 in Amsterdam is today there, but still yesterday in UTC
+    const now = Date.parse('2026-09-27T08:00:00Z')
+    const log = [entry('mc-sentence:w_a', Date.parse('2026-09-26T22:30:00Z'))]
+    expect(computeLadder(log, [item], { ...CONFIG, timeZone: 'Europe/Amsterdam' }, now).get('w_a')!.stepsToday).toBe(1)
+    expect(computeLadder(log, [item], { ...CONFIG, timeZone: 'UTC' }, now).get('w_a')!.stepsToday).toBe(0)
+  })
+
   it('records first and last time seen', () => {
     const log = [entry('mc-sentence:w_a', NOW - DAY), entry('mc-word:w_a', NOW - 1000, 'wrong')]
     const state = computeLadder(log, [item], CONFIG, NOW).get('w_a')!
@@ -98,6 +106,29 @@ describe('computeLadder()', () => {
   it('is the same when replayed from the log', () => {
     const log = [entry('mc-sentence:w_a', NOW - DAY), entry('mc-word:w_a', NOW - DAY + 1, 'wrong'), entry('mc-sentence:w_a', NOW - 10)]
     expect(computeLadder(log, [item], CONFIG, NOW)).toEqual(computeLadder([...log], [item], CONFIG, NOW))
+  })
+})
+
+describe('dayStartMs()', () => {
+  const TZ = 'Europe/Amsterdam'
+
+  it('starts the day at local midnight in summer time', () => {
+    // 00:30 on 27 Sept in Amsterdam (UTC+2)
+    expect(dayStartMs(Date.parse('2026-09-26T22:30:00Z'), TZ)).toBe(Date.parse('2026-09-26T22:00:00Z'))
+  })
+
+  it('starts the day at local midnight in winter time', () => {
+    // 00:30 on 16 Jan in Amsterdam (UTC+1)
+    expect(dayStartMs(Date.parse('2026-01-15T23:30:00Z'), TZ)).toBe(Date.parse('2026-01-15T23:00:00Z'))
+  })
+
+  it('uses the offset at midnight on the day summer time starts', () => {
+    // 29 March 2026: midnight is still UTC+1, noon is UTC+2
+    expect(dayStartMs(Date.parse('2026-03-29T10:00:00Z'), TZ)).toBe(Date.parse('2026-03-28T23:00:00Z'))
+  })
+
+  it('works with UTC', () => {
+    expect(dayStartMs(Date.parse('2026-09-26T22:30:00Z'), 'UTC')).toBe(Date.parse('2026-09-26T00:00:00Z'))
   })
 })
 
