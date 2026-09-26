@@ -12,6 +12,7 @@ import { introSentence } from '../engine/sentences.ts'
 import { withArticle } from '../engine/plurals.ts'
 import type { Exercise, ReviewResult } from '../exercises/types.ts'
 import { exerciseMap } from '../exercises/index.ts'
+import { isRetypeCorrect } from '../exercises/choice.ts'
 import { S } from './strings.nl.ts'
 import { playAudio } from './speak.ts'
 import ReportModal from './ReportModal.tsx'
@@ -101,6 +102,7 @@ export default function SessionScreen({
   const [progress, setProgress] = useState<ProgressState>(initialProgress)
   const [showReport, setShowReport] = useState(false)
   const [startTime, setStartTime] = useState(Date.now())
+  const [retypeWrong, setRetypeWrong] = useState(false)
   const submittingRef = useRef(false)
 
   const sessionId = useRef(crypto.randomUUID())
@@ -138,12 +140,13 @@ export default function SessionScreen({
       inputRef.current.focus()
     } else if (phase === 'question' && isChoice) {
       screenRef.current?.focus()
+    } else if (phase === 'lapse-retype') {
+      inputRef.current?.focus()
     } else if (
       phase === 'intro' ||
       phase === 'question' ||
       phase === 'flashcard-reveal' ||
-      phase === 'feedback' ||
-      phase === 'lapse-retype'
+      phase === 'feedback'
     ) {
       primaryBtnRef.current?.focus()
     }
@@ -289,6 +292,13 @@ export default function SessionScreen({
   }
 
   function handleLapseRetypeNext() {
+    const mod = exercise && exerciseMap.get(exercise.typeId)
+    if (mod && exercise && !isRetypeCorrect(mod, input, exercise, config.checker)) {
+      setRetypeWrong(true)
+      inputRef.current?.focus()
+      return
+    }
+    setRetypeWrong(false)
     advanceToNext(queue, pos + 1, answeredCount)
   }
 
@@ -598,15 +608,16 @@ export default function SessionScreen({
             <div className="feedback-answer"><strong>{exercise.answers[0]}</strong></div>
             <input
               ref={inputRef}
-              className="answer-input"
+              className={`answer-input ${retypeWrong ? 'wrong' : ''}`}
               type="text"
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={e => { setInput(e.target.value); setRetypeWrong(false) }}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
             />
+            {retypeWrong && <div className="feedback-label wrong">{S.LAPSE_MISMATCH}</div>}
             <div className="action-row">
               <button className="btn-primary" ref={primaryBtnRef} onClick={handleLapseRetypeNext}>
                 {S.LAPSE_CONFIRM}

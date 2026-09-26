@@ -1,5 +1,11 @@
 import { pickSentence, sentencesForItem, withGap } from '../engine/sentences.ts'
-import type { Content, Exercise, ReviewResult } from './types.ts'
+import type { CheckerConfig } from '../engine/checker.ts'
+import type { Content, Exercise, ExerciseModule, ReviewResult } from './types.ts'
+
+/** Retyping after a mistake only counts when it is fully correct ("almost" is not enough). */
+export function isRetypeCorrect(mod: ExerciseModule, input: string, exercise: Exercise, config: CheckerConfig): boolean {
+  return input.trim() !== '' && mod.check(input.trim(), exercise, config) === 'correct'
+}
 
 export const GAP = '___'
 

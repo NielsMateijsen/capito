@@ -27,6 +27,7 @@ export const S = {
 
   LAPSE_RETYPE: 'Type het juiste antwoord over:',
   LAPSE_CONFIRM: 'Bevestigen',
+  LAPSE_MISMATCH: 'Nog niet goed, probeer het nog eens.',
 
   FLASHCARD_REVEAL: 'Toon antwoord',
   FLASHCARD_AGAIN: 'Opnieuw',
