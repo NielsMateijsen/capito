@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { migrate, exportJson, importJson } from '../../src/storage/migrations.ts'
+import { migrate, exportJson, importJson, CURRENT_SCHEMA } from '../../src/storage/migrations.ts'
 import { defaultState } from '../../src/storage/progress-store.ts'
 import type { MigrationMap } from '../../src/storage/migrations.ts'
 
@@ -14,7 +14,7 @@ describe('migrate()', () => {
     const dummy: MigrationMap = {
       1: (s) => ({ ...s, schema: 2, extra: 'added' }),
     }
-    const result = migrate(defaultState(), dummy, 2)
+    const result = migrate({ ...defaultState(), schema: 1 }, dummy, 2)
     expect(result.schema).toBe(2)
     expect((result as unknown as Record<string, unknown>)['extra']).toBe('added')
   })
@@ -24,7 +24,7 @@ describe('migrate()', () => {
       1: (s) => ({ ...s, schema: 2, stepA: true }),
       2: (s) => ({ ...s, schema: 3, stepB: true }),
     }
-    const result = migrate(defaultState(), multi, 3)
+    const result = migrate({ ...defaultState(), schema: 1 }, multi, 3)
     const r = result as unknown as Record<string, unknown>
     expect(r['schema']).toBe(3)
     expect(r['stepA']).toBe(true)
@@ -62,5 +62,42 @@ describe('export → import roundtrip', () => {
 
     const restored = importJson(exportJson(state))
     expect(restored).toEqual(state)
+  })
+})
+
+describe('schema 1 → 2 (separate daily limits for new words and new review cards)', () => {
+  const v1 = {
+    schema: 1,
+    cards: {},
+    reviewLog: [],
+    introduced: ['w_test'],
+    unitMeta: {},
+    flags: [],
+    settings: { newCardsPerDay: 12, autoplayAudio: true },
+    meta: {},
+  }
+
+  it('is the current schema', () => {
+    expect(CURRENT_SCHEMA).toBe(2)
+    expect(defaultState().schema).toBe(2)
+  })
+
+  it('keeps newCardsPerDay as the limit for new review cards and adds no word limit', () => {
+    const result = migrate(structuredClone(v1))
+    expect(result.schema).toBe(2)
+    expect(result.settings).toEqual({ newCardsPerDay: 12, autoplayAudio: true })
+    expect(result.settings.newItemsPerDay).toBeUndefined()
+    expect(result.introduced).toEqual(['w_test'])
+  })
+
+  it('imports a schema-1 backup', () => {
+    const restored = importJson(JSON.stringify(v1))
+    expect(restored.schema).toBe(2)
+    expect(restored.settings.newCardsPerDay).toBe(12)
+  })
+
+  it('roundtrips both daily limits', () => {
+    const state = { ...defaultState(), settings: { newCardsPerDay: 8, newItemsPerDay: 3 } }
+    expect(importJson(exportJson(state))).toEqual(state)
   })
 })

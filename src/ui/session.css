@@ -102,6 +102,92 @@ body {
   color: #444;
 }
 
+.intro-sentence {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.intro-sentence-it {
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.intro-sentence-nl,
+.sentence-nl {
+  font-size: 1rem;
+  color: #555;
+}
+
+.intro-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+
+.sentence-highlight {
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: #4c8bf5;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+}
+
+.sentence-gap {
+  display: inline-block;
+  min-width: 3.5em;
+  border-bottom: 2px solid #888;
+}
+
+.register-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.register-badge.formal { background: #e3f2fd; color: #1565c0; }
+.register-badge.informal { background: #fff3e0; color: #e65100; }
+
+/* Multiple choice */
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+  color: #111;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  font-size: 1.05rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.choice:hover:not(:disabled) { border-color: #4c8bf5; }
+.choice:disabled { cursor: default; }
+.choice.correct { border-color: #2e7d32; background: #f1f8f1; }
+.choice.wrong { border-color: #c62828; background: #fff5f5; }
+.choice.dim { opacity: 0.55; }
+
+.choice-key {
+  font-size: 0.8rem;
+  color: #888;
+  min-width: 1ch;
+}
+
 /* Answer input */
 .answer-input {
   width: 100%;
@@ -899,6 +985,29 @@ body {
   .card-hint-text { color: #aaa; }
 
   .intro-nl { color: #bbb; }
+
+  .intro-sentence-nl,
+  .sentence-nl { color: #aaa; }
+
+  .intro-item { border-color: #333; }
+
+  .sentence-highlight { text-decoration-color: #6aa0ff; }
+
+  .sentence-gap { border-color: #aaa; }
+
+  .register-badge.formal { background: #0a1a2a; color: #64b5f6; }
+  .register-badge.informal { background: #3a2010; color: #ffb74d; }
+
+  .choice {
+    background: #2a2a2a;
+    color: #e8e8e8;
+    border-color: #555;
+  }
+
+  .choice:hover:not(:disabled) { border-color: #6aa0ff; }
+  .choice.correct { border-color: #2e7d32; background: #1a2a1a; }
+  .choice.wrong { border-color: #c62828; background: #2a1515; }
+  .choice-key { color: #999; }
 
   .answer-input {
     background: #2a2a2a;

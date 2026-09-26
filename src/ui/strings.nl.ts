@@ -3,8 +3,16 @@ export const S = {
   LOADING: 'Laden…',
   LOAD_ERROR: (msg: string) => `Fout bij laden: ${msg}`,
 
-  INTRO_HEADER: 'Nieuw item',
-  INTRO_DONE: 'Klaar',
+  INTRO_HEADER: 'Nieuw woord',
+  INTRO_DONE: 'Verder',
+  REGISTER_FORMAL: 'formeel',
+  REGISTER_INFORMAL: 'informeel',
+
+  MC_SENTENCE_QUESTION: 'Wat betekent deze zin?',
+  MC_WORD_QUESTION: 'Kies het ontbrekende woord',
+  CLOZE_WORD_QUESTION: 'Vul het ontbrekende woord in',
+  DICTATION_QUESTION: 'Luister en typ wat je hoort',
+  WITH_ARTICLE: 'Met lidwoord',
 
   HINT: 'Hint',
   AUDIO: '🔊',
@@ -20,6 +28,7 @@ export const S = {
 
   LAPSE_RETYPE: 'Type het juiste antwoord over:',
   LAPSE_CONFIRM: 'Bevestigen',
+  LAPSE_MISMATCH: 'Nog niet goed, probeer het nog eens.',
 
   FLASHCARD_REVEAL: 'Toon antwoord',
   FLASHCARD_AGAIN: 'Opnieuw',
@@ -69,7 +78,8 @@ export const S = {
   // Settings screen
   SETTINGS: 'Instellingen',
   SETTINGS_LEARNING: 'Leerbeleid',
-  SETTINGS_NEW_PER_DAY: 'Nieuwe kaarten per dag',
+  SETTINGS_NEW_ITEMS_PER_DAY: 'Nieuwe woorden per dag',
+  SETTINGS_NEW_PER_DAY: 'Nieuwe herhaalkaarten per dag',
   SETTINGS_AUTOPLAY: 'Autoplay audio',
   SETTINGS_UNLOCK: 'Alles ontgrendelen',
   SETTINGS_UNLOCK_ON: 'Ingeschakeld',

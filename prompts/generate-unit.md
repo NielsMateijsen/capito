@@ -24,7 +24,9 @@ Schrijf één bestand `content/units/<UNIT_ID>.json` volgens het schema in SPEC 
 ## Eisen
 - Werk vanuit de kan-doelen: elk dialoog of zinnengroep dient minstens één kan-doel
 - Niveau A1: korte zinnen (bij voorkeur maximaal 8 woorden), hoogfrequent en praktisch
-- Elk woord komt voor in minstens één zin, elk kernwoord in minstens twee
+- Elk woord en werkwoord komt voor in minstens drie zinnen, elk kernwoord in minstens twee
+- Orden de zinnen als leerpad: de eerste zin met een item introduceert dat item en bevat verder alleen items die al eerder in de unit of in `KNOWN` voorkwamen
+- Elk item uit `uses` staat letterlijk in de zin (woord als `it` of meervoud, werkwoord als infinitief of vervoegde vorm)
 - Elke zin staat op `uses` met alleen woorden uit deze unit of `KNOWN`
 - Zinnen moeten de grammaticafocus oefenen, maar mogen geen nog niet behandelde grammatica bevatten (alleen presente)
 - Elk zelfstandig naamwoord heeft `article` en `gender`; `plural` alleen bij onregelmatig

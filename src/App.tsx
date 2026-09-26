@@ -9,9 +9,13 @@ import { IdbProgressStorage, defaultState } from './storage/progress-store.ts'
 import { loadUnits, loadTenses, loadGrammarDocs } from './content/loader.ts'
 import { exercises } from './exercises/index.ts'
 import { buildExamSession } from './engine/exam.ts'
-import { isLeech } from './engine/session-builder.ts'
+import { cardType, isLeech } from './engine/session-builder.ts'
+import { ladderItems as buildLadderItems } from './engine/ladder.ts'
+import type { LadderItem } from './engine/ladder.ts'
+import { ladderItemOrder } from './engine/sentences.ts'
 import { exportJson } from './storage/migrations.ts'
 import { shouldRequestPersistentStorage } from './storage/persist.ts'
+import { createNavigator } from './ui/navigation.ts'
 import SessionScreen from './ui/SessionScreen.tsx'
 import HomeScreen from './ui/HomeScreen.tsx'
 import UnitScreen from './ui/UnitScreen.tsx'
@@ -41,6 +45,8 @@ interface AppData {
   allCardKeys: string[]
   cardToUnit: Map<string, string>
   cardKeysByUnit: Map<string, string[]>
+  ladderItems: LadderItem[]
+  cardRequires: Map<string, string[]>
   grammarMap: Map<string, GrammarDoc>
   progress: ProgressState
 }
@@ -49,12 +55,23 @@ const storage = new IdbProgressStorage()
 
 const unlockConfig = { ...appConfig.unlock, passThreshold: appConfig.exam.passThreshold }
 
+const HOME: View = { screen: 'home' }
+
 export default function App() {
   const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
   const [view, setView] = useState<View>({ screen: 'loading' })
   const [data, setData] = useState<AppData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const loaded = useRef(false)
+  const [nav] = useState(() => createNavigator<View>(window.history, setView))
+
+  useEffect(() => {
+    function onPopState(e: PopStateEvent) {
+      if (nav.handlePop(e.state)) void reloadProgress()
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [nav])
 
   useEffect(() => {
     if (loaded.current) return
@@ -83,10 +100,19 @@ export default function App() {
           allCardKeys.map(k => [k, itemToUnit.get(k.split(':')[1] ?? '') ?? ''])
         )
 
+        // Mastery counts review cards only: stage-only and excluded types never get enough reps
+        const excludedTypes = new Set(appConfig.session.excludedTypes)
         const cardKeysByUnit = new Map<string, string[]>()
         for (const unit of units) cardKeysByUnit.set(unit.id, [])
         for (const [key, unitId] of cardToUnit) {
-          cardKeysByUnit.get(unitId)?.push(key)
+          if (!excludedTypes.has(cardType(key))) cardKeysByUnit.get(unitId)?.push(key)
+        }
+
+        const ladderItems = buildLadderItems(ladderItemOrder(content), appConfig.ladder.stages, allCardKeys)
+        const cardRequires = new Map<string, string[]>()
+        for (const e of exercises) {
+          if (!e.requires) continue
+          for (const key of e.cards(content)) cardRequires.set(key, e.requires(key, content))
         }
 
         const grammarMap = new Map(grammarDocs.map(d => [d.frontmatter.id, d]))
@@ -99,8 +125,8 @@ export default function App() {
           await storage.save(progress)
         }
 
-        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, grammarMap, progress })
-        setView({ screen: 'home' })
+        setData({ content, units, allCardKeys, cardToUnit, cardKeysByUnit, ladderItems, cardRequires, grammarMap, progress })
+        nav.start(HOME)
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
       }
@@ -111,23 +137,19 @@ export default function App() {
 
   async function reloadProgress(): Promise<ProgressState> {
     const progress = await storage.load()
-    if (data) setData(d => d ? { ...d, progress } : d)
+    setData(d => d ? { ...d, progress } : d)
     return progress
   }
 
   function handleSessionDone() {
-    reloadProgress().then(() => setView({ screen: 'home' })).catch(() => setView({ screen: 'home' }))
-  }
-
-  function handleUnitSessionDone() {
-    reloadProgress().then(() => setView({ screen: 'home' })).catch(() => setView({ screen: 'home' }))
+    reloadProgress().then(() => nav.home(HOME)).catch(() => nav.home(HOME))
   }
 
   function handleEindtoets(unitId: string) {
     if (!data) return
     const examKeys = buildExamSession(unitId, data.allCardKeys, data.cardToUnit, appConfig.exam)
     const overrideQueue: SessionItem[] = examKeys.map(k => ({ kind: 'exercise' as const, cardKey: k, isNew: false }))
-    setView({ screen: 'session', mode: 'exam', targetUnitId: unitId, overrideQueue })
+    nav.navigate({ screen: 'session', mode: 'exam', targetUnitId: unitId, overrideQueue })
   }
 
   async function handleSaveSettings(settings: Settings) {
@@ -140,7 +162,7 @@ export default function App() {
   async function handleReset() {
     await storage.save(defaultState())
     await reloadProgress()
-    setView({ screen: 'home' })
+    nav.home(HOME)
   }
 
   async function handleExport() {
@@ -196,6 +218,11 @@ export default function App() {
   const settings = (data.progress.settings ?? {}) as Settings
   const unlockAll = settings.unlockAll === true
   const autoplayAudio = settings.autoplayAudio === true
+  const sessionConfig = {
+    ...appConfig,
+    session: { ...appConfig.session, newCardsPerDay: settings.newCardsPerDay ?? appConfig.session.newCardsPerDay },
+    ladder: { ...appConfig.ladder, newItemsPerDay: settings.newItemsPerDay ?? appConfig.ladder.newItemsPerDay },
+  }
   const flagCount = data.progress.flags.length
   const leechCount = Object.values(data.progress.cards).filter(s => isLeech(s, appConfig.leech)).length
 
@@ -217,11 +244,11 @@ export default function App() {
           progress={data.progress}
           config={appConfig}
           grammarMap={data.grammarMap}
-          onBack={() => setView({ screen: 'home' })}
-          onOefen={unitId => setView({ screen: 'session', mode: 'unit', targetUnitId: unitId })}
+          onBack={() => nav.back(HOME)}
+          onOefen={unitId => nav.navigate({ screen: 'session', mode: 'unit', targetUnitId: unitId })}
           onEindtoets={handleEindtoets}
-          onOpenGrammar={grammarId => setView({ screen: 'grammar', grammarId, fromUnitId: view.unitId })}
-          onOpenDialogue={dialogueId => setView({ screen: 'dialogue', dialogueId, unitId: view.unitId })}
+          onOpenGrammar={grammarId => nav.navigate({ screen: 'grammar', grammarId, fromUnitId: view.unitId })}
+          onOpenDialogue={dialogueId => nav.navigate({ screen: 'dialogue', dialogueId, unitId: view.unitId })}
         />
       )
     }
@@ -233,8 +260,8 @@ export default function App() {
           grammarId={view.grammarId}
           doc={doc}
           allCardKeys={data.allCardKeys}
-          onBack={() => setView({ screen: 'unit', unitId: view.fromUnitId })}
-          onDrill={queue => setView({ screen: 'session', mode: 'unit', overrideQueue: queue })}
+          onBack={() => nav.back({ screen: 'unit', unitId: view.fromUnitId })}
+          onDrill={queue => nav.navigate({ screen: 'session', mode: 'unit', overrideQueue: queue })}
         />
       )
     }
@@ -248,7 +275,7 @@ export default function App() {
           dialogue={dialogue}
           unitDialogues={unit.dialogues}
           sentences={data.content.sentences}
-          onBack={() => setView({ screen: 'unit', unitId: view.unitId })}
+          onBack={() => nav.back({ screen: 'unit', unitId: view.unitId })}
         />
       )
     }
@@ -259,13 +286,16 @@ export default function App() {
           content={data.content}
           allCardKeys={data.allCardKeys}
           cardToUnit={data.cardToUnit}
+          ladderItems={data.ladderItems}
+          cardRequires={data.cardRequires}
+          targetUnitId={view.targetUnitId}
           initialProgress={data.progress}
           storage={storage}
-          config={appConfig}
+          config={sessionConfig}
           mode={view.mode}
           overrideQueue={view.overrideQueue}
           autoplayAudio={autoplayAudio}
-          onDone={view.mode === 'unit' ? handleUnitSessionDone : handleSessionDone}
+          onDone={handleSessionDone}
         />
       )
     }
@@ -277,7 +307,7 @@ export default function App() {
           config={appConfig}
           onSave={handleSaveSettings}
           onReset={handleReset}
-          onBack={() => setView({ screen: 'home' })}
+          onBack={() => nav.back(HOME)}
           onExport={handleExport}
           onImport={handleImport}
         />
@@ -288,7 +318,7 @@ export default function App() {
       return (
         <ReportsScreen
           flags={data.progress.flags}
-          onBack={() => setView({ screen: 'home' })}
+          onBack={() => nav.back(HOME)}
         />
       )
     }
@@ -299,7 +329,7 @@ export default function App() {
           content={data.content}
           progress={data.progress}
           config={appConfig}
-          onBack={() => setView({ screen: 'home' })}
+          onBack={() => nav.back(HOME)}
         />
       )
     }
@@ -313,11 +343,11 @@ export default function App() {
         unlockAll={unlockAll}
         flagCount={flagCount}
         leechCount={leechCount}
-        onStartSession={() => setView({ screen: 'session', mode: 'daily' })}
-        onOpenUnit={unitId => setView({ screen: 'unit', unitId })}
-        onOpenSettings={() => setView({ screen: 'settings' })}
-        onOpenReports={() => setView({ screen: 'reports' })}
-        onOpenLeech={() => setView({ screen: 'leech' })}
+        onStartSession={() => nav.navigate({ screen: 'session', mode: 'daily' })}
+        onOpenUnit={unitId => nav.navigate({ screen: 'unit', unitId })}
+        onOpenSettings={() => nav.navigate({ screen: 'settings' })}
+        onOpenReports={() => nav.navigate({ screen: 'reports' })}
+        onOpenLeech={() => nav.navigate({ screen: 'leech' })}
         onExport={handleExport}
       />
     )

@@ -1,5 +1,5 @@
 // Italian fixture data is OK in test-fixture files per .claude/rules/engine.md
-import type { Word, Verb, Sentence, Tense } from '../../src/content/schemas.ts'
+import type { Word, Verb, Sentence, Tense, Unit } from '../../src/content/schemas.ts'
 
 export const word_caffe: Word = {
   id: 'w_caffe',
@@ -124,4 +124,30 @@ export const sentence_long: Sentence = {
   register: 'informal',
   uses: [],
   audioText: null,
+}
+
+// Small unit for the learning ladder: sentences in learning order
+export const ladderSentences: Sentence[] = [
+  { id: 's_l_001', it: 'Ciao, Giulia!', nl: ['Hoi, Giulia!'], register: 'informal', uses: ['w_ciao'], audioText: null },
+  { id: 's_l_002', it: 'Ciao, sono Sam.', nl: ['Hoi, ik ben Sam.'], register: 'informal', uses: ['w_ciao', 'v_essere'], audioText: null },
+  { id: 's_l_003', it: 'Buongiorno, signora.', nl: ['Goedemorgen, mevrouw.'], register: 'formal', uses: ['w_signora'], audioText: null },
+  { id: 's_l_004', it: 'Lei è la signora Rossi?', nl: ['Bent u mevrouw Rossi?'], register: 'formal', uses: ['v_essere', 'w_signora'], audioText: null },
+  { id: 's_l_005', it: 'Le signore sono qui.', nl: ['De dames zijn hier.'], register: 'neutral', uses: ['w_signora', 'v_essere'], audioText: null },
+  { id: 's_l_006', it: 'Tu sei Marco?', nl: ['Ben jij Marco?'], register: 'informal', uses: ['v_essere'], audioText: null },
+]
+
+export const ladderUnit: Unit = {
+  schema: 1,
+  id: 'u01_test',
+  order: 1,
+  title: 'Test',
+  canDo: ['a', 'b'],
+  requires: [],
+  words: [word_ciao, word_signora],
+  verbs: [verb_essere],
+  sentences: ladderSentences,
+  dialogues: [],
+  grammar: [],
+  tenses: ['presente'],
+  review: { status: 'draft' },
 }

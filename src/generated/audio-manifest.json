@@ -59,10 +59,40 @@
       "v_essere"
     ]
   },
+  "bf09d7e5904d": {
+    "file": "audio/bf09d7e5904d.mp3",
+    "ids": [
+      "s_u01_006"
+    ]
+  },
   "a6c3e3f1280a": {
     "file": "audio/a6c3e3f1280a.mp3",
     "ids": [
       "s_u01_001"
+    ]
+  },
+  "f09de4a05a62": {
+    "file": "audio/f09de4a05a62.mp3",
+    "ids": [
+      "s_u01_007"
+    ]
+  },
+  "a58f27795e91": {
+    "file": "audio/a58f27795e91.mp3",
+    "ids": [
+      "s_u01_008"
+    ]
+  },
+  "56e2f6f189e0": {
+    "file": "audio/56e2f6f189e0.mp3",
+    "ids": [
+      "s_u01_009"
+    ]
+  },
+  "34e52934effa": {
+    "file": "audio/34e52934effa.mp3",
+    "ids": [
+      "s_u01_010"
     ]
   },
   "3f403d559683": {
@@ -77,16 +107,208 @@
       "s_u01_003"
     ]
   },
+  "1551fc822f64": {
+    "file": "audio/1551fc822f64.mp3",
+    "ids": [
+      "s_u01_011"
+    ]
+  },
+  "efd546449675": {
+    "file": "audio/efd546449675.mp3",
+    "ids": [
+      "s_u01_012"
+    ]
+  },
+  "77e1948b91c2": {
+    "file": "audio/77e1948b91c2.mp3",
+    "ids": [
+      "s_u01_013"
+    ]
+  },
+  "350a3caf4bf0": {
+    "file": "audio/350a3caf4bf0.mp3",
+    "ids": [
+      "s_u01_014"
+    ]
+  },
+  "d2f4987be1b5": {
+    "file": "audio/d2f4987be1b5.mp3",
+    "ids": [
+      "s_u01_015"
+    ]
+  },
+  "6817d7b5708b": {
+    "file": "audio/6817d7b5708b.mp3",
+    "ids": [
+      "s_u01_016"
+    ]
+  },
+  "795b078a6d20": {
+    "file": "audio/795b078a6d20.mp3",
+    "ids": [
+      "s_u01_017"
+    ]
+  },
+  "6178b38be782": {
+    "file": "audio/6178b38be782.mp3",
+    "ids": [
+      "s_u01_018"
+    ]
+  },
+  "0fbba7a2c811": {
+    "file": "audio/0fbba7a2c811.mp3",
+    "ids": [
+      "s_u01_019"
+    ]
+  },
+  "8da3ac377f5b": {
+    "file": "audio/8da3ac377f5b.mp3",
+    "ids": [
+      "s_u01_020"
+    ]
+  },
+  "a297f1b18028": {
+    "file": "audio/a297f1b18028.mp3",
+    "ids": [
+      "s_u01_021"
+    ]
+  },
+  "87651aed92b5": {
+    "file": "audio/87651aed92b5.mp3",
+    "ids": [
+      "s_u01_022"
+    ]
+  },
   "2d137a580685": {
     "file": "audio/2d137a580685.mp3",
     "ids": [
       "s_u01_004"
     ]
   },
+  "5252f1bd8564": {
+    "file": "audio/5252f1bd8564.mp3",
+    "ids": [
+      "s_u01_023"
+    ]
+  },
+  "19db60bb7dcd": {
+    "file": "audio/19db60bb7dcd.mp3",
+    "ids": [
+      "s_u01_024"
+    ]
+  },
   "573e2eb63b35": {
     "file": "audio/573e2eb63b35.mp3",
     "ids": [
       "s_u01_005"
+    ]
+  },
+  "44a0a6a16324": {
+    "file": "audio/44a0a6a16324.mp3",
+    "ids": [
+      "s_u01_025"
+    ]
+  },
+  "579ae67382d4": {
+    "file": "audio/579ae67382d4.mp3",
+    "ids": [
+      "s_u01_026"
+    ]
+  },
+  "55a9b822af3d": {
+    "file": "audio/55a9b822af3d.mp3",
+    "ids": [
+      "s_u01_027"
+    ]
+  },
+  "ff35b76c438b": {
+    "file": "audio/ff35b76c438b.mp3",
+    "ids": [
+      "s_u01_028"
+    ]
+  },
+  "3e33a5bf77e2": {
+    "file": "audio/3e33a5bf77e2.mp3",
+    "ids": [
+      "s_u01_029"
+    ]
+  },
+  "2a49d303b527": {
+    "file": "audio/2a49d303b527.mp3",
+    "ids": [
+      "s_u01_030"
+    ]
+  },
+  "1d13dcd0ceb9": {
+    "file": "audio/1d13dcd0ceb9.mp3",
+    "ids": [
+      "s_u01_031"
+    ]
+  },
+  "432a97541167": {
+    "file": "audio/432a97541167.mp3",
+    "ids": [
+      "s_u01_032"
+    ]
+  },
+  "32f38df6ae4a": {
+    "file": "audio/32f38df6ae4a.mp3",
+    "ids": [
+      "s_u01_033"
+    ]
+  },
+  "da345a3e4f06": {
+    "file": "audio/da345a3e4f06.mp3",
+    "ids": [
+      "s_u01_034"
+    ]
+  },
+  "31fb4ff1a38d": {
+    "file": "audio/31fb4ff1a38d.mp3",
+    "ids": [
+      "s_u01_028"
+    ]
+  },
+  "401ea471f82a": {
+    "file": "audio/401ea471f82a.mp3",
+    "ids": [
+      "s_u01_006"
+    ]
+  },
+  "53ac9dc62b4a": {
+    "file": "audio/53ac9dc62b4a.mp3",
+    "ids": [
+      "s_u01_026"
+    ]
+  },
+  "f73131d5c38e": {
+    "file": "audio/f73131d5c38e.mp3",
+    "ids": [
+      "s_u01_031"
+    ]
+  },
+  "d3b98e4f8a65": {
+    "file": "audio/d3b98e4f8a65.mp3",
+    "ids": [
+      "s_u01_033"
+    ]
+  },
+  "266b5e527453": {
+    "file": "audio/266b5e527453.mp3",
+    "ids": [
+      "s_u01_002"
+    ]
+  },
+  "12474b5bc1cc": {
+    "file": "audio/12474b5bc1cc.mp3",
+    "ids": [
+      "s_u01_017"
+    ]
+  },
+  "644406de45b7": {
+    "file": "audio/644406de45b7.mp3",
+    "ids": [
+      "s_u01_024"
     ]
   }
 }

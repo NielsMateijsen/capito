@@ -12,12 +12,16 @@ function build(cardKey: string, content: Content): Exercise {
   const id = cardKey.slice(TYPE.length + 1)
   const sentence = content.sentences.get(id)
   if (!sentence) throw new Error(`Unknown sentence id: ${id}`)
-  return { cardKey, typeId: TYPE, prompt: '', answers: [sentence.it] }
+  return { cardKey, typeId: TYPE, prompt: '', answers: [sentence.it], audio: sentence.audioText ?? sentence.it }
 }
 
 function check(input: string, exercise: Exercise, config: CheckerConfig): ReviewResult {
   return engineCheck(input, exercise.answers, 'translation', config)
 }
 
-const exercise: ExerciseModule = { id: TYPE, typoTolerance: true, cards, build, check }
+function requires(cardKey: string, content: Content): string[] {
+  return content.sentences.get(cardKey.slice(TYPE.length + 1))?.uses ?? []
+}
+
+const exercise: ExerciseModule = { id: TYPE, typoTolerance: true, cards, build, check, requires }
 export default exercise

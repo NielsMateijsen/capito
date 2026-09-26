@@ -1,6 +1,6 @@
 import type { ExerciseModule } from './types.ts'
 
-const raw = import.meta.glob<ExerciseModule>(['./*.ts', '!./types.ts', '!./index.ts'], { eager: true, import: 'default' })
+const raw = import.meta.glob<ExerciseModule>(['./*.ts', '!./types.ts', '!./index.ts', '!./choice.ts'], { eager: true, import: 'default' })
 
 export const exercises: ExerciseModule[] = Object.values(raw).filter(
   (m): m is ExerciseModule => m != null && typeof (m as ExerciseModule).id === 'string',

@@ -46,6 +46,11 @@ export function pluralize(word: Word): string {
   return it
 }
 
+export function withArticle(word: Word): string {
+  if (!word.article) return word.it
+  return word.article.endsWith("'") ? `${word.article}${word.it}` : `${word.article} ${word.it}`
+}
+
 export function pluralArticle(word: Word): string {
   const singular = word.article
   const gender = word.gender

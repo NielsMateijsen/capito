@@ -4,7 +4,10 @@ import type { ReviewEntry, CardKey } from '../engine/review-log.ts'
 export type Flag = Record<string, unknown>
 
 export interface Settings {
+  /** New review cards per day (cards released after an item finished the ladder). */
   newCardsPerDay?: number
+  /** New words and verbs per day that start the learning ladder (schema 2). */
+  newItemsPerDay?: number
   autoplayAudio?: boolean
   unlockAll?: boolean
 }

@@ -1,4 +1,49 @@
 import type { Unit } from './schemas.ts'
+import type { Content } from '../exercises/types.ts'
+import { itemForms, ladderItemOrder, locate, sentencesForItem } from '../engine/sentences.ts'
+
+export interface LadderCheck {
+  errors: string[]
+  warnings: string[]
+}
+
+/** Content rules for the learning ladder (see docs/style-guide.md). */
+export function checkLadderContent(
+  content: Content,
+  config: { minSentencesPerItem: number; optionCount: number },
+): LadderCheck {
+  const errors: string[] = []
+  const warnings: string[] = []
+  const isItem = (id: string) => content.words.has(id) || content.verbs.has(id)
+
+  for (const s of content.sentences.values()) {
+    for (const id of s.uses) {
+      if (isItem(id) && !locate(s.it, itemForms(id, content))) {
+        errors.push(`${s.id}: "${id}" is in uses but cannot be found in the sentence`)
+      }
+    }
+  }
+
+  const order = ladderItemOrder(content)
+  const position = new Map(order.map((id, i) => [id, i]))
+  for (const id of order) {
+    const matches = sentencesForItem(id, content)
+    if (matches.length < config.minSentencesPerItem) {
+      warnings.push(`${id}: in ${matches.length} sentence(s), expected at least ${config.minSentencesPerItem}`)
+    }
+    const intro = matches[0]
+    if (!intro) continue
+    const laterItems = intro.sentence.uses.filter(u => u !== id && isItem(u) && (position.get(u) ?? -1) > position.get(id)!)
+    if (laterItems.length > 0) {
+      warnings.push(`${id}: intro sentence ${intro.sentence.id} also introduces ${laterItems.join(', ')}`)
+    }
+  }
+
+  if (content.sentences.size > 0 && content.sentences.size < config.optionCount) {
+    warnings.push(`only ${content.sentences.size} sentences; multiple choice needs ${config.optionCount}`)
+  }
+  return { errors, warnings }
+}
 
 /** Topological sort of units by requires. Returns null if a cycle is detected. */
 export function topoSort(units: Unit[]): Unit[] | null {
