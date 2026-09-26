@@ -353,9 +353,117 @@
       "register": "neutral",
       "uses": ["w_arrivederci"],
       "audioText": null
+    },
+    {
+      "id": "s_u01_026",
+      "it": "Prego!",
+      "nl": ["Graag gedaan!", "Geen dank!"],
+      "register": "neutral",
+      "uses": ["w_prego"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_027",
+      "it": "Ciao, sei Sam?",
+      "nl": ["Hoi, ben jij Sam?", "Hoi, ben je Sam?"],
+      "register": "informal",
+      "uses": ["w_ciao", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sei", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_028",
+      "it": "Sono io. E tu sei Giulia?",
+      "nl": ["Dat ben ik. En ben jij Giulia?", "Dat ben ik. En ben je Giulia?"],
+      "register": "informal",
+      "uses": ["v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sei", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_029",
+      "it": "Sono io!",
+      "nl": ["Dat ben ik!", "Ik ben het!"],
+      "register": "neutral",
+      "uses": ["v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "Sono", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_030",
+      "it": "Ciao, Sam!",
+      "nl": ["Doei, Sam!", "Dag, Sam!", "Hoi, Sam!"],
+      "register": "informal",
+      "uses": ["w_ciao"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_031",
+      "it": "Ciao!",
+      "nl": ["Doei!", "Dag!", "Hoi!"],
+      "register": "informal",
+      "uses": ["w_ciao"],
+      "audioText": null
+    },
+    {
+      "id": "s_u01_032",
+      "it": "Buongiorno, Lei è Sam?",
+      "nl": ["Goedemorgen, bent u Sam?", "Goedendag, bent u Sam?"],
+      "register": "formal",
+      "uses": ["w_buongiorno", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_033",
+      "it": "Sono io. E Lei è la signora Rossi?",
+      "nl": ["Dat ben ik. En bent u mevrouw Rossi?"],
+      "register": "formal",
+      "uses": ["v_essere", "w_signora"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u01_034",
+      "it": "Arrivederci, Sam!",
+      "nl": ["Tot ziens, Sam!"],
+      "register": "neutral",
+      "uses": ["w_arrivederci"],
+      "audioText": null
     }
   ],
-  "dialogues": [],
+  "dialogues": [
+    {
+      "id": "d_u01_informal",
+      "register": "informal",
+      "title": "Eerste ontmoeting bij de voordeur: Sam houdt de deur open voor Giulia",
+      "lines": [
+        { "speaker": "A", "sentence": "s_u01_027" },
+        { "speaker": "B", "sentence": "s_u01_028" },
+        { "speaker": "A", "sentence": "s_u01_029" },
+        { "speaker": "B", "sentence": "s_u01_006" },
+        { "speaker": "A", "sentence": "s_u01_014" },
+        { "speaker": "B", "sentence": "s_u01_026" },
+        { "speaker": "A", "sentence": "s_u01_030" },
+        { "speaker": "B", "sentence": "s_u01_031" }
+      ]
+    },
+    {
+      "id": "d_u01_formal",
+      "register": "formal",
+      "title": "Eerste ontmoeting bij de voordeur: Sam houdt de deur open voor mevrouw Rossi",
+      "lines": [
+        { "speaker": "A", "sentence": "s_u01_032" },
+        { "speaker": "B", "sentence": "s_u01_033" },
+        { "speaker": "A", "sentence": "s_u01_029" },
+        { "speaker": "B", "sentence": "s_u01_002" },
+        { "speaker": "A", "sentence": "s_u01_014" },
+        { "speaker": "B", "sentence": "s_u01_017" },
+        { "speaker": "A", "sentence": "s_u01_034" },
+        { "speaker": "B", "sentence": "s_u01_024" }
+      ]
+    }
+  ],
   "grammar": [],
   "tenses": ["presente"],
   "review": { "status": "draft" }
