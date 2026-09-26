@@ -240,7 +240,8 @@ export default function SessionScreen({
     setAnsweredCount(answeredCount + 1)
     setResult(res)
 
-    if (res === 'wrong') {
+    // A test session shows every card once: reinserted cards would push the last types past maxReviews
+    if (res === 'wrong' && mode !== 'test') {
       setQueue(replanAfterWrong(queue, pos, cardKey, session.ladderStages, config))
     }
     setPhase('feedback')
