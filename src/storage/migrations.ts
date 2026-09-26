@@ -4,9 +4,13 @@ import type { ProgressState } from './types.ts'
 export type Migration = (old: Record<string, unknown>) => Record<string, unknown>
 export type MigrationMap = Record<number, Migration>
 
-export const CURRENT_SCHEMA = 1
+export const CURRENT_SCHEMA = 2
 
-export const MIGRATIONS: MigrationMap = {}
+export const MIGRATIONS: MigrationMap = {
+  // 2 adds settings.newItemsPerDay (new ladder words); settings.newCardsPerDay keeps its meaning
+  // (new review cards per day), so existing values stay as they are.
+  1: (s) => ({ ...s, schema: 2 }),
+}
 
 export function migrate(
   raw: unknown,

@@ -16,6 +16,8 @@
     "maxStepsPerItemPerDay": 2,
     "dropOnWrong": 1,
     "newItemsPerDay": 5,
+    "minNewItemsPerDay": 1,
+    "maxNewItemsPerDay": 20,
     "maxItemsInProgress": 15,
     "reviewShare": 0.4,
     "minGapSameItem": 2,

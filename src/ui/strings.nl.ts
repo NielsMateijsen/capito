@@ -77,7 +77,8 @@ export const S = {
   // Settings screen
   SETTINGS: 'Instellingen',
   SETTINGS_LEARNING: 'Leerbeleid',
-  SETTINGS_NEW_PER_DAY: 'Nieuwe woorden per dag',
+  SETTINGS_NEW_ITEMS_PER_DAY: 'Nieuwe woorden per dag',
+  SETTINGS_NEW_PER_DAY: 'Nieuwe herhaalkaarten per dag',
   SETTINGS_AUTOPLAY: 'Autoplay audio',
   SETTINGS_UNLOCK: 'Alles ontgrendelen',
   SETTINGS_UNLOCK_ON: 'Ingeschakeld',

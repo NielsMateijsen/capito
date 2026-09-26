@@ -220,7 +220,8 @@ export default function App() {
   const autoplayAudio = settings.autoplayAudio === true
   const sessionConfig = {
     ...appConfig,
-    ladder: { ...appConfig.ladder, newItemsPerDay: settings.newCardsPerDay ?? appConfig.ladder.newItemsPerDay },
+    session: { ...appConfig.session, newCardsPerDay: settings.newCardsPerDay ?? appConfig.session.newCardsPerDay },
+    ladder: { ...appConfig.ladder, newItemsPerDay: settings.newItemsPerDay ?? appConfig.ladder.newItemsPerDay },
   }
   const flagCount = data.progress.flags.length
   const leechCount = Object.values(data.progress.cards).filter(s => isLeech(s, appConfig.leech)).length

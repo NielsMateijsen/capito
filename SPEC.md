@@ -233,6 +233,7 @@ Invoer: voortgang, config, ontgrendelde units. **Alle getallen komen uit `config
 
 - **Mix:** minimaal `session.minOldMaterialRatio` (30%) kaarten uit eerdere units, ook bij "oefen deze unit"
 - **Nieuwe woorden en werkwoorden** doorlopen eerst de leerladder (zie "Leerladder")
+- **Dag:** alle daglimieten (nieuwe woorden, nieuwe kaarten, treden per dag) tellen per kalenderdag in `session.timeZone` (`Europe/Amsterdam`), dus de dag wisselt om middernacht Nederlandse tijd, ook bij zomer- en wintertijd
 - **Sessielengte:** maximaal `session.maxReviewsPerSession` (30). Daarna een afrondscherm met de knop "Nog een ronde"
 - **Nieuwe herhaalkaarten:** kaarten die vrijkomen als een item de ladder heeft afgerond (bijv. `article`, `conjugate`, `dictation`), maximaal `session.newCardsPerDay` per dag
 - **Uitgesloten types:** `session.excludedTypes` komen niet als herhaalkaart in de sessie: `flashcard` en `cloze` (de kaarten blijven bestaan), en `mc-sentence` en `mc-word` (die bestaan alleen als trede op de ladder)
@@ -291,7 +292,7 @@ Elk bestand exporteert:
 ### Voortgang (`storage/`)
 ```ts
 {
-  schema: 1,
+  schema: 2,
   cards: Record<CardKey, CardState>,   // afgeleid van de log (cache)
   reviewLog: ReviewEntry[],            // append-only, bron van waarheid
   introduced: string[],
@@ -301,6 +302,7 @@ Elk bestand exporteert:
   meta: { lastExportAt?: string, persistGranted?: boolean }
 }
 ```
+- `settings.newItemsPerDay` (nieuwe woorden op de ladder) en `settings.newCardsPerDay` (nieuwe herhaalkaarten) overschrijven `ladder.newItemsPerDay` en `session.newCardsPerDay`. Schema 2 voegde `newItemsPerDay` toe; de migratie 1 → 2 laat bestaande instellingen ongemoeid
 - Statistieken worden uit de log afgeleid en niet apart opgeslagen
 - `migrations: Record<number, (old) => new>`, uitgevoerd bij laden en bij importeren
 - Opslag: IndexedDB via een asynchrone `ProgressStorage`-interface
@@ -353,7 +355,7 @@ ReviewEntry = {
 3. **Sessie:** één oefening per scherm, Enter om te controleren en door te gaan, directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout". Meerkeuze met toetsen 1-4. Bij invuloefeningen staat de Nederlandse zin boven de Italiaanse zin met het gat
 4. **Grammaticales:** Markdown + knop "oefen dit"
 5. **Dialoog:** regels met audio, NL-vertaling aan/uit, wissel informeel/formeel
-6. **Instellingen:** nieuwe woorden per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), reset, versie-info (app, commit, content)
+6. **Instellingen:** nieuwe woorden per dag, nieuwe herhaalkaarten per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), reset, versie-info (app, commit, content)
 7. **Meldingen:** lijst met gemelde fouten, exporteerbaar
 8. **Lastig:** lijst met leech-kaarten
 

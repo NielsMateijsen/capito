@@ -5,8 +5,8 @@ import BackupImportModal from './BackupImportModal.tsx'
 import { S } from './strings.nl.ts'
 
 interface AppConfig {
-  session: { minNewCardsPerDay: number; maxNewCardsPerDay: number }
-  ladder: { newItemsPerDay: number }
+  session: { newCardsPerDay: number; minNewCardsPerDay: number; maxNewCardsPerDay: number }
+  ladder: { newItemsPerDay: number; minNewItemsPerDay: number; maxNewItemsPerDay: number }
   backup: { reminderDays: number }
 }
 
@@ -22,8 +22,8 @@ interface Props {
 
 export default function SettingsScreen({ progress, config, onSave, onReset, onBack, onExport, onImport }: Props) {
   const settings = (progress.settings ?? {}) as Settings
-  // Stored as newCardsPerDay (existing settings field); it sets the number of new ladder items per day
-  const newPerDay = settings.newCardsPerDay ?? config.ladder.newItemsPerDay
+  const newItemsPerDay = settings.newItemsPerDay ?? config.ladder.newItemsPerDay
+  const newPerDay = settings.newCardsPerDay ?? config.session.newCardsPerDay
   const autoplay = settings.autoplayAudio ?? false
   const unlockAll = settings.unlockAll ?? false
 
@@ -90,6 +90,20 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
       {/* Leerbeleid */}
       <section className="settings-section">
         <h2>{S.SETTINGS_LEARNING}</h2>
+        <div className="settings-row">
+          <label htmlFor="new-items-per-day">{S.SETTINGS_NEW_ITEMS_PER_DAY}</label>
+          <input
+            id="new-items-per-day"
+            type="number"
+            min={config.ladder.minNewItemsPerDay}
+            max={config.ladder.maxNewItemsPerDay}
+            value={newItemsPerDay}
+            onChange={e => {
+              const v = Math.max(config.ladder.minNewItemsPerDay, Math.min(config.ladder.maxNewItemsPerDay, Number(e.target.value)))
+              if (!isNaN(v)) void save({ newItemsPerDay: v })
+            }}
+          />
+        </div>
         <div className="settings-row">
           <label htmlFor="new-per-day">{S.SETTINGS_NEW_PER_DAY}</label>
           <input
