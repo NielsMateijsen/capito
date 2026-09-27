@@ -23,7 +23,7 @@ Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige s
 9. Leerbeleid (limieten, drempels, scores, intervallen) komt uit `config/app.json`, nooit hardcoded.
 10. De review-log is append-only. Wijzig of verwijder nooit bestaande entries. Kaartstatus moet altijd opnieuw uit de log te berekenen zijn.
 11. Content volgt `docs/style-guide.md` en elke unit heeft `canDo`-kan-doelen.
-12. Pilotregel: genereer geen units na `u01` zolang `docs/pilot.md` niet op `Pilot-status: afgerond` staat.
+12. Pilotregel: genereer geen units na `u02` zolang `docs/pilot.md` niet op `Pilot-status: afgerond` staat.
 
 ## Definition of done
 - `typecheck`, `validate` en `test` zijn groen (de Stop-hook controleert dit)
