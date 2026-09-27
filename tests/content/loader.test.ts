@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { loadUnits, loadTenses } from '../../src/content/loader.ts'
+import { loadUnits, loadTenses, loadGrammarDocs } from '../../src/content/loader.ts'
 
 describe('loadUnits', () => {
   it('loads u01_greetings without validation errors', () => {
@@ -30,6 +30,24 @@ describe('loadUnits', () => {
       for (const ref of s.uses) {
         expect(knownIds.has(ref), `sentence ${s.id} uses unknown ID "${ref}"`).toBe(true)
       }
+    }
+  })
+})
+
+describe('loadGrammarDocs', () => {
+  it('parses frontmatter and body without Node APIs, as in the browser', () => {
+    const g = globalThis as { Buffer?: unknown }
+    const saved = g.Buffer
+    delete g.Buffer
+    try {
+      const docs = loadGrammarDocs()
+      expect(docs.length).toBeGreaterThan(0)
+      for (const doc of docs) {
+        expect(doc.frontmatter.id).toMatch(/^g_/)
+        expect(doc.body.startsWith('---')).toBe(false)
+      }
+    } finally {
+      g.Buffer = saved
     }
   })
 })
