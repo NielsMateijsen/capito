@@ -1,0 +1,685 @@
+{
+  "schema": 1,
+  "id": "u02_introductions",
+  "order": 2,
+  "title": "Kennismaken",
+  "canDo": [
+    "Ik kan zeggen hoe ik heet en vragen hoe iemand anders heet",
+    "Ik kan zeggen waar ik vandaan kom en waar ik woon, en daarnaar vragen",
+    "Ik kan mezelf en iemand anders voorstellen, informeel en formeel"
+  ],
+  "requires": ["u01_greetings"],
+  "words": [
+    {
+      "id": "w_come",
+      "it": "come",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["hoe"],
+      "register": "neutral",
+      "tags": ["question"],
+      "core": true,
+      "note": "Come ti chiami? = Hoe heet je?"
+    },
+    {
+      "id": "w_e",
+      "it": "e",
+      "pos": "conjunction",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["en"],
+      "register": "neutral",
+      "tags": [],
+      "core": true,
+      "note": "Zonder accent. Met accent (è) betekent het 'is'"
+    },
+    {
+      "id": "w_piacere",
+      "it": "piacere",
+      "pos": "interjection",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["aangenaam", "leuk je te ontmoeten", "leuk u te ontmoeten"],
+      "register": "neutral",
+      "tags": ["introduction"],
+      "core": false,
+      "note": "Wat je zegt als je kennismaakt. Letterlijk: genoegen"
+    },
+    {
+      "id": "w_di",
+      "it": "di",
+      "pos": "preposition",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["van", "uit"],
+      "register": "neutral",
+      "tags": ["origin"],
+      "core": true,
+      "note": "Sono di Utrecht = ik kom uit Utrecht"
+    },
+    {
+      "id": "w_dove",
+      "it": "dove",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["waar"],
+      "register": "neutral",
+      "tags": ["question"],
+      "core": true,
+      "note": "Di dove sei? = Waar kom je vandaan?"
+    },
+    {
+      "id": "w_olandese",
+      "it": "olandese",
+      "pos": "adjective",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["Nederlands", "Nederlander", "Nederlandse"],
+      "register": "neutral",
+      "tags": ["nationality"],
+      "core": false,
+      "note": "Eindigt op -e: gelijk voor mannelijk en vrouwelijk. Met kleine letter"
+    },
+    {
+      "id": "w_italiano",
+      "it": "italiano",
+      "pos": "adjective",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["Italiaans", "Italiaan"],
+      "register": "neutral",
+      "tags": ["nationality"],
+      "core": false,
+      "note": "Mannelijke vorm; vrouwelijk: italiana. Met kleine letter"
+    },
+    {
+      "id": "w_italiana",
+      "it": "italiana",
+      "pos": "adjective",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["Italiaans", "Italiaanse"],
+      "register": "neutral",
+      "tags": ["nationality"],
+      "core": false,
+      "note": "Vrouwelijke vorm van italiano. Met kleine letter"
+    },
+    {
+      "id": "w_si",
+      "it": "sì",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["ja"],
+      "register": "neutral",
+      "tags": [],
+      "core": true,
+      "note": "Altijd met accent. Zonder accent (si) is het iets anders, zoals in si chiama"
+    },
+    {
+      "id": "w_inglese",
+      "it": "inglese",
+      "pos": "adjective",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["Engels", "Engelsman", "Engelse"],
+      "register": "neutral",
+      "tags": ["nationality"],
+      "core": false,
+      "note": "Eindigt op -e: gelijk voor mannelijk en vrouwelijk. Met kleine letter"
+    },
+    {
+      "id": "w_no",
+      "it": "no",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["nee"],
+      "register": "neutral",
+      "tags": [],
+      "core": true,
+      "note": null
+    },
+    {
+      "id": "w_non",
+      "it": "non",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["niet"],
+      "register": "neutral",
+      "tags": [],
+      "core": true,
+      "note": "Staat vóór het werkwoord: non sono inglese = ik ben niet Engels"
+    },
+    {
+      "id": "w_a",
+      "it": "a",
+      "pos": "preposition",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["in", "te"],
+      "register": "neutral",
+      "tags": ["place"],
+      "core": true,
+      "note": "Bij steden: abito a Bologna = ik woon in Bologna"
+    },
+    {
+      "id": "w_qui",
+      "it": "qui",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["hier"],
+      "register": "neutral",
+      "tags": ["place"],
+      "core": true,
+      "note": null
+    },
+    {
+      "id": "w_adesso",
+      "it": "adesso",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["nu"],
+      "register": "neutral",
+      "tags": ["time"],
+      "core": false,
+      "note": null
+    },
+    {
+      "id": "w_anche",
+      "it": "anche",
+      "pos": "adverb",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["ook"],
+      "register": "neutral",
+      "tags": [],
+      "core": true,
+      "note": "Staat vóór het woord waar het bij hoort: anche Marco = Marco ook"
+    },
+    {
+      "id": "w_ma",
+      "it": "ma",
+      "pos": "conjunction",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["maar"],
+      "register": "neutral",
+      "tags": [],
+      "core": true,
+      "note": null
+    },
+    {
+      "id": "w_questo",
+      "it": "questo",
+      "pos": "pronoun",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["dit", "deze"],
+      "register": "neutral",
+      "tags": ["introduction"],
+      "core": false,
+      "note": "Mannelijke vorm, bij het voorstellen van een man: questo è Marco = dit is Marco"
+    },
+    {
+      "id": "w_questa",
+      "it": "questa",
+      "pos": "pronoun",
+      "article": null,
+      "gender": null,
+      "plural": null,
+      "nl": ["dit", "deze"],
+      "register": "neutral",
+      "tags": ["introduction"],
+      "core": false,
+      "note": "Vrouwelijke vorm, bij het voorstellen van een vrouw: questa è Giulia = dit is Giulia"
+    }
+  ],
+  "verbs": [
+    {
+      "id": "v_chiamarsi",
+      "inf": "chiamarsi",
+      "nl": ["heten"],
+      "conj": "are",
+      "reflexive": true
+    },
+    {
+      "id": "v_abitare",
+      "inf": "abitare",
+      "nl": ["wonen"],
+      "conj": "are"
+    }
+  ],
+  "sentences": [
+    {
+      "id": "s_u02_001",
+      "it": "Mi chiamo Sam.",
+      "nl": ["Ik heet Sam.", "Mijn naam is Sam."],
+      "register": "neutral",
+      "uses": ["v_chiamarsi"],
+      "audioText": null,
+      "cloze": [{ "target": "Mi chiamo", "hint": "chiamarsi" }]
+    },
+    {
+      "id": "s_u02_002",
+      "it": "Ciao! Come ti chiami?",
+      "nl": ["Hoi! Hoe heet je?", "Hoi! Hoe heet jij?"],
+      "register": "informal",
+      "uses": ["w_ciao", "w_come", "v_chiamarsi"],
+      "audioText": null,
+      "cloze": [{ "target": "ti chiami", "hint": "chiamarsi" }]
+    },
+    {
+      "id": "s_u02_003",
+      "it": "Mi chiamo Sam. E tu?",
+      "nl": ["Ik heet Sam. En jij?"],
+      "register": "informal",
+      "uses": ["v_chiamarsi", "w_e"],
+      "audioText": null,
+      "cloze": [{ "target": "Mi chiamo", "hint": "chiamarsi" }]
+    },
+    {
+      "id": "s_u02_004",
+      "it": "Buonasera! Lei come si chiama?",
+      "nl": ["Goedenavond! Hoe heet u?", "Goedenavond! Wat is uw naam?"],
+      "register": "formal",
+      "uses": ["w_buonasera", "w_come", "v_chiamarsi"],
+      "audioText": null,
+      "cloze": [{ "target": "si chiama", "hint": "chiamarsi" }]
+    },
+    {
+      "id": "s_u02_005",
+      "it": "Mi chiamo Sam. E Lei?",
+      "nl": ["Ik heet Sam. En u?"],
+      "register": "formal",
+      "uses": ["v_chiamarsi", "w_e"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_006",
+      "it": "Mi chiamo Giulia. Piacere!",
+      "nl": ["Ik heet Giulia. Aangenaam!", "Ik heet Giulia. Leuk je te ontmoeten!"],
+      "register": "informal",
+      "uses": ["v_chiamarsi", "w_piacere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_007",
+      "it": "Sono la signora Rossi. Piacere.",
+      "nl": ["Ik ben mevrouw Rossi. Aangenaam."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_signora", "w_piacere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_008",
+      "it": "Come si chiama, signora?",
+      "nl": ["Hoe heet u, mevrouw?", "Wat is uw naam, mevrouw?"],
+      "register": "formal",
+      "uses": ["w_come", "v_chiamarsi", "w_signora"],
+      "audioText": null,
+      "cloze": [{ "target": "si chiama", "hint": "chiamarsi" }]
+    },
+    {
+      "id": "s_u02_041",
+      "it": "Piacere, signora.",
+      "nl": ["Aangenaam, mevrouw.", "Leuk u te ontmoeten, mevrouw."],
+      "register": "formal",
+      "uses": ["w_piacere", "w_signora"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_009",
+      "it": "Sono di Utrecht.",
+      "nl": ["Ik kom uit Utrecht."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_di"],
+      "audioText": null,
+      "cloze": [{ "target": "Sono", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_010",
+      "it": "Di dove sei?",
+      "nl": ["Waar kom je vandaan?", "Waar kom jij vandaan?"],
+      "register": "informal",
+      "uses": ["w_di", "w_dove", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sei", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_011",
+      "it": "Piacere, Giulia! Di dove sei?",
+      "nl": ["Aangenaam, Giulia! Waar kom je vandaan?", "Leuk je te ontmoeten, Giulia! Waar kom je vandaan?"],
+      "register": "informal",
+      "uses": ["w_piacere", "w_di", "w_dove", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_012",
+      "it": "Sono di Bologna. E tu?",
+      "nl": ["Ik kom uit Bologna. En jij?"],
+      "register": "informal",
+      "uses": ["v_essere", "w_di", "w_e"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_013",
+      "it": "Sono olandese.",
+      "nl": ["Ik ben Nederlands.", "Ik ben Nederlander.", "Ik ben Nederlandse."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_olandese"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_014",
+      "it": "Sono olandese, di Utrecht.",
+      "nl": ["Ik ben Nederlander, uit Utrecht.", "Ik ben Nederlands, uit Utrecht."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_olandese", "w_di"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_015",
+      "it": "Marco è italiano.",
+      "nl": ["Marco is Italiaans.", "Marco is Italiaan."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_italiano"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_016",
+      "it": "Giulia è italiana.",
+      "nl": ["Giulia is Italiaans.", "Giulia is een Italiaanse."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_italiana"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_017",
+      "it": "Sei italiana, Giulia?",
+      "nl": ["Ben je Italiaans, Giulia?", "Ben jij Italiaans, Giulia?"],
+      "register": "informal",
+      "uses": ["v_essere", "w_italiana"],
+      "audioText": null,
+      "cloze": [{ "target": "Sei", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_018",
+      "it": "Sì, sono italiana.",
+      "nl": ["Ja, ik ben Italiaans.", "Ja, ik ben Italiaanse."],
+      "register": "neutral",
+      "uses": ["w_si", "v_essere", "w_italiana"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_019",
+      "it": "Piacere! Lei è inglese?",
+      "nl": ["Aangenaam! Bent u Engels?", "Aangenaam! Bent u Engelsman?", "Leuk u te ontmoeten! Bent u Engels?"],
+      "register": "formal",
+      "uses": ["w_piacere", "v_essere", "w_inglese"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_020",
+      "it": "No, sono olandese.",
+      "nl": ["Nee, ik ben Nederlands.", "Nee, ik ben Nederlander.", "Nee, ik ben Nederlandse."],
+      "register": "neutral",
+      "uses": ["w_no", "v_essere", "w_olandese"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_021",
+      "it": "No, non sono inglese.",
+      "nl": ["Nee, ik ben niet Engels.", "Nee, ik ben geen Engelsman.", "Nee, ik ben geen Engelse."],
+      "register": "neutral",
+      "uses": ["w_no", "w_non", "v_essere", "w_inglese"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_042",
+      "it": "Lei è inglese?",
+      "nl": ["Bent u Engels?", "Bent u Engelsman?"],
+      "register": "formal",
+      "uses": ["v_essere", "w_inglese"],
+      "audioText": null,
+      "cloze": [{ "target": "è", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_022",
+      "it": "E dove abiti?",
+      "nl": ["En waar woon je?", "En waar woon jij?"],
+      "register": "informal",
+      "uses": ["w_e", "w_dove", "v_abitare"],
+      "audioText": null,
+      "cloze": [{ "target": "abiti", "hint": "abitare" }]
+    },
+    {
+      "id": "s_u02_023",
+      "it": "E dove abita?",
+      "nl": ["En waar woont u?"],
+      "register": "formal",
+      "uses": ["w_e", "w_dove", "v_abitare"],
+      "audioText": null,
+      "cloze": [{ "target": "abita", "hint": "abitare" }]
+    },
+    {
+      "id": "s_u02_024",
+      "it": "Abito a Bologna.",
+      "nl": ["Ik woon in Bologna."],
+      "register": "neutral",
+      "uses": ["v_abitare", "w_a"],
+      "audioText": null,
+      "cloze": [{ "target": "Abito", "hint": "abitare" }]
+    },
+    {
+      "id": "s_u02_025",
+      "it": "Abito qui a Bologna.",
+      "nl": ["Ik woon hier in Bologna."],
+      "register": "neutral",
+      "uses": ["v_abitare", "w_qui", "w_a"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_026",
+      "it": "Adesso abito a Bologna.",
+      "nl": ["Nu woon ik in Bologna.", "Ik woon nu in Bologna."],
+      "register": "neutral",
+      "uses": ["w_adesso", "v_abitare", "w_a"],
+      "audioText": null,
+      "cloze": [{ "target": "abito", "hint": "abitare" }]
+    },
+    {
+      "id": "s_u02_027",
+      "it": "E Lei, signora, dove abita?",
+      "nl": ["En u, mevrouw, waar woont u?", "En waar woont u, mevrouw?"],
+      "register": "formal",
+      "uses": ["w_e", "w_signora", "w_dove", "v_abitare"],
+      "audioText": null,
+      "cloze": [{ "target": "abita", "hint": "abitare" }]
+    },
+    {
+      "id": "s_u02_028",
+      "it": "Anche Marco abita qui.",
+      "nl": ["Marco woont hier ook.", "Ook Marco woont hier."],
+      "register": "neutral",
+      "uses": ["w_anche", "v_abitare", "w_qui"],
+      "audioText": null,
+      "cloze": [{ "target": "abita", "hint": "abitare" }]
+    },
+    {
+      "id": "s_u02_029",
+      "it": "Anche tu sei di Bologna?",
+      "nl": ["Kom jij ook uit Bologna?", "Kom je ook uit Bologna?"],
+      "register": "informal",
+      "uses": ["w_anche", "v_essere", "w_di"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_030",
+      "it": "Sì, anche Luca è italiano.",
+      "nl": ["Ja, Luca is ook Italiaans.", "Ja, Luca is ook Italiaan."],
+      "register": "neutral",
+      "uses": ["w_si", "w_anche", "v_essere", "w_italiano"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_031",
+      "it": "No, sono olandese, ma abito qui.",
+      "nl": ["Nee, ik ben Nederlander, maar ik woon hier.", "Nee, ik ben Nederlands, maar ik woon hier."],
+      "register": "neutral",
+      "uses": ["w_no", "v_essere", "w_olandese", "w_ma", "v_abitare", "w_qui"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_032",
+      "it": "Non sono italiano, ma adesso abito qui.",
+      "nl": ["Ik ben geen Italiaan, maar nu woon ik hier.", "Ik ben niet Italiaans, maar ik woon nu hier."],
+      "register": "neutral",
+      "uses": ["w_non", "v_essere", "w_italiano", "w_ma", "w_adesso", "v_abitare", "w_qui"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_033",
+      "it": "Luca è di Roma, ma adesso abita qui.",
+      "nl": ["Luca komt uit Rome, maar hij woont nu hier.", "Luca komt uit Rome, maar nu woont hij hier."],
+      "register": "neutral",
+      "uses": ["v_essere", "w_di", "w_ma", "w_adesso", "v_abitare", "w_qui"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_034",
+      "it": "Questo è Marco.",
+      "nl": ["Dit is Marco."],
+      "register": "neutral",
+      "uses": ["w_questo", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_035",
+      "it": "Sam, questo è Marco.",
+      "nl": ["Sam, dit is Marco."],
+      "register": "neutral",
+      "uses": ["w_questo", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_036",
+      "it": "Ciao, Marco! Piacere.",
+      "nl": ["Hoi, Marco! Aangenaam.", "Hoi, Marco! Leuk je te ontmoeten."],
+      "register": "informal",
+      "uses": ["w_ciao", "w_piacere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_037",
+      "it": "Questa è Giulia.",
+      "nl": ["Dit is Giulia."],
+      "register": "neutral",
+      "uses": ["w_questa", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_038",
+      "it": "Piacere, signora. Questa è Giulia.",
+      "nl": ["Aangenaam, mevrouw. Dit is Giulia."],
+      "register": "formal",
+      "uses": ["w_piacere", "w_signora", "w_questa", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_039",
+      "it": "Sì, questa è la signora Rossi.",
+      "nl": ["Ja, dit is mevrouw Rossi."],
+      "register": "neutral",
+      "uses": ["w_si", "w_questa", "v_essere", "w_signora"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_043",
+      "it": "Abito qui. Signora, questa è Giulia.",
+      "nl": ["Ik woon hier. Mevrouw, dit is Giulia."],
+      "register": "formal",
+      "uses": ["v_abitare", "w_qui", "w_signora", "w_questa", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_044",
+      "it": "Piacere, Giulia!",
+      "nl": ["Aangenaam, Giulia!", "Leuk je te ontmoeten, Giulia!"],
+      "register": "neutral",
+      "uses": ["w_piacere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_040",
+      "it": "Questo è Sam. Non è inglese, è olandese.",
+      "nl": ["Dit is Sam. Hij is niet Engels, hij is Nederlands.", "Dit is Sam. Hij is geen Engelsman, hij is Nederlander."],
+      "register": "neutral",
+      "uses": ["w_questo", "v_essere", "w_non", "w_inglese", "w_olandese"],
+      "audioText": null
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "d_u02_informal",
+      "register": "informal",
+      "title": "Op een feestje in Bologna: Sam maakt kennis met Giulia, en Giulia stelt Marco voor",
+      "lines": [
+        { "speaker": "A", "sentence": "s_u02_002" },
+        { "speaker": "B", "sentence": "s_u02_003" },
+        { "speaker": "A", "sentence": "s_u02_006" },
+        { "speaker": "B", "sentence": "s_u02_011" },
+        { "speaker": "A", "sentence": "s_u02_012" },
+        { "speaker": "B", "sentence": "s_u02_014" },
+        { "speaker": "A", "sentence": "s_u02_022" },
+        { "speaker": "B", "sentence": "s_u02_025" },
+        { "speaker": "A", "sentence": "s_u02_035" },
+        { "speaker": "B", "sentence": "s_u02_036" }
+      ]
+    },
+    {
+      "id": "d_u02_formal",
+      "register": "formal",
+      "title": "Op hetzelfde feestje: Sam maakt kennis met signora Rossi en stelt Giulia aan haar voor",
+      "lines": [
+        { "speaker": "A", "sentence": "s_u02_004" },
+        { "speaker": "B", "sentence": "s_u02_005" },
+        { "speaker": "A", "sentence": "s_u02_007" },
+        { "speaker": "B", "sentence": "s_u02_041" },
+        { "speaker": "A", "sentence": "s_u02_042" },
+        { "speaker": "B", "sentence": "s_u02_020" },
+        { "speaker": "A", "sentence": "s_u02_023" },
+        { "speaker": "B", "sentence": "s_u02_043" },
+        { "speaker": "A", "sentence": "s_u02_044" }
+      ]
+    }
+  ],
+  "grammar": ["g_chiamarsi", "g_origin_di_a", "g_gender_o_a"],
+  "tenses": ["presente"],
+  "review": { "status": "draft" }
+}
