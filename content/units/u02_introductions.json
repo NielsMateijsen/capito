@@ -378,6 +378,32 @@
       "audioText": null
     },
     {
+      "id": "s_u02_045",
+      "it": "Buonasera! Lei di dov'è?",
+      "nl": ["Goedenavond! Waar komt u vandaan?"],
+      "register": "formal",
+      "uses": ["w_buonasera", "w_di", "v_essere"],
+      "audioText": null
+    },
+    {
+      "id": "s_u02_046",
+      "it": "Sono di Utrecht, signora.",
+      "nl": ["Ik kom uit Utrecht, mevrouw."],
+      "register": "formal",
+      "uses": ["v_essere", "w_di", "w_signora"],
+      "audioText": null,
+      "cloze": [{ "target": "Sono", "hint": "essere" }]
+    },
+    {
+      "id": "s_u02_047",
+      "it": "Ciao, Sam! Di dove sei?",
+      "nl": ["Hoi, Sam! Waar kom je vandaan?", "Hoi, Sam! Waar kom jij vandaan?"],
+      "register": "informal",
+      "uses": ["w_ciao", "w_di", "w_dove", "v_essere"],
+      "audioText": null,
+      "cloze": [{ "target": "sei", "hint": "essere" }]
+    },
+    {
       "id": "s_u02_012",
       "it": "Sono di Bologna. E tu?",
       "nl": ["Ik kom uit Bologna. En jij?"],
@@ -648,34 +674,29 @@
     {
       "id": "d_u02_informal",
       "register": "informal",
-      "title": "Op een feestje in Bologna: Sam maakt kennis met Giulia, en Giulia stelt Marco voor",
+      "title": "Op een feestje in Bologna: Giulia vraagt Sam waar hij vandaan komt en stelt Marco voor",
       "lines": [
-        { "speaker": "A", "sentence": "s_u02_002" },
-        { "speaker": "B", "sentence": "s_u02_003" },
-        { "speaker": "A", "sentence": "s_u02_006" },
-        { "speaker": "B", "sentence": "s_u02_011" },
-        { "speaker": "A", "sentence": "s_u02_012" },
+        { "speaker": "A", "sentence": "s_u02_047" },
         { "speaker": "B", "sentence": "s_u02_014" },
         { "speaker": "A", "sentence": "s_u02_022" },
         { "speaker": "B", "sentence": "s_u02_025" },
         { "speaker": "A", "sentence": "s_u02_035" },
-        { "speaker": "B", "sentence": "s_u02_036" }
+        { "speaker": "B", "sentence": "s_u02_036" },
+        { "speaker": "A", "sentence": "s_u02_028" }
       ]
     },
     {
       "id": "d_u02_formal",
       "register": "formal",
-      "title": "Op hetzelfde feestje: Sam maakt kennis met signora Rossi en stelt Giulia aan haar voor",
+      "title": "Op hetzelfde feestje: signora Rossi vraagt Sam waar hij vandaan komt en Sam stelt Giulia aan haar voor",
       "lines": [
-        { "speaker": "A", "sentence": "s_u02_004" },
-        { "speaker": "B", "sentence": "s_u02_005" },
-        { "speaker": "A", "sentence": "s_u02_007" },
-        { "speaker": "B", "sentence": "s_u02_041" },
-        { "speaker": "A", "sentence": "s_u02_042" },
-        { "speaker": "B", "sentence": "s_u02_020" },
+        { "speaker": "A", "sentence": "s_u02_045" },
+        { "speaker": "B", "sentence": "s_u02_046" },
         { "speaker": "A", "sentence": "s_u02_023" },
         { "speaker": "B", "sentence": "s_u02_043" },
-        { "speaker": "A", "sentence": "s_u02_044" }
+        { "speaker": "A", "sentence": "s_u02_044" },
+        { "speaker": "B", "sentence": "s_u02_027" },
+        { "speaker": "A", "sentence": "s_u02_025" }
       ]
     }
   ],

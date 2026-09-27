@@ -13,7 +13,14 @@ Voor je herkomst gebruik je *essere* met het voorzetsel **di** en de naam van de
 - *Sono di Utrecht.* = Ik kom uit Utrecht.
 - *Giulia è di Bologna.* = Giulia komt uit Bologna.
 
-De vraag begint ook met *di*: *Di dove sei?* (informeel) = Waar kom je vandaan? In het Nederlands staat *vandaan* achteraan; in het Italiaans staat het voorzetsel vooraan.
+Ook in de vraag staat *di* vóór *dove*:
+
+- *Di dove sei?* (informeel) = Waar kom je vandaan?
+- *Lei di dov'è?* (formeel) = Waar komt u vandaan?
+
+In het Nederlands staat *vandaan* achteraan; het Italiaans zet *di* juist vooraan in de vraag.
+
+Vóór *è* valt de laatste klinker van *dove* weg en schrijf je een apostrof: *dov'è*. Dat gebeurt altijd, niet alleen in de formele vraag, bijvoorbeeld ook in *Di dov'è Giulia?* (Waar komt Giulia vandaan?). Vóór *sei* gebeurt dat niet: *Di dove sei?*. Je spreekt *dov'è* uit als één woord.
 
 Je kunt ook je nationaliteit noemen: *Sono olandese.* = Ik ben Nederlands. In het Italiaans schrijf je nationaliteiten met een kleine letter.
 
@@ -38,7 +45,7 @@ Dit geldt voor steden. Bij landen gebruik je een ander voorzetsel (*in*); dat ko
 | voi | abitate | jullie wonen |
 | loro | abitano | zij wonen |
 
-De klemtoon ligt bij *abito*, *abiti*, *abita* en *abitano* op de eerste lettergreep: **à**bito.
+De klemtoon ligt bij *abito*, *abiti*, *abita* en *abitano* op de eerste lettergreep: **a**bito, **a**biti, **a**bita, **a**bitano. Dat accent schrijf je niet; je hoort het alleen.
 
 ## Tip: *non*
 
