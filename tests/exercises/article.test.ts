@@ -35,6 +35,25 @@ describe('article.build()', () => {
     expect(ex.typeId).toBe('article')
   })
 
+  it('shows the Dutch meaning and the noun with a gap where the article goes', () => {
+    const content = makeContent({ words: [word_signora] })
+    const ex = article.build('article:w_signora', content)
+    expect(ex.sentence).toEqual({ it: 'la signora', nl: 'mevrouw', span: { start: 0, end: 2 }, mode: 'gap', spaceAfterGap: true })
+  })
+
+  it('speaks the noun with its article, not the article alone', () => {
+    const ex = article.build('article:w_signora', makeContent({ words: [word_signora] }))
+    expect(ex.audio).toBe('la signora')
+  })
+
+  it('keeps a space after the gap for an elided article, so it looks like any other article', () => {
+    const amica = { ...word_signora, id: 'w_amica', it: 'amica', article: "l'", nl: ['vriendin'] }
+    const ex = article.build('article:w_amica', makeContent({ words: [amica] }))
+    expect(ex.answers).toEqual(["l'"])
+    // The feedback shows the real spelling; only the gap view adds the space
+    expect(ex.sentence).toMatchObject({ it: "l'amica", span: { start: 0, end: 2 }, spaceAfterGap: true })
+  })
+
   it('throws for unknown word id', () => {
     expect(() => article.build('article:w_unknown', makeContent({}))).toThrow()
   })

@@ -79,6 +79,7 @@ function questionLabel(typeId: string): string | undefined {
   if (typeId === 'mc-sentence') return S.MC_SENTENCE_QUESTION
   if (typeId === 'mc-word') return S.MC_WORD_QUESTION
   if (typeId === 'cloze-word') return S.CLOZE_WORD_QUESTION
+  if (typeId === 'article') return S.ARTICLE_QUESTION
   if (typeId === 'dictation') return S.DICTATION_QUESTION
   return undefined
 }
@@ -426,7 +427,7 @@ export default function SessionScreen({
       return (
         <>
           <div className="sentence-nl">{ex.sentence.nl}</div>
-          <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="gap" />
+          <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="gap" spaceAfterGap={ex.sentence.spaceAfterGap} />
         </>
       )
     }

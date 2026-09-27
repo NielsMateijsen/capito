@@ -11,6 +11,7 @@ export const S = {
   MC_SENTENCE_QUESTION: 'Wat betekent deze zin?',
   MC_WORD_QUESTION: 'Kies het ontbrekende woord',
   CLOZE_WORD_QUESTION: 'Vul het ontbrekende woord in',
+  ARTICLE_QUESTION: 'Vul het lidwoord in',
   DICTATION_QUESTION: 'Luister en typ wat je hoort',
   WITH_ARTICLE: 'Met lidwoord',
 

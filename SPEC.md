@@ -306,7 +306,7 @@ Elk bestand exporteert:
   requires?(cardKey, content): ItemId[]      // items die afgerond moeten zijn (standaard het item uit de key)
 }
 ```
-`ctx.seq` is het aantal eerdere antwoorden op het item; daarmee wisselen zin en optievolgorde. `index.ts` verzamelt ze automatisch. Types: `flashcard` (zelf beoordelen: opnieuw/goed/makkelijk), `translate-it-nl`, `translate-nl-it` (met lidwoord; zonder lidwoord is "bijna goed"), `sentence-translate`, `conjugate`, `article`, `cloze`, `dictation`, `mc-sentence`, `mc-word`, `cloze-word`. Meerkeuze telt niet mee in de eindtoets.
+`ctx.seq` is het aantal eerdere antwoorden op het item; daarmee wisselen zin en optievolgorde. `index.ts` verzamelt ze automatisch. Types: `flashcard` (zelf beoordelen: opnieuw/goed/makkelijk), `translate-it-nl`, `translate-nl-it` (met lidwoord; zonder lidwoord is "bijna goed"), `sentence-translate`, `conjugate`, `article` ("Vul het lidwoord in": de Nederlandse betekenis boven het woord met een streep op de plek van het lidwoord; ook bij een afgekort lidwoord staat er een spatie tussen streep en woord, zodat dat niet opvalt), `cloze`, `dictation`, `mc-sentence`, `mc-word`, `cloze-word`. Meerkeuze telt niet mee in de eindtoets.
 
 ### Voortgang (`storage/`)
 ```ts
