@@ -45,7 +45,7 @@ export class App {
 
   async expectHome() {
     await expect(this.heading(S.APP_NAME)).toBeVisible()
-    await expect(this.button(S.TODAY)).toBeVisible()
+    await expect(this.button(S.CONTINUE)).toBeVisible()
   }
 
   /** Home navigation buttons; their name can include a badge count. */
@@ -105,6 +105,21 @@ export class App {
     return this.unitSection(S.UNIT_CANDO_HEADER).getByRole('listitem')
   }
 
+  /** The lessons on the unit's path, in order. */
+  lessonSteps() {
+    return this.unitSection(S.UNIT_PATH_HEADER).getByRole('listitem')
+  }
+
+  /** The lesson that is open now (the only one that can be started). */
+  currentLesson() {
+    return this.unitSection(S.UNIT_PATH_HEADER).locator('[aria-current="step"]')
+  }
+
+  /** Lessons marked as done. */
+  doneLessons() {
+    return this.unitSection(S.UNIT_PATH_HEADER).locator('.lesson-step--done')
+  }
+
   /** Buttons that open a dialogue or grammar lesson from the unit screen. */
   unitLinks(header: typeof S.UNIT_DIALOGUES_HEADER | typeof S.UNIT_GRAMMAR_HEADER) {
     return this.unitSection(header).getByRole('button')
@@ -131,14 +146,22 @@ export class App {
     return this.page.getByTestId('session')
   }
 
-  async startToday() {
-    await this.button(S.TODAY).click()
+  /** "Verder" on home: the next step on the path. */
+  async startContinue() {
+    await this.button(S.CONTINUE).click()
     await expect(this.session()).toBeVisible()
   }
 
-  async startUnitPractice() {
-    await this.button(S.PRACTICE_UNIT).click()
-    await expect(this.session()).toHaveAttribute('data-mode', 'unit')
+  /** From the unit screen. */
+  async startCurrentLesson() {
+    await this.currentLesson().click()
+    await expect(this.session()).toHaveAttribute('data-mode', 'lesson')
+  }
+
+  /** From the unit screen. */
+  async startExam() {
+    await this.button(S.EXAM).click()
+    await expect(this.session()).toHaveAttribute('data-mode', 'exam')
   }
 
   async startExerciseTest() {
@@ -157,7 +180,15 @@ export class App {
 
   /** From the end screen back to home. */
   async finishSession() {
-    await this.button(S.ANOTHER_ROUND).click()
+    await this.button(S.TO_HOME).click()
     await this.expectHome()
+  }
+
+  /** "Verder" on the end screen: straight on to the next session. */
+  async continueFromEndScreen() {
+    const before = await this.session().getAttribute('data-phase')
+    if (before !== 'done') throw new Error('continueFromEndScreen() needs the end screen')
+    await this.session().getByRole('button', { name: S.CONTINUE, exact: true }).click()
+    await expect(this.session()).not.toHaveAttribute('data-phase', 'done')
   }
 }

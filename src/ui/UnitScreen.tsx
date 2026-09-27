@@ -1,34 +1,27 @@
 import type { Unit } from '../content/schemas.ts'
-import type { ProgressState } from '../storage/types.ts'
+import type { Content } from '../exercises/types.ts'
 import type { GrammarDoc } from '../content/loader.ts'
-import { unitMastery } from '../engine/unlock.ts'
+import type { UnitPath } from '../engine/lessons.ts'
 import { S } from './strings.nl.ts'
 import { playAudio } from './speak.ts'
 
-interface AppConfig {
-  unlock: { minRepsPerCard: number }
-  exam: { availableFromMastery: number }
-}
-
 interface Props {
   unit: Unit
-  cardKeysByUnit: Map<string, string[]>
-  progress: ProgressState
-  config: AppConfig
+  content: Content
+  path: UnitPath
+  passed: boolean
+  bestScore?: number
+  passThreshold: number
   grammarMap?: Map<string, GrammarDoc>
   onBack: () => void
-  onOefen: (unitId: string) => void
-  onEindtoets: (unitId: string) => void
+  onStartLesson: (lessonId: string) => void
+  onExam: (unitId: string) => void
   onOpenGrammar: (grammarId: string) => void
   onOpenDialogue: (dialogueId: string) => void
 }
 
-export default function UnitScreen({ unit, cardKeysByUnit, progress, config, grammarMap, onBack, onOefen, onEindtoets, onOpenGrammar, onOpenDialogue }: Props) {
-  const keys = cardKeysByUnit.get(unit.id) ?? []
-  const mastery = unitMastery(keys, progress.cards, config.unlock)
-  const masteryPct = Math.round(mastery * 100)
-  const examAvailable = mastery >= config.exam.availableFromMastery
-  const examThresholdPct = Math.round(config.exam.availableFromMastery * 100)
+export default function UnitScreen({ unit, content, path, passed, bestScore, passThreshold, grammarMap, onBack, onStartLesson, onExam, onOpenGrammar, onOpenDialogue }: Props) {
+  const itemLabel = (id: string) => content.words.get(id)?.it ?? content.verbs.get(id)?.inf ?? id
 
   return (
     <div className="unit-screen">
@@ -47,13 +40,61 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, gra
         </section>
       )}
 
+      {path.lessons.length > 0 && (
+        <section>
+          <h2>{S.UNIT_PATH_HEADER}</h2>
+          <ol className="lesson-path">
+            {path.lessons.map(({ lesson, done, available }) => {
+              const state = done ? 'done' : available ? 'current' : 'locked'
+              return (
+                <li key={lesson.id} className={`lesson-step lesson-step--${state}`}>
+                  <button
+                    className="lesson-btn"
+                    disabled={state !== 'current'}
+                    aria-current={state === 'current' ? 'step' : undefined}
+                    onClick={() => onStartLesson(lesson.id)}
+                  >
+                    <span className="lesson-mark" aria-hidden="true">
+                      {done ? S.LESSON_MARK_DONE : available ? S.LESSON_MARK_CURRENT : S.LESSON_MARK_LOCKED}
+                    </span>
+                    <span className="lesson-text">
+                      <span className="lesson-title">{lesson.final ? S.LESSON_FINAL : S.LESSON(lesson.number)}</span>
+                      {lesson.final
+                        ? <span className="lesson-words">{S.LESSON_FINAL_INFO}</span>
+                        : <span className="lesson-words" lang="it">{lesson.items.map(itemLabel).join(', ')}</span>}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      )}
+
+      <section className="exam-section">
+        <h2>{S.EXAM}</h2>
+        <p className="settings-meta">
+          {passed || path.doneCount > 0 ? S.EXAM_INFO(Math.round(passThreshold * 100)) : S.EXAM_TESTOUT_INFO}
+        </p>
+        {bestScore !== undefined && (
+          <p className="settings-meta">
+            {S.EXAM_BEST(Math.round(bestScore * 100))}{passed && ` · ${S.UNIT_PASSED}`}
+          </p>
+        )}
+        <div>
+          <button className={path.current ? 'btn-secondary' : 'btn-primary'} onClick={() => onExam(unit.id)}>
+            {S.EXAM}
+          </button>
+        </div>
+      </section>
+
       {unit.words.length > 0 && (
         <section>
           <h2>{S.UNIT_WORDS_HEADER}</h2>
           <ul className="word-list">
             {unit.words.map(w => (
               <li key={w.id} className="word-item">
-                <strong>{w.it}</strong>
+                <strong lang="it">{w.it}</strong>
                 <span className="word-nl">{w.nl.join(' / ')}</span>
                 <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => void playAudio(w.it)}>
                   {S.AUDIO}
@@ -70,7 +111,7 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, gra
           <ul className="word-list">
             {unit.verbs.map(v => (
               <li key={v.id} className="word-item">
-                <strong>{v.inf}</strong>
+                <strong lang="it">{v.inf}</strong>
                 <span className="word-nl">{v.nl.join(' / ')}</span>
                 <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => void playAudio(v.inf)}>
                   {S.AUDIO}
@@ -110,27 +151,6 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, gra
           </ul>
         </section>
       )}
-
-      <div className="unit-actions">
-        <button className="btn-primary" onClick={() => onOefen(unit.id)}>
-          {S.PRACTICE_UNIT}
-        </button>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <button
-            className="btn-secondary"
-            disabled={!examAvailable}
-            onClick={() => examAvailable && onEindtoets(unit.id)}
-          >
-            {S.EXAM}
-          </button>
-          {!examAvailable && (
-            <span className="exam-unavailable">
-              {S.EXAM_UNAVAILABLE(examThresholdPct, masteryPct)}
-            </span>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

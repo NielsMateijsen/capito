@@ -4,12 +4,19 @@ import type { ProgressState } from './types.ts'
 export type Migration = (old: Record<string, unknown>) => Record<string, unknown>
 export type MigrationMap = Record<number, Migration>
 
-export const CURRENT_SCHEMA = 2
+export const CURRENT_SCHEMA = 3
 
 export const MIGRATIONS: MigrationMap = {
   // 2 adds settings.newItemsPerDay (new ladder words); settings.newCardsPerDay keeps its meaning
   // (new review cards per day), so existing values stay as they are.
   1: (s) => ({ ...s, schema: 2 }),
+  // 3 replaces the daily session by the lesson path: the daily limits make way for
+  // settings.newItemsPerLesson (default from config). Log entries get optional fields
+  // (lesson, unit, examSize) and new modes; existing entries stay exactly as they are.
+  2: (s) => {
+    const { newCardsPerDay: _cards, newItemsPerDay: _items, ...settings } = (s['settings'] ?? {}) as Record<string, unknown>
+    return { ...s, schema: 3, settings }
+  },
 }
 
 export function migrate(

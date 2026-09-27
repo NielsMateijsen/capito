@@ -12,7 +12,8 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 
 - **Content is data, code is engine.** Woorden, zinnen, units en grammatica staan in `content/`. De code in `src/` kent geen Italiaans.
 - **Elke oefening is een "card"** met een sleutel (`conjugate:v_parlare:presente:noi`). De SRS houdt per sleutel bij wanneer je iets weer moet zien.
-- **Leerladder:** een nieuw woord of werkwoord maak je eerst mee in een zin (onderstreept, met audio, lidwoord en formeel/informeel). Daarna volgen de treden: de zin begrijpen (meerkeuze), het woord kiezen in een zin (meerkeuze), het woord typen in een zin, en zelf vertalen van NL naar IT. Elke keer staat het woord in een andere zin. Een item stijgt hooguit twee treden per dag, dus in een sessie lopen de treden door elkaar. De volgorde in een sessie is willekeurig. Na de laatste trede gaat het woord naar de gewone herhaling (zie `SPEC.md` §5 "Leerladder").
+- **Leerladder:** een nieuw woord of werkwoord maak je eerst mee in een zin (onderstreept, met audio, lidwoord en formeel/informeel). Daarna volgen de treden: de zin begrijpen (meerkeuze), het woord kiezen in een zin (meerkeuze), het woord typen in een zin, en zelf vertalen van NL naar IT. Elke keer staat het woord in een andere zin. Een item stijgt hooguit twee treden per les: eerst herkennen, in de volgende les zelf typen. Na de laatste trede gaat het woord naar de gewone herhaling (zie `SPEC.md` §5 "Leerladder").
+- **Lessenpad:** elke unit is een pad van korte lessen (3 nieuwe woorden, het afmaken van de vorige les en een paar herhalingen), dan Afronden en de eindtoets. Geen daglimiet: "Verder" opent steeds de volgende stap. Met de eindtoets kun je een unit ook overslaan (test-out); pas als je hem haalt, gaat de volgende unit open. Daarnaast: opfrissen (optioneel, voor wat wegzakt), een streak en "perfecte les" (zie `SPEC.md` §5 "Lessenpad").
 - **Voortgang en review-log** (elk antwoord, append-only) staan lokaal in je browser (IndexedDB). De kaartstatus wordt uit de log afgeleid.
 - **Back-up:** installeer de app op je beginscherm en maak elke ~2 weken een export (de app herinnert je eraan). Zonder back-up kan de browser je data wissen.
 - **Versiestempel:** Instellingen toont app-versie, commit en content-versie. Die staan ook in elke export en foutmelding.
@@ -35,7 +36,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 | `prompts/` | Prompts voor het genereren en reviewen van content |
 | `docs/` | `style-guide.md` (stijlgids content) en `pilot.md` (pilotweek, succescriteria, besluit) |
 | `tests/golden/` | Door mij gecontroleerde vervoegingen (bron van waarheid) |
-| `config/app.json` | Alle drempels (nieuwe woorden per dag, treden van de ladder, ontgrendelpercentage, ...) |
+| `config/app.json` | Alle drempels (nieuwe woorden per les, treden van de ladder, herhalingen per les, slagingsgrens eindtoets, ...) |
 | `.claude/` | Agent-setup (zie hieronder) |
 
 ## Commando's
@@ -80,7 +81,7 @@ Start de app nooit met alleen `npx vite preview`: dat toont de laatste build, ni
 4. Nieuwe logica heeft een test
 5. Nooit direct op `main` werken
 6. Leerbeleid alleen in `config/app.json`; de review-log is append-only
-7. Eerst unit 1 volledig af en een week gebruiken, dan pas units 2-10 (pilotregel)
+7. Eerst unit 1 en 2 volledig af en een week gebruiken, dan pas units 3-10 (pilotregel)
 
 ## Starten
 
@@ -98,8 +99,8 @@ Voortgang per fase (uit `SPEC.md` §10):
 - [x] 4 UI
 - [x] 5 Audio
 - [x] 6 PWA + deploy
-- [ ] 7a Pilot: unit 1 + een week gebruiken (`docs/pilot.md`)
-- [ ] 7b Units 2-10 (na positief pilotbesluit)
+- [ ] 7a Pilot: unit 1 en 2 + een week gebruiken (`docs/pilot.md`)
+- [ ] 7b Units 3-10 (na positief pilotbesluit)
 - [ ] 8 Afwerking
 
 ## Eenmalige setup

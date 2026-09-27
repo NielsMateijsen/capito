@@ -1,25 +1,21 @@
 import type { CardState } from './srs.ts'
-import type { ReviewEntry } from './review-log.ts'
 import type { ProgressState } from '../storage/types.ts'
 import type { ReviewResult } from '../exercises/types.ts'
-import { computeLadder, dayStartMs, isGraduated } from './ladder.ts'
+import { computeLadder, isGraduated } from './ladder.ts'
 import type { ItemLadderState, LadderConfig, LadderItem } from './ladder.ts'
+import type { Lesson, LessonConfig } from './lessons.ts'
 import { seededRandom } from './distractors.ts'
 
 export interface SessionBuilderConfig {
   session: {
-    maxReviewsPerSession: number
-    newCardsPerDay: number
-    minOldMaterialRatio: number
     maxSameTypeInRow: number
     excludedTypes: string[]
     timeZone: string
   }
-  backlog: {
-    maxDueShownPerDay: number
-    pauseNewCardsAboveDue: number
-    returnAfterDays: number
-    returnMaxSessionReviews: number
+  lesson: LessonConfig
+  refresh: {
+    maxCards: number
+    prominentAboveDueItems: number
   }
   lapse: {
     retypeCorrectAnswer: boolean
@@ -38,19 +34,29 @@ export interface SessionBuilderConfig {
     flashcard: { again: number; good: number; easy: number }
   }
   ladder: LadderConfig
+  exam: { passThreshold: number; passResults: string[] }
 }
 
-export interface SessionInput {
+interface BuildInput {
   now: number
   allCardKeys: string[]
-  cardToUnit: Map<string, string>
   progress: ProgressState
   config: SessionBuilderConfig
-  targetUnitId?: string
   seed?: number
   ladderItems?: LadderItem[]
   /** Items that must have finished the ladder before a card enters the review pool. Default: the card's own item. */
   cardRequires?: Map<string, string[]>
+}
+
+export interface LessonInput extends BuildInput {
+  lesson: Lesson
+  /** Words and verbs of the lesson's unit: unfinished ones of this unit are finished first. */
+  unitItems?: string[]
+}
+
+export interface RefreshInput extends BuildInput {
+  /** Practise exactly these cards (e.g. the questions missed in an exam) instead of the due ones. */
+  onlyKeys?: string[]
 }
 
 export type SessionItem =
@@ -61,14 +67,12 @@ type ExerciseItem = Extract<SessionItem, { kind: 'exercise' }>
 
 export interface Session {
   queue: SessionItem[]
-  isReturn: boolean
+  /** The session ends after this many answers, even if cards are left. */
   maxReviews: number
   newItemIds: string[]
   /** Stage keys of every item that had not finished the ladder when the session was built. */
   ladderStages: Record<string, string[]>
 }
-
-const MS_PER_DAY = 86_400_000
 
 export function cardType(cardKey: string): string {
   return cardKey.split(':')[0]
@@ -76,32 +80,6 @@ export function cardType(cardKey: string): string {
 
 export function itemIdFromKey(cardKey: string): string {
   return cardKey.split(':')[1]
-}
-
-function computeTodayNewCount(reviewLog: ReviewEntry[], now: number, timeZone: string, counts: (key: string) => boolean): number {
-  const todayStart = dayStartMs(now, timeZone)
-  const firstSeen = new Map<string, number>()
-  for (const entry of reviewLog) {
-    if (!counts(entry.key)) continue
-    const t = Date.parse(entry.t)
-    const prev = firstSeen.get(entry.key)
-    if (prev === undefined || t < prev) firstSeen.set(entry.key, t)
-  }
-  let count = 0
-  for (const t of firstSeen.values()) {
-    if (t >= todayStart) count++
-  }
-  return count
-}
-
-function computeLastSessionAt(reviewLog: ReviewEntry[]): number | undefined {
-  if (reviewLog.length === 0) return undefined
-  let latest = -Infinity
-  for (const entry of reviewLog) {
-    const t = Date.parse(entry.t)
-    if (t > latest) latest = t
-  }
-  return latest
 }
 
 function exercise(cardKey: string, isNew: boolean): SessionItem {
@@ -210,11 +188,14 @@ export function scheduleChains(chains: SessionItem[][], rand: () => number, minG
     () => true,
   ]
 
-  // New items keep their learning order: an intro chain waits until earlier intro chains have started
+  // New items keep their learning order: an intro chain waits until earlier intro chains have started.
+  // No new item gets its second question before every new item had its first (pos 2 = intro and first
+  // question done), so a lesson left halfway has started all its new items (see planLessons).
   const introChains = pending.filter(p => p.items[0].kind === 'intro')
   const introAllowed = (p: { items: SessionItem[]; pos: number }) => {
-    if (p.pos > 0 || p.items[0].kind !== 'intro') return true
-    return introChains.slice(0, introChains.indexOf(p)).every(q => q.pos > 0)
+    if (p.items[0].kind !== 'intro') return true
+    if (p.pos === 0) return introChains.slice(0, introChains.indexOf(p)).every(q => q.pos > 0)
+    return p.pos < 2 || introChains.every(q => q.pos >= 2 || q.pos >= q.items.length)
   }
 
   for (;;) {
@@ -298,115 +279,119 @@ export function replanAfterWrong(
   return [...next.slice(0, at), exercise(back, false), ...next.slice(at)]
 }
 
-export function buildSession(input: SessionInput): Session {
-  const { now, allCardKeys, cardToUnit, progress, config, targetUnitId } = input
-  const { session: sc, backlog: bc, ladder: lc } = config
-  const requires = input.cardRequires ?? new Map<string, string[]>()
-  const rand = seededRandom(input.seed ?? now)
-  const todayStart = dayStartMs(now, sc.timeZone)
+function ladderOf(input: BuildInput): Map<string, ItemLadderState> {
+  return computeLadder(input.progress.reviewLog, input.ladderItems ?? [], input.config.ladder, input.config.exam)
+}
 
-  // Return after a pause
-  const lastSessionAt = computeLastSessionAt(progress.reviewLog)
-  const isReturn =
-    lastSessionAt !== undefined && now - lastSessionAt >= bc.returnAfterDays * MS_PER_DAY
-  const maxReviews = isReturn ? bc.returnMaxSessionReviews : sc.maxReviewsPerSession
+function ladderStagesOf(ladder: Map<string, ItemLadderState>): Record<string, string[]> {
+  const stages: Record<string, string[]> = {}
+  for (const s of ladder.values()) {
+    if (!s.graduated) stages[s.itemId] = s.stageKeys
+  }
+  return stages
+}
 
-  // Ladder state, derived from the log
-  const items = input.ladderItems ?? []
-  const ladder = computeLadder(progress.reviewLog, items, { ...lc, timeZone: sc.timeZone }, now)
-  const stageKeySet = new Set(items.flatMap(i => i.stageKeys))
-  const inTarget = (k: string) => targetUnitId === undefined || cardToUnit.get(k) === targetUnitId
-  const itemInTarget = (s: ItemLadderState) => inTarget(s.stageKeys[0])
-
-  // Review pool: allowed types whose items have finished the ladder
-  const excluded = new Set(sc.excludedTypes)
-  const reviewPool = allCardKeys.filter(k =>
+/** Review cards: allowed types whose items have finished the ladder. */
+export function reviewPool(
+  allCardKeys: string[],
+  ladder: Map<string, ItemLadderState>,
+  cardRequires: Map<string, string[]>,
+  excludedTypes: string[],
+): string[] {
+  const excluded = new Set(excludedTypes)
+  return allCardKeys.filter(k =>
     !excluded.has(cardType(k)) &&
-    (requires.get(k) ?? [itemIdFromKey(k)]).every(id => isGraduated(ladder, id)),
+    (cardRequires.get(k) ?? [itemIdFromKey(k)]).every(id => isGraduated(ladder, id)),
   )
-  const dueAll = reviewPool
-    .filter(k => {
-      const state = progress.cards[k]
-      return state !== undefined && state.due <= now
-    })
-    .sort((a, b) => (progress.cards[a]?.due ?? 0) - (progress.cards[b]?.due ?? 0))
-  const totalDue = dueAll.length
-  const due = dueAll.slice(0, bc.maxDueShownPerDay)
-  const blockedNew = isReturn || totalDue >= bc.pauseNewCardsAboveDue
+}
 
-  const todayNewCount = computeTodayNewCount(progress.reviewLog, now, sc.timeZone, k => !stageKeySet.has(k))
-  const newCardSlots = blockedNew ? 0 : Math.max(0, sc.newCardsPerDay - todayNewCount)
-  const newReviewCards = reviewPool.filter(k => progress.cards[k] === undefined).slice(0, newCardSlots)
+/** Cards in the pool that are due, most overdue first. */
+export function dueCards(pool: string[], cards: Record<string, CardState>, now: number): string[] {
+  return pool
+    .filter(k => cards[k] !== undefined && cards[k].due <= now)
+    .sort((a, b) => cards[a].due - cards[b].due)
+}
 
-  // Ladder chains
-  const states = [...ladder.values()]
-  const onLadder = states.filter(s => s.started && !s.graduated)
-  const chainFor = (s: ItemLadderState, isNew: boolean): SessionItem[] => {
-    const steps = Math.max(0, lc.maxStepsPerItemPerDay - s.stepsToday)
-    const keys = s.stageKeys.slice(s.level, s.level + steps)
-    if (keys.length === 0) return []
-    return [
-      ...(isNew ? [{ kind: 'intro' as const, itemId: s.itemId }] : []),
-      ...keys.map(k => exercise(k, isNew)),
-    ]
+/** Review cards never answered; cards whose items finished the ladder first come first. */
+function unseenCards(pool: string[], input: BuildInput, ladder: Map<string, ItemLadderState>): string[] {
+  const requires = input.cardRequires ?? new Map<string, string[]>()
+  const releasedAt = (k: string) =>
+    Math.max(0, ...(requires.get(k) ?? [itemIdFromKey(k)]).map(id => ladder.get(id)?.graduatedAt ?? 0))
+  return pool
+    .filter(k => input.progress.cards[k] === undefined)
+    .map((k, i) => ({ k, i, at: releasedAt(k) }))
+    .sort((a, b) => a.at - b.at || a.i - b.i)
+    .map(x => x.k)
+}
+
+/** Without a ladder, a wrong answer brings the same card back instead of a lower stage. */
+function toSession(chains: SessionItem[][], input: BuildInput, ladder: Map<string, ItemLadderState> | null): Session {
+  const { config } = input
+  const queue = scheduleChains(chains, seededRandom(input.seed ?? input.now), config.ladder.minGapSameItem, config.session.maxSameTypeInRow)
+  return {
+    queue,
+    maxReviews: Number.POSITIVE_INFINITY,
+    newItemIds: queue.flatMap(i => (i.kind === 'intro' ? [i.itemId] : [])),
+    ladderStages: ladder ? ladderStagesOf(ladder) : {},
   }
-  const inProgressChains = onLadder
-    .filter(itemInTarget)
-    .sort((a, b) => (a.lastSeen ?? 0) - (b.lastSeen ?? 0))
-    .map(s => chainFor(s, false))
-  const introducedToday = states.filter(s => s.firstSeen !== undefined && s.firstSeen >= todayStart).length
-  const newItemSlots = blockedNew
-    ? 0
-    : Math.max(0, Math.min(lc.newItemsPerDay - introducedToday, lc.maxItemsInProgress - onLadder.length))
-  const newItemChains = states
-    .filter(s => !s.started && itemInTarget(s))
-    .slice(0, newItemSlots)
-    .map(s => chainFor(s, true))
+}
 
-  // Fill the budget: reserved reviews, ladder, new items, remaining reviews, new review cards
+/**
+ * A lesson: its new items (intro and the first `maxStepsPerItemPerLesson` stages), the next
+ * stages of unfinished items from earlier lessons, and a few review cards (due ones first,
+ * then some never answered). An item of the lesson never climbs past the lesson target here,
+ * also when the lesson is resumed.
+ */
+export function buildLesson(input: LessonInput): Session {
+  const { lesson, config, progress, now } = input
+  const lc = config.lesson
+  const ladder = ladderOf(input)
+  const members = new Set(lesson.items)
   const chains: SessionItem[][] = []
-  let budget = targetUnitId === undefined
-    ? maxReviews
-    : Math.max(1, Math.floor(maxReviews * (1 - sc.minOldMaterialRatio)))
-  const take = (chain: SessionItem[]) => {
-    if (budget <= 0 || exerciseCount(chain) === 0) return
-    const kept: SessionItem[] = []
-    let n = 0
-    for (const item of chain) {
-      if (item.kind === 'exercise') {
-        if (n >= budget) break
-        n++
-      }
-      kept.push(item)
-    }
-    budget -= n
-    chains.push(kept)
-  }
-  const dueTarget = due.filter(inTarget)
-  const reserved = Math.min(dueTarget.length, Math.floor(budget * lc.reviewShare))
-  dueTarget.slice(0, reserved).forEach(k => take([exercise(k, false)]))
-  inProgressChains.forEach(take)
-  newItemChains.forEach(take)
-  dueTarget.slice(reserved).forEach(k => take([exercise(k, false)]))
-  newReviewCards.filter(inTarget).forEach(k => take([exercise(k, true)]))
 
-  // Practising one unit: add old material from other units
-  if (targetUnitId !== undefined) {
-    const targetCount = chains.reduce((n, c) => n + exerciseCount(c), 0)
-    const ratio = sc.minOldMaterialRatio
-    const minOther = Math.ceil((ratio / (1 - ratio)) * targetCount)
-    const otherDue = due.filter(k => !inTarget(k))
-    const otherDueSet = new Set(otherDue)
-    const otherSeen = reviewPool.filter(k => !inTarget(k) && progress.cards[k] !== undefined && !otherDueSet.has(k))
-    ;[...otherDue, ...otherSeen].slice(0, minOther).forEach(k => chains.push([exercise(k, false)]))
+  for (const id of lesson.items) {
+    const s = ladder.get(id)
+    if (!s || s.graduated) continue
+    const isNew = !s.started
+    const keys = s.stageKeys.slice(s.level, Math.min(lc.maxStepsPerItemPerLesson, s.stageKeys.length))
+    if (keys.length === 0) continue
+    chains.push([
+      ...(isNew ? [{ kind: 'intro' as const, itemId: id }] : []),
+      ...keys.map(k => exercise(k, isNew)),
+    ])
   }
 
-  const queue = scheduleChains(chains, rand, lc.minGapSameItem, sc.maxSameTypeInRow)
-  const newItemIds = chains.flatMap(c => c.flatMap(i => (i.kind === 'intro' ? [i.itemId] : [])))
-  const ladderStages: Record<string, string[]> = {}
-  for (const s of states) {
-    if (!s.graduated) ladderStages[s.itemId] = s.stageKeys
+  const ownUnit = new Set(input.unitItems ?? [])
+  const unfinished = [...ladder.values()]
+    .filter(s => s.started && !s.graduated && !members.has(s.itemId))
+    .sort((a, b) => Number(ownUnit.has(b.itemId)) - Number(ownUnit.has(a.itemId)) || (a.lastSeen ?? 0) - (b.lastSeen ?? 0))
+    .slice(0, lc.maxFinishItemsPerLesson)
+  for (const s of unfinished) {
+    chains.push(s.stageKeys.slice(s.level, s.level + lc.maxStepsPerItemPerLesson).map(k => exercise(k, false)))
   }
 
-  return { queue, isReturn, maxReviews, newItemIds, ladderStages }
+  const pool = reviewPool(input.allCardKeys, ladder, input.cardRequires ?? new Map(), config.session.excludedTypes)
+  dueCards(pool, progress.cards, now).slice(0, lc.maxReviewsPerLesson).forEach(k => chains.push([exercise(k, false)]))
+  unseenCards(pool, input, ladder).slice(0, lc.newReviewCardsPerLesson).forEach(k => chains.push([exercise(k, true)]))
+
+  return toSession(chains, input, ladder)
+}
+
+/**
+ * Opfrissen: the most overdue review cards, then leeches that are not due yet, then review
+ * cards never answered, up to `refresh.maxCards`. With `onlyKeys`: exactly those cards.
+ * A missed card comes back as it is: refreshing never walks down the ladder.
+ */
+export function buildRefresh(input: RefreshInput): Session {
+  const { config, progress, now } = input
+  if (input.onlyKeys) {
+    return toSession([...new Set(input.onlyKeys)].map(k => [exercise(k, false)]), input, null)
+  }
+  const ladder = ladderOf(input)
+  const pool = reviewPool(input.allCardKeys, ladder, input.cardRequires ?? new Map(), config.session.excludedTypes)
+  const due = dueCards(pool, progress.cards, now)
+  const dueSet = new Set(due)
+  const leeches = pool.filter(k => !dueSet.has(k) && progress.cards[k] !== undefined && isLeech(progress.cards[k], config.leech))
+  const keys = [...due, ...leeches, ...unseenCards(pool, input, ladder)].slice(0, config.refresh.maxCards)
+  return toSession(keys.map(k => [exercise(k, progress.cards[k] === undefined)]), input, null)
 }

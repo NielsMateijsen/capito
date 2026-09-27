@@ -1,13 +1,10 @@
 import type { ReviewEntry } from './review-log.ts'
+import { examOutcomes } from './exam.ts'
 
 export interface LadderConfig {
   stages: string[]
   passResults: string[]
-  maxStepsPerItemPerDay: number
   dropOnWrong: number
-  newItemsPerDay: number
-  maxItemsInProgress: number
-  reviewShare: number
   minGapSameItem: number
   optionCount: number
   minSentencesPerItem: number
@@ -23,41 +20,28 @@ export interface ItemLadderState {
   itemId: string
   stageKeys: string[]
   level: number
+  /** Highest level ever reached; a later drop does not lower it. */
+  maxLevel: number
   graduated: boolean
   started: boolean
-  stepsToday: number
+  /** Graduated by a passed exam instead of the stages. */
+  testedOut: boolean
   firstSeen?: number
   lastSeen?: number
+  /** Lesson in which the item got its first answer (schema 3). */
+  firstLesson?: string
+  /** reachedAt[n]: when level n was first reached. */
+  reachedAt: number[]
+  graduatedAt?: number
 }
 
 const FAIL: ReadonlySet<ReviewEntry['result']> = new Set(['wrong', 'again'])
 
+/** Modes from before the lesson path (schema 2 and older). */
+const LEGACY_MODES: ReadonlySet<ReviewEntry['mode']> = new Set(['daily', 'unit'])
+
 export function isFail(result: ReviewEntry['result']): boolean {
   return FAIL.has(result)
-}
-
-function zonedParts(ms: number, timeZone: string): { y: number; m: number; d: number; wallMs: number } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone, hourCycle: 'h23',
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
-  }).formatToParts(new Date(ms))
-  const get = (type: string) => Number(parts.find(p => p.type === type)!.value)
-  const y = get('year'), m = get('month'), d = get('day')
-  return { y, m, d, wallMs: Date.UTC(y, m - 1, d, get('hour'), get('minute'), get('second')) }
-}
-
-function offsetAt(ms: number, timeZone: string): number {
-  const whole = Math.floor(ms / 1000) * 1000
-  return zonedParts(whole, timeZone).wallMs - whole
-}
-
-/** Start of the calendar day containing `now` in `timeZone`, in UTC milliseconds. */
-export function dayStartMs(now: number, timeZone: string): number {
-  const { y, m, d } = zonedParts(now, timeZone)
-  const midnightWall = Date.UTC(y, m - 1, d)
-  // The offset can differ between now and midnight on a DST switch day
-  const guess = midnightWall - offsetAt(now, timeZone)
-  return midnightWall - offsetAt(guess, timeZone)
 }
 
 export function ladderItems(itemOrder: string[], stages: string[], cardKeys: Iterable<string>): LadderItem[] {
@@ -67,40 +51,66 @@ export function ladderItems(itemOrder: string[], stages: string[], cardKeys: Ite
     .filter(item => item.stageKeys.length > 0)
 }
 
+function graduate(state: ItemLadderState, t: number, testedOut: boolean) {
+  Object.assign(state, { graduated: true, testedOut, level: state.stageKeys.length, maxLevel: state.stageKeys.length, graduatedAt: t, lastSeen: t })
+  state.firstSeen ??= t
+}
+
+/**
+ * Ladder state per item, derived from the log:
+ * - only stage answers in a lesson (or in older logs: `daily`, `unit`) start and move an item
+ * - a pass on the current stage climbs one level, a fail drops `dropOnWrong` levels
+ * - a pass in a passed exam graduates the item at once (test-out); other exam answers do not count
+ * - an item whose first old-style answer is not on the first stage was practised before the
+ *   ladder existed and counts as graduated
+ */
 export function computeLadder(
   log: ReviewEntry[],
   items: LadderItem[],
-  config: Pick<LadderConfig, 'dropOnWrong' | 'passResults'> & { timeZone: string },
-  now: number,
+  config: Pick<LadderConfig, 'dropOnWrong' | 'passResults'>,
+  exam?: { passThreshold: number; passResults: string[] },
 ): Map<string, ItemLadderState> {
-  const todayStart = dayStartMs(now, config.timeZone)
   const pass = new Set(config.passResults)
+  const examPass = new Set(exam?.passResults ?? [])
+  const passedExams = new Set(exam ? examOutcomes(log, exam).filter(o => o.passed).map(o => o.session) : [])
   const states = new Map<string, ItemLadderState>()
   const keyToItem = new Map<string, string>()
   for (const item of items) {
-    states.set(item.itemId, { itemId: item.itemId, stageKeys: item.stageKeys, level: 0, graduated: false, started: false, stepsToday: 0 })
+    states.set(item.itemId, {
+      itemId: item.itemId, stageKeys: item.stageKeys, level: 0, maxLevel: 0,
+      graduated: false, started: false, testedOut: false, reachedAt: [],
+    })
     for (const k of item.stageKeys) keyToItem.set(k, item.itemId)
   }
 
   for (const entry of log) {
-    if (entry.mode === 'exam') continue
     const state = states.get(entry.key.split(':')[1])
     if (!state || state.graduated) continue
     const t = Date.parse(entry.t)
-    // Practised before the ladder existed: its first answer is not on the first stage
-    if (!state.started && entry.key !== state.stageKeys[0]) {
-      Object.assign(state, { started: true, graduated: true, level: state.stageKeys.length, firstSeen: t, lastSeen: t })
+    if (entry.mode === 'exam') {
+      if (passedExams.has(entry.session) && examPass.has(entry.result)) graduate(state, t, true)
       continue
     }
-    if (!keyToItem.has(entry.key)) continue
-    state.started = true
-    state.firstSeen ??= t
+    const legacy = LEGACY_MODES.has(entry.mode)
+    if (!state.started && legacy && entry.key !== state.stageKeys[0]) {
+      state.started = true
+      graduate(state, t, false)
+      continue
+    }
+    // Only a lesson (or an old-style session) introduces or moves an item; refresh and drill never do
+    if (!keyToItem.has(entry.key) || (entry.mode !== 'lesson' && !legacy)) continue
+    if (!state.started) {
+      state.started = true
+      state.firstLesson = entry.lesson
+      state.firstSeen = t
+    }
     state.lastSeen = t
     if (pass.has(entry.result)) {
       if (entry.key !== state.stageKeys[state.level]) continue
       state.level++
-      if (t >= todayStart) state.stepsToday++
-      if (state.level >= state.stageKeys.length) state.graduated = true
+      state.maxLevel = Math.max(state.maxLevel, state.level)
+      state.reachedAt[state.level] ??= t
+      if (state.level >= state.stageKeys.length) graduate(state, t, false)
     } else if (isFail(entry.result)) {
       state.level = Math.max(0, state.level - config.dropOnWrong)
     }

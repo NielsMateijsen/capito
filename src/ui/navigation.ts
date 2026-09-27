@@ -22,6 +22,8 @@ export interface Navigator<V> {
   start(view: V): void
   /** Opens a view as a new history entry. */
   navigate(view: V): void
+  /** Swaps the current view for another one, so back skips the replaced view. */
+  replace(view: V): void
   /** Goes one entry back; at the root it shows `fallback` without leaving the app. */
   back(fallback: V): void
   /** Returns to the root entry, dropping the screens in between. */
@@ -44,6 +46,10 @@ export function createNavigator<V>(history: HistoryLike, onChange: (view: V) => 
     navigate(view) {
       depth += 1
       history.pushState({ view, depth } satisfies Entry<V>, '')
+      onChange(view)
+    },
+    replace(view) {
+      history.replaceState({ view, depth } satisfies Entry<V>, '')
       onChange(view)
     },
     back(fallback) {

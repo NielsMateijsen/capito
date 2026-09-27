@@ -3,6 +3,12 @@ import type { CardState, SrsConfig } from './srs.ts'
 
 export type CardKey = string
 
+/**
+ * - `lesson`, `refresh`, `exam`, `drill`: schema 3 (lesson path)
+ * - `daily`, `unit`: older logs, from before the lesson path
+ */
+export type ReviewMode = 'lesson' | 'refresh' | 'exam' | 'drill' | 'daily' | 'unit'
+
 export interface ReviewEntry {
   t: string
   key: CardKey
@@ -12,8 +18,14 @@ export interface ReviewEntry {
   hint: boolean
   answer?: string
   session: string
-  mode: 'daily' | 'unit' | 'exam'
+  mode: ReviewMode
   cv: string
+  /** Lesson ID (`<unitId>#<n>` or `<unitId>#final`), only on mode 'lesson'. */
+  lesson?: string
+  /** Unit of the exam, only on mode 'exam'. */
+  unit?: string
+  /** Number of questions in the exam, only on mode 'exam'. */
+  examSize?: number
 }
 
 export function rebuildCards(

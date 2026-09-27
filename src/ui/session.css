@@ -40,15 +40,6 @@ body {
   margin-bottom: 1rem;
 }
 
-.welcome-back {
-  background: #e8f4fd;
-  border: 1px solid #b3d9f7;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
 /* Card */
 .card {
   background: #fff;
@@ -535,19 +526,6 @@ body {
   flex: 1;
 }
 
-.unit-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  padding-top: 0.5rem;
-}
-
-.exam-unavailable {
-  font-size: 0.85rem;
-  color: #888;
-  margin-top: 0.25rem;
-}
-
 /* ── Home nav ───────────────────────────────────────────── */
 
 .home-nav {
@@ -965,11 +943,6 @@ body {
 
   .session-progress { color: #aaa; }
 
-  .welcome-back {
-    background: #1a2a35;
-    border-color: #2a4a65;
-  }
-
   .card {
     background: #252525;
     box-shadow: 0 1px 4px rgba(0,0,0,0.4);
@@ -1089,7 +1062,6 @@ body {
 
   .word-item .word-nl { color: #aaa; }
 
-  .exam-unavailable { color: #777; }
 
   /* Home nav */
   .home-nav { border-color: #333; }
@@ -1192,4 +1164,222 @@ body {
   .backup-compare th, .backup-compare td { border-color: #444; }
 
   .settings-error { color: #ef9a9a; }
+}
+
+/* ── Lesson path ─────────────────────────────────────────── */
+
+.streak {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.streak-days {
+  font-weight: 600;
+  color: #999;
+}
+
+.streak--today .streak-days { color: #e65100; }
+
+.continue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.btn-continue {
+  font-size: 1.1rem;
+  padding: 0.8rem 1.6rem;
+  min-height: 44px;
+}
+
+.continue-label {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.all-done {
+  margin: 0;
+  font-weight: 600;
+}
+
+.banner.refresh-banner {
+  background: #fff3e0;
+  border-color: #ffb74d;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.lesson-path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lesson-btn {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: #fff;
+  color: inherit;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lesson-btn:disabled { cursor: default; }
+
+.lesson-step--current .lesson-btn {
+  border: 2px solid #4c8bf5;
+}
+
+.lesson-step--locked .lesson-btn { opacity: 0.55; }
+
+.lesson-mark {
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  background: #eee;
+}
+
+.lesson-step--done .lesson-mark { background: #c8e6c9; color: #2e7d32; }
+.lesson-step--current .lesson-mark { background: #4c8bf5; color: #fff; }
+
+.lesson-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lesson-title { font-weight: 600; }
+
+.lesson-words {
+  font-size: 0.85rem;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exam-section p { margin: 0 0 0.5rem; }
+
+/* ── End screens ─────────────────────────────────────────── */
+
+.end-screen--exam {
+  justify-content: flex-start;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.exam-score {
+  font-size: 1.5rem !important;
+  font-weight: 700;
+  color: inherit !important;
+}
+
+.exam-verdict.passed { color: #2e7d32 !important; }
+.exam-verdict.failed { color: #c62828 !important; }
+
+.end-section {
+  width: 100%;
+  text-align: left;
+}
+
+.end-section h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  margin: 0 0 0.4rem;
+}
+
+.missed-list,
+.cando-check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.missed-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.95rem;
+}
+
+.missed-prompt { color: #555; }
+
+.cando-check li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cando-answers {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.cando-answers button {
+  min-height: 44px;
+}
+
+.cando-answers button[aria-pressed="true"] {
+  background: #4c8bf5;
+  border-color: #4c8bf5;
+  color: #fff;
+}
+
+.perfect-badge {
+  font-weight: 700;
+  color: #f57f17 !important;
+}
+
+.end-streak { color: #e65100 !important; }
+
+.end-info { font-size: 0.95rem !important; }
+
+.end-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .streak { color: #999; }
+  .continue-label { color: #aaa; }
+  .banner.refresh-banner { background: #3a2a14; border-color: #7a5a24; }
+  .lesson-btn { background: #252525; border-color: #3a3a3a; }
+  .lesson-mark { background: #333; }
+  .lesson-step--done .lesson-mark { background: #1b3a1d; color: #a5d6a7; }
+  .lesson-words { color: #aaa; }
+  .end-section h3 { color: #999; }
+  .missed-prompt { color: #aaa; }
+  .exam-verdict.passed { color: #a5d6a7 !important; }
+  .exam-verdict.failed { color: #ef9a9a !important; }
 }

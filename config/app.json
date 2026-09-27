@@ -1,36 +1,34 @@
 {
-  "schema": 1,
+  "schema": 2,
   "session": {
-    "maxReviewsPerSession": 30,
-    "newCardsPerDay": 10,
-    "minNewCardsPerDay": 1,
-    "maxNewCardsPerDay": 50,
-    "minOldMaterialRatio": 0.3,
     "maxSameTypeInRow": 3,
     "excludedTypes": ["flashcard", "cloze", "mc-sentence", "mc-word"],
     "timeZone": "Europe/Amsterdam"
   },
+  "lesson": {
+    "itemsPerLesson": 3,
+    "minItemsPerLesson": 1,
+    "maxItemsPerLesson": 8,
+    "maxStepsPerItemPerLesson": 2,
+    "maxFinishItemsPerLesson": 6,
+    "maxReviewsPerLesson": 4,
+    "newReviewCardsPerLesson": 2
+  },
+  "refresh": {
+    "maxCards": 15,
+    "prominentAboveDueItems": 10
+  },
+  "streak": {
+    "minRefreshAnswers": 5
+  },
   "ladder": {
     "stages": ["mc-sentence", "mc-word", "cloze-word", "translate-nl-it"],
     "passResults": ["correct", "good", "easy"],
-    "maxStepsPerItemPerDay": 2,
     "dropOnWrong": 1,
-    "newItemsPerDay": 5,
-    "minNewItemsPerDay": 1,
-    "maxNewItemsPerDay": 20,
-    "maxItemsInProgress": 15,
-    "reviewShare": 0.4,
     "minGapSameItem": 2,
     "optionCount": 4,
     "minSentencesPerItem": 3,
     "introAutoplay": true
-  },
-  "backlog": {
-    "maxDueShownPerDay": 40,
-    "order": "most-overdue-first",
-    "pauseNewCardsAboveDue": 60,
-    "returnAfterDays": 7,
-    "returnMaxSessionReviews": 20
   },
   "lapse": {
     "retypeCorrectAnswer": true,
@@ -54,16 +52,12 @@
     "minEase": 1.3,
     "maxIntervalDays": 180
   },
-  "unlock": {
-    "masteryThreshold": 0.8,
-    "minRepsPerCard": 2,
-    "requireExam": false
-  },
   "exam": {
-    "availableFromMastery": 0.6,
     "itemCount": 15,
     "unitShare": 0.6,
     "passThreshold": 0.8,
+    "passResults": ["correct", "almost"],
+    "itemTypes": ["translate-nl-it", "conjugate"],
     "allowHints": false
   },
   "checker": {

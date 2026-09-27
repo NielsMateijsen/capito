@@ -1,6 +1,6 @@
 # Rooktest (Playwright)
 
-Snelle end-to-end-controle of de belangrijkste flows van de app nog werken: starten, navigeren, instellingen, elke oefenvorm, een dagelijkse sessie, een unit en fouten melden. Draait tegen de productiebuild (`vite preview`) in Chromium op 360 px breed (mobile-first).
+Snelle end-to-end-controle of de belangrijkste flows van de app nog werken: starten, navigeren, instellingen, elke oefenvorm, lessen via Verder, een unit met lessenpad, de eindtoets met opfrissen en fouten melden. Draait tegen de productiebuild (`vite preview`) in Chromium op 360 px breed (mobile-first).
 
 ```sh
 npm run test:e2e                       # alles (bouwt eerst de app)

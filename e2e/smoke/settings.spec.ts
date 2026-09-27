@@ -15,16 +15,16 @@ test.describe('settings', () => {
   test('a changed setting survives a reload', async ({ app }) => {
     await app.goto()
     await app.openSettings()
-    const field = app.page.getByLabel(S.SETTINGS_NEW_ITEMS_PER_DAY)
+    const field = app.page.getByLabel(S.SETTINGS_NEW_ITEMS_PER_LESSON)
     // Stay within the field's range, whatever the defaults in config/app.json are
     const value = Number(await field.inputValue())
     const next = String(value < Number(await field.getAttribute('max')) ? value + 1 : value - 1)
     await field.fill(next)
-    await expect.poll(async () => (await readProgress(app.page))?.settings.newItemsPerDay).toBe(Number(next))
+    await expect.poll(async () => (await readProgress(app.page))?.settings.newItemsPerLesson).toBe(Number(next))
 
     await app.reload()
     await app.openSettings()
-    await expect(app.page.getByLabel(S.SETTINGS_NEW_ITEMS_PER_DAY)).toHaveValue(next)
+    await expect(app.page.getByLabel(S.SETTINGS_NEW_ITEMS_PER_LESSON)).toHaveValue(next)
   })
 
   test('unlock all asks for confirmation and can be switched back', async ({ app }) => {

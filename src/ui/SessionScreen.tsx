@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Content } from '../exercises/types.ts'
 import type { ProgressState, ProgressStorage } from '../storage/types.ts'
 import type { Session, SessionBuilderConfig, SessionItem } from '../engine/session-builder.ts'
-import { buildSession, gradeFromResult, isLeech, itemIdFromKey, replanAfterWrong } from '../engine/session-builder.ts'
-import type { LadderItem } from '../engine/ladder.ts'
+import { gradeFromResult, isLeech, itemIdFromKey, replanAfterWrong } from '../engine/session-builder.ts'
 import { rebuildCards } from '../engine/review-log.ts'
 import type { ReviewEntry } from '../engine/review-log.ts'
+import type { ExamConfig } from '../engine/exam.ts'
+import type { Streak } from '../engine/streak.ts'
+import type { Unit } from '../content/schemas.ts'
 import type { SrsConfig } from '../engine/srs.ts'
 import type { CheckerConfig } from '../engine/checker.ts'
 import { introSentence } from '../engine/sentences.ts'
@@ -18,24 +20,39 @@ import { playAudio } from './speak.ts'
 import ReportModal from './ReportModal.tsx'
 import type { ReportEntry } from './ReportModal.tsx'
 import SentenceText from './SentenceText.tsx'
+import SessionEndScreen from './SessionEndScreen.tsx'
 
-type AppConfig = SessionBuilderConfig & { srs: SrsConfig; checker: CheckerConfig }
+type AppConfig = SessionBuilderConfig & { srs: SrsConfig; checker: CheckerConfig; exam: ExamConfig }
+
+/** 'test' tries out exercise types without saving answers or introductions. */
+export type SessionMode = 'lesson' | 'refresh' | 'exam' | 'drill' | 'test'
+
+/** What the end screen shows about the learner's progress after the session. */
+export interface SessionSummary {
+  /** Only for a lesson: is the lesson done now? */
+  lessonDone?: boolean
+  streak: Streak
+}
 
 interface Props {
   content: Content
-  allCardKeys: string[]
-  cardToUnit: Map<string, string>
-  ladderItems?: LadderItem[]
-  cardRequires?: Map<string, string[]>
-  targetUnitId?: string
+  /** Called once, when the screen opens. */
+  makeSession: () => Session
   initialProgress: ProgressState
   storage: ProgressStorage
   config: AppConfig
-  /** 'test' tries out exercise types without saving answers or introductions. */
-  mode?: 'daily' | 'unit' | 'exam' | 'test'
-  overrideQueue?: SessionItem[]
+  mode: SessionMode
+  lessonId?: string
+  examUnit?: Unit
+  /** Passing the exam opens another unit. */
+  examUnlocksNext?: boolean
   autoplayAudio?: boolean
-  onDone: () => void
+  summarize?: (progress: ProgressState) => SessionSummary
+  onHome: () => void
+  /** "Verder" on the end screen: the next step on the path. */
+  onContinue?: () => void
+  onRefreshMissed?: (cardKeys: string[]) => void
+  onRetryExam?: (unitId: string) => void
 }
 
 type Phase =
@@ -67,29 +84,14 @@ function questionLabel(typeId: string): string | undefined {
 }
 
 export default function SessionScreen({
-  content, allCardKeys, cardToUnit, ladderItems, cardRequires, targetUnitId,
-  initialProgress, storage, config,
-  mode = 'daily', overrideQueue, autoplayAudio = false,
-  onDone,
+  content, makeSession, initialProgress, storage, config,
+  mode, lessonId, examUnit, examUnlocksNext, autoplayAudio = false, summarize,
+  onHome, onContinue, onRefreshMissed, onRetryExam,
 }: Props) {
   const sessionRef = useRef<Session | null>(null)
-  if (sessionRef.current === null) {
-    const now = Date.now()
-    sessionRef.current = overrideQueue
-      ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [], ladderStages: {} }
-      : buildSession({
-          now,
-          seed: now,
-          allCardKeys,
-          cardToUnit,
-          progress: initialProgress,
-          config,
-          targetUnitId: mode === 'unit' ? targetUnitId : undefined,
-          ladderItems,
-          cardRequires,
-        })
-  }
+  if (sessionRef.current === null) sessionRef.current = makeSession()
   const session = sessionRef.current
+  const examSize = session.queue.filter(i => i.kind === 'exercise').length
 
   const [queue, setQueue] = useState<SessionItem[]>(() => [...session.queue])
   const [pos, setPos] = useState(0)
@@ -183,13 +185,22 @@ export default function SessionScreen({
     setStartTime(Date.now())
   }, [session.maxReviews])
 
-  async function saveEntry(entry: ReviewEntry, updatedProgress: ProgressState) {
-    const newLog = [...updatedProgress.reviewLog, entry]
-    const newCards = Object.fromEntries(rebuildCards(newLog, config.srs))
-    const newProgress = { ...updatedProgress, reviewLog: newLog, cards: newCards }
-    await storage.save(newProgress)
-    setProgress(newProgress)
-    return newProgress
+  /**
+   * Every save starts from what is stored now, not from this screen's copy: a copy from before
+   * the previous session would otherwise overwrite its answers (the log is append-only).
+   */
+  async function persist(change: (latest: ProgressState) => ProgressState): Promise<ProgressState> {
+    const next = change(await storage.load())
+    await storage.save(next)
+    setProgress(next)
+    return next
+  }
+
+  async function saveEntry(entry: ReviewEntry) {
+    return persist(latest => {
+      const reviewLog = [...latest.reviewLog, entry]
+      return { ...latest, reviewLog, cards: Object.fromEntries(rebuildCards(reviewLog, config.srs)) }
+    })
   }
 
   async function handleIntroNext() {
@@ -199,12 +210,7 @@ export default function SessionScreen({
       return
     }
     const itemId = currentItem.itemId
-    const newIntroduced = progress.introduced.includes(itemId)
-      ? progress.introduced
-      : [...progress.introduced, itemId]
-    const updated = { ...progress, introduced: newIntroduced }
-    await storage.save(updated)
-    setProgress(updated)
+    await persist(latest => latest.introduced.includes(itemId) ? latest : { ...latest, introduced: [...latest.introduced, itemId] })
     advanceToNext(queue, pos + 1, answeredCount)
   }
 
@@ -221,6 +227,13 @@ export default function SessionScreen({
     }
   }
 
+  /** Where the answer was given, as stored in the log. Never called in a test session. */
+  function entryContext(): Pick<ReviewEntry, 'mode' | 'lesson' | 'unit' | 'examSize'> {
+    if (mode === 'lesson') return { mode, lesson: lessonId }
+    if (mode === 'exam') return { mode, unit: examUnit?.id, examSize }
+    return { mode: mode === 'test' ? 'drill' : mode }
+  }
+
   async function submitAnswer(answer: string, cardKey: string, res: ReviewResult) {
     if (mode !== 'test') {
       const entry: ReviewEntry = {
@@ -232,16 +245,17 @@ export default function SessionScreen({
         hint: hintUsed,
         answer: res !== 'correct' ? answer.slice(0, 100) : undefined,
         session: sessionId.current,
-        mode,
+        ...entryContext(),
         cv: 'dev',
       }
-      await saveEntry(entry, progress)
+      await saveEntry(entry)
     }
     setAnsweredCount(answeredCount + 1)
     setResult(res)
 
-    // A test session shows every card once: reinserted cards would push the last types past maxReviews
-    if (res === 'wrong' && mode !== 'test') {
+    // A test session shows every card once: reinserted cards would push the last types past maxReviews.
+    // An exam asks every question once, so its score is the first answer.
+    if (res === 'wrong' && mode !== 'test' && mode !== 'exam') {
       setQueue(replanAfterWrong(queue, pos, cardKey, session.ladderStages, config))
     }
     setPhase('feedback')
@@ -275,10 +289,10 @@ export default function SessionScreen({
         ms: Date.now() - startTime,
         hint: false,
         session: sessionId.current,
-        mode,
+        ...entryContext(),
         cv: 'dev',
       }
-      await saveEntry(entry, progress)
+      await saveEntry(entry)
     }
     const newCount = answeredCount + 1
     setAnsweredCount(newCount)
@@ -326,9 +340,7 @@ export default function SessionScreen({
   }
 
   async function handleReport(entry: ReportEntry) {
-    const newProgress = { ...progress, flags: [...progress.flags, entry as unknown as Record<string, unknown>] }
-    await storage.save(newProgress)
-    setProgress(newProgress)
+    await persist(latest => ({ ...latest, flags: [...latest.flags, entry as unknown as Record<string, unknown>] }))
   }
 
   function handleScreenKeyDown(e: React.KeyboardEvent) {
@@ -376,13 +388,31 @@ export default function SessionScreen({
     if (e.key === '3') { e.preventDefault(); void handleFlashcardGrade('easy') }
   }
 
+  async function handleSaveCanDo(unitId: string, answers: boolean[]) {
+    await persist(latest => ({
+      ...latest,
+      unitMeta: { ...latest.unitMeta, [unitId]: { ...latest.unitMeta[unitId], canDo: answers } },
+    }))
+  }
+
   if (phase === 'done') {
     return (
-      <div className="end-screen" data-testid="session" data-phase="done" data-answered={answeredCount}>
-        <h2>{S.SESSION_DONE}</h2>
-        <p>{S.REVIEWED(answeredCount)}</p>
-        <button className="btn-primary" autoFocus onClick={onDone}>{S.ANOTHER_ROUND}</button>
-      </div>
+      <SessionEndScreen
+        mode={mode}
+        answeredCount={answeredCount}
+        entries={progress.reviewLog.filter(e => e.session === sessionId.current)}
+        content={content}
+        progress={progress}
+        config={config}
+        examUnit={examUnit}
+        unlocksNext={examUnlocksNext}
+        summary={summarize && mode !== 'test' ? summarize(progress) : undefined}
+        onHome={onHome}
+        onContinue={onContinue}
+        onRefreshMissed={onRefreshMissed}
+        onRetryExam={onRetryExam}
+        onSaveCanDo={handleSaveCanDo}
+      />
     )
   }
 
@@ -446,8 +476,6 @@ export default function SessionScreen({
       data-card-key={currentKey ?? undefined}
       data-exercise-type={exercise?.typeId}
     >
-      {session.isReturn && <div className="welcome-back">{S.WELCOME_BACK}</div>}
-
       <div className="session-progress">
         {answeredCount} / {Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)}
       </div>

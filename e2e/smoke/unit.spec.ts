@@ -1,12 +1,16 @@
 import { test, expect } from '../support/fixtures.ts'
 import { S } from '../support/app.ts'
 import { runSession } from '../support/session-driver.ts'
+import { readProgress } from '../support/storage.ts'
 
 test.describe('unit', () => {
-  test('shows can-do goals and words', async ({ app }) => {
+  test('shows can-do goals, the lesson path and words', async ({ app }) => {
     await app.goto()
     await app.openFirstUnit()
     await expect(app.canDoGoals().first()).toBeVisible()
+    // At least one lesson with words and the final lesson
+    expect(await app.lessonSteps().count()).toBeGreaterThanOrEqual(2)
+    await expect(app.currentLesson()).toHaveCount(1)
     await expect(app.heading(S.UNIT_WORDS_HEADER)).toBeVisible()
   })
 
@@ -40,14 +44,45 @@ test.describe('unit', () => {
     await expect(app.heading(unitTitle)).toBeVisible()
   })
 
-  test('practising the unit runs a session to the end', async ({ app }) => {
-    // Session length follows config/app.json (maxReviewsPerSession)
-    test.slow()
+  test('the current lesson starts from the path and runs to the end', async ({ app }) => {
     await app.goto()
     await app.openFirstUnit()
-    await app.startUnitPractice()
+    await app.startCurrentLesson()
 
     const run = await runSession(app.page)
     expect(run.answered).toBeGreaterThan(0)
+  })
+
+  test('the exam can be taken right away (test-out) and shows a result with the can-do goals', async ({ app }) => {
+    await app.goto()
+    await app.openFirstUnit()
+    await app.startExam()
+
+    // The driver answers every typed question wrong the first time, so the exam is not passed
+    const run = await runSession(app.page)
+    expect(run.answered).toBeGreaterThan(0)
+    await expect(app.session()).toHaveAttribute('data-passed', 'false')
+    await expect(app.page.getByText(S.CANDO_QUESTION)).toBeVisible()
+
+    // Exam answers carry the unit and the exam size, so the result can be derived from the log
+    const log = (await readProgress(app.page))?.reviewLog ?? []
+    expect(log.every(e => e.mode === 'exam' && e.unit && e.examSize === run.answered)).toBe(true)
+
+    // A can-do answer is kept
+    await app.button(S.CANDO_YES).first().click()
+    await expect.poll(async () => Object.values((await readProgress(app.page))?.unitMeta ?? {})[0]?.canDo?.[0]).toBe(true)
+
+    // The missed questions can be practised straight away
+    await app.button(S.EXAM_REFRESH_MISSED).click()
+    await expect(app.session()).toHaveAttribute('data-mode', 'refresh')
+    const refresh = await runSession(app.page)
+    expect(refresh.answered).toBeGreaterThan(0)
+    await expect(app.heading(S.REFRESH_DONE_TITLE)).toBeVisible()
+
+    // The refresh adds to the log: the exam answers and the can-do answer are still there
+    const after = await readProgress(app.page)
+    expect(after?.reviewLog.filter(e => e.mode === 'exam')).toHaveLength(run.answered)
+    expect(after?.reviewLog.filter(e => e.mode === 'refresh')).toHaveLength(refresh.answered)
+    expect(Object.values(after?.unitMeta ?? {})[0]?.canDo?.[0]).toBe(true)
   })
 })

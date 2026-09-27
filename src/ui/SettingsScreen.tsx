@@ -5,8 +5,7 @@ import BackupImportModal from './BackupImportModal.tsx'
 import { S } from './strings.nl.ts'
 
 interface AppConfig {
-  session: { newCardsPerDay: number; minNewCardsPerDay: number; maxNewCardsPerDay: number }
-  ladder: { newItemsPerDay: number; minNewItemsPerDay: number; maxNewItemsPerDay: number }
+  lesson: { itemsPerLesson: number; minItemsPerLesson: number; maxItemsPerLesson: number }
   backup: { reminderDays: number }
 }
 
@@ -23,8 +22,7 @@ interface Props {
 
 export default function SettingsScreen({ progress, config, onSave, onReset, onBack, onExport, onImport, onTestSession }: Props) {
   const settings = (progress.settings ?? {}) as Settings
-  const newItemsPerDay = settings.newItemsPerDay ?? config.ladder.newItemsPerDay
-  const newPerDay = settings.newCardsPerDay ?? config.session.newCardsPerDay
+  const newItemsPerLesson = settings.newItemsPerLesson ?? config.lesson.itemsPerLesson
   const autoplay = settings.autoplayAudio ?? false
   const unlockAll = settings.unlockAll ?? false
 
@@ -92,30 +90,16 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
       <section className="settings-section">
         <h2>{S.SETTINGS_LEARNING}</h2>
         <div className="settings-row">
-          <label htmlFor="new-items-per-day">{S.SETTINGS_NEW_ITEMS_PER_DAY}</label>
+          <label htmlFor="new-items-per-lesson">{S.SETTINGS_NEW_ITEMS_PER_LESSON}</label>
           <input
-            id="new-items-per-day"
+            id="new-items-per-lesson"
             type="number"
-            min={config.ladder.minNewItemsPerDay}
-            max={config.ladder.maxNewItemsPerDay}
-            value={newItemsPerDay}
+            min={config.lesson.minItemsPerLesson}
+            max={config.lesson.maxItemsPerLesson}
+            value={newItemsPerLesson}
             onChange={e => {
-              const v = Math.max(config.ladder.minNewItemsPerDay, Math.min(config.ladder.maxNewItemsPerDay, Number(e.target.value)))
-              if (!isNaN(v)) void save({ newItemsPerDay: v })
-            }}
-          />
-        </div>
-        <div className="settings-row">
-          <label htmlFor="new-per-day">{S.SETTINGS_NEW_PER_DAY}</label>
-          <input
-            id="new-per-day"
-            type="number"
-            min={config.session.minNewCardsPerDay}
-            max={config.session.maxNewCardsPerDay}
-            value={newPerDay}
-            onChange={e => {
-              const v = Math.max(config.session.minNewCardsPerDay, Math.min(config.session.maxNewCardsPerDay, Number(e.target.value)))
-              if (!isNaN(v)) void save({ newCardsPerDay: v })
+              const v = Math.max(config.lesson.minItemsPerLesson, Math.min(config.lesson.maxItemsPerLesson, Number(e.target.value)))
+              if (!isNaN(v)) void save({ newItemsPerLesson: v })
             }}
           />
         </div>
