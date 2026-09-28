@@ -9,6 +9,7 @@ import { isPerfectRun } from '../engine/lessons.ts'
 import { exerciseMap } from '../exercises/index.ts'
 import type { SessionMode, SessionSummary } from './SessionScreen.tsx'
 import { S } from './strings.nl.ts'
+import { ICON, ICON_LINE, IconCheck, IconCorrect, IconNext, IconPerfect, IconRefresh, IconStreak, IconWrong } from './icons.ts'
 
 interface Props {
   mode: SessionMode
@@ -31,7 +32,7 @@ interface Props {
 
 function MissedList({ keys, content, optionCount }: { keys: string[]; content: Content; optionCount: number }) {
   return (
-    <ul className="missed-list">
+    <ul className="end-list">
       {keys.map(key => {
         try {
           const ex = exerciseMap.get(key.split(':')[0])?.build(key, content, { seq: 0, optionCount })
@@ -40,7 +41,7 @@ function MissedList({ keys, content, optionCount }: { keys: string[]; content: C
           const prompt = ex.sentence?.nl
             ?? (ex.typeId === 'dictation' ? S.DICTATION_QUESTION : ex.hint ? `${ex.prompt} · ${ex.hint}` : ex.prompt)
           return (
-            <li key={key}>
+            <li key={key} className="missed">
               <span className="missed-prompt">{prompt}</span>
               <strong className="missed-answer" lang="it">{ex.answers[0]}</strong>
             </li>
@@ -53,6 +54,14 @@ function MissedList({ keys, content, optionCount }: { keys: string[]; content: C
   )
 }
 
+function StreakRow({ days }: { days: number }) {
+  return (
+    <div className="end-streak">
+      <IconStreak {...ICON} />{S.STREAK(days)}
+    </div>
+  )
+}
+
 export default function SessionEndScreen({
   mode, answeredCount, entries, content, progress, config, examUnit, unlocksNext, summary,
   onHome, onContinue, onRefreshMissed, onRetryExam, onSaveCanDo,
@@ -61,11 +70,13 @@ export default function SessionEndScreen({
   const streak = summary?.streak
 
   const homeButton = (primary: boolean) => (
-    <button className={primary ? 'btn-primary' : 'btn-secondary'} autoFocus={primary} onClick={onHome}>{S.TO_HOME}</button>
+    <button className={`btn btn--block ${primary ? 'btn--primary' : 'btn--secondary'}`} autoFocus={primary} onClick={onHome}>
+      {S.TO_HOME}
+    </button>
   )
   const continueButtons = onContinue
     ? <>
-        <button className="btn-primary" autoFocus onClick={onContinue}>{S.CONTINUE}</button>
+        <button className="btn btn--primary btn--block" autoFocus onClick={onContinue}>{S.CONTINUE}<IconNext {...ICON_LINE} /></button>
         {homeButton(false)}
       </>
     : homeButton(true)
@@ -84,31 +95,35 @@ export default function SessionEndScreen({
       await onSaveCanDo(examUnit.id, next)
     }
     return (
-      <div className="end-screen end-screen--exam" data-testid="session" data-phase="done" data-mode={mode}
+      <div className="end end--exam" data-testid="session" data-phase="done" data-mode={mode}
         data-answered={answeredCount} data-passed={passed}>
-        <h2>{S.EXAM}</h2>
-        <p className="exam-score">{S.EXAM_SCORE(Math.round(score * 100))}</p>
-        <p className={`exam-verdict ${passed ? 'passed' : 'failed'}`}>
-          {passed ? (unlocksNext ? S.EXAM_PASSED_NEXT : S.EXAM_PASSED) : S.EXAM_FAILED(Math.round(config.exam.passThreshold * 100))}
-        </p>
+        <div className="end-top">
+          <div className={`score-ring score-ring--${passed ? 'pass' : 'fail'}`}>{S.PERCENT(Math.round(score * 100))}</div>
+          <h2 className="end-title">{S.EXAM}</h2>
+          <p className={`verdict verdict--${passed ? 'pass' : 'fail'}`}>
+            {passed ? <IconCorrect {...ICON} /> : <IconWrong {...ICON} />}
+            {passed ? (unlocksNext ? S.EXAM_PASSED_NEXT : S.EXAM_PASSED) : S.EXAM_FAILED(Math.round(config.exam.passThreshold * 100))}
+          </p>
+          <p className="visually-hidden">{S.EXAM_SCORE(Math.round(score * 100))}</p>
+        </div>
 
         {missedCardKeys.length > 0 && (
           <section className="end-section">
-            <h3>{S.EXAM_MISSED_HEADER}</h3>
+            <h3 className="end-section-title">{S.EXAM_MISSED_HEADER}</h3>
             <MissedList keys={missedCardKeys} content={content} optionCount={config.ladder.optionCount} />
           </section>
         )}
 
         <section className="end-section">
-          <h3>{S.CANDO_QUESTION}</h3>
-          <ul className="cando-check">
+          <h3 className="end-section-title">{S.CANDO_QUESTION}</h3>
+          <ul className="end-list">
             {examUnit.canDo.map((goal, i) => (
-              <li key={i}>
-                <span>{goal}</span>
-                <span className="cando-answers">
-                  <button className="btn-secondary" aria-pressed={canDo[i] === true} onClick={() => void answer(i, true)}>{S.CANDO_YES}</button>
-                  <button className="btn-secondary" aria-pressed={canDo[i] === false} onClick={() => void answer(i, false)}>{S.CANDO_NOT_YET}</button>
-                </span>
+              <li key={i} className="cando-card">
+                <p className="cando-text">{goal}</p>
+                <div className="cando-toggle">
+                  <button className="toggle-btn" aria-pressed={canDo[i] === true} onClick={() => void answer(i, true)}>{S.CANDO_YES}</button>
+                  <button className="toggle-btn" aria-pressed={canDo[i] === false} onClick={() => void answer(i, false)}>{S.CANDO_NOT_YET}</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -118,9 +133,11 @@ export default function SessionEndScreen({
           {passed ? continueButtons : (
             <>
               {missedCardKeys.length > 0 && onRefreshMissed && (
-                <button className="btn-primary" autoFocus onClick={() => onRefreshMissed(missedCardKeys)}>{S.EXAM_REFRESH_MISSED}</button>
+                <button className="btn btn--primary btn--block" autoFocus onClick={() => onRefreshMissed(missedCardKeys)}>
+                  <IconRefresh {...ICON} />{S.EXAM_REFRESH_MISSED}
+                </button>
               )}
-              {onRetryExam && <button className="btn-secondary" onClick={() => onRetryExam(examUnit.id)}>{S.EXAM_RETRY}</button>}
+              {onRetryExam && <button className="btn btn--secondary btn--block" onClick={() => onRetryExam(examUnit.id)}>{S.EXAM_RETRY}</button>}
               {homeButton(missedCardKeys.length === 0 || !onRefreshMissed)}
             </>
           )}
@@ -130,18 +147,28 @@ export default function SessionEndScreen({
   }
 
   const perfect = mode === 'lesson' && isPerfectRun(entries)
+  const notDone = mode === 'lesson' && summary?.lessonDone === false
   const title =
-    mode === 'lesson' ? (summary?.lessonDone === false ? S.LESSON_NOT_DONE_TITLE : S.LESSON_DONE_TITLE)
+    mode === 'lesson' ? (notDone ? S.LESSON_NOT_DONE_TITLE : S.LESSON_DONE_TITLE)
       : mode === 'refresh' ? S.REFRESH_DONE_TITLE
         : S.SESSION_DONE
+  const heroKind = perfect ? 'perfect' : notDone ? 'soft' : mode === 'refresh' ? 'refresh' : 'done'
+  const HeroIcon = perfect ? IconPerfect : notDone ? IconStreak : mode === 'refresh' ? IconRefresh : IconCheck
+  const celebrate = perfect || (mode === 'lesson' && !notDone)
 
   return (
-    <div className="end-screen" data-testid="session" data-phase="done" data-mode={mode} data-answered={answeredCount}>
-      <h2>{title}</h2>
-      {perfect && <p className="perfect-badge">{S.PERFECT_LESSON}</p>}
-      <p>{S.REVIEWED(answeredCount)}</p>
-      {mode === 'lesson' && summary?.lessonDone === false && <p className="end-info">{S.LESSON_NOT_DONE_INFO}</p>}
-      {streak && streak.current > 0 && <p className="end-streak">{S.STREAK(streak.current)}</p>}
+    <div className="end" data-testid="session" data-phase="done" data-mode={mode} data-answered={answeredCount}>
+      <div className="end-center">
+        <div className={`hero hero--${heroKind}${celebrate ? ' hero--celebrate' : ''}`} aria-hidden="true">
+          {perfect && <><span className="spark spark--1" /><span className="spark spark--2" /><span className="spark spark--3" /><span className="spark spark--4" /></>}
+          <HeroIcon {...(heroKind === 'done' ? ICON_LINE : ICON)} />
+        </div>
+        <h2 className="end-title">{title}</h2>
+        {perfect && <p className="perfect-badge"><IconPerfect {...ICON} />{S.PERFECT_LESSON}</p>}
+        <p className="end-sub">{S.REVIEWED(answeredCount)}</p>
+        {notDone && <p className="end-sub">{S.LESSON_NOT_DONE_INFO}</p>}
+        {streak && streak.current > 0 && <StreakRow days={streak.current} />}
+      </div>
       <div className="end-actions">{continueButtons}</div>
     </div>
   )

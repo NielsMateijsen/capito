@@ -48,29 +48,6 @@ body {
   cursor: default;
 }
 
-/* End screen */
-.end-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100dvh;
-  gap: 1.25rem;
-  text-align: center;
-  padding: 2rem;
-}
-
-.end-screen h2 {
-  font-size: 1.8rem;
-  margin: 0;
-}
-
-.end-screen p {
-  font-size: 1.1rem;
-  color: #555;
-  margin: 0;
-}
-
 /* ── Home screen ─────────────────────────────────────────── */
 
 .home {
@@ -637,8 +614,6 @@ body {
 
   .btn-secondary:hover { background: #333; }
 
-  .end-screen p { color: #aaa; }
-
   /* Home */
   .banner {
     background: #2a2510;
@@ -870,95 +845,6 @@ body {
 
 .exam-section p { margin: 0 0 0.5rem; }
 
-/* ── End screens ─────────────────────────────────────────── */
-
-.end-screen--exam {
-  justify-content: flex-start;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.exam-score {
-  font-size: 1.5rem !important;
-  font-weight: 700;
-  color: inherit !important;
-}
-
-.exam-verdict.passed { color: #2e7d32 !important; }
-.exam-verdict.failed { color: #c62828 !important; }
-
-.end-section {
-  width: 100%;
-  text-align: left;
-}
-
-.end-section h3 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #666;
-  margin: 0 0 0.4rem;
-}
-
-.missed-list,
-.cando-check {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.missed-list li {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  font-size: 0.95rem;
-}
-
-.missed-prompt { color: #555; }
-
-.cando-check li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.cando-answers {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.cando-answers button {
-  min-height: 44px;
-}
-
-.cando-answers button[aria-pressed="true"] {
-  background: #4c8bf5;
-  border-color: #4c8bf5;
-  color: #fff;
-}
-
-.perfect-badge {
-  font-weight: 700;
-  color: #f57f17 !important;
-}
-
-.end-streak { color: #e65100 !important; }
-
-.end-info { font-size: 0.95rem !important; }
-
-.end-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
 @media (prefers-color-scheme: dark) {
   .streak { color: #999; }
   .continue-label { color: #aaa; }
@@ -967,8 +853,5 @@ body {
   .lesson-mark { background: #333; }
   .lesson-step--done .lesson-mark { background: #1b3a1d; color: #a5d6a7; }
   .lesson-words { color: #aaa; }
-  .end-section h3 { color: #999; }
-  .missed-prompt { color: #aaa; }
-  .exam-verdict.passed { color: #a5d6a7 !important; }
-  .exam-verdict.failed { color: #ef9a9a !important; }
+
 }

@@ -111,6 +111,9 @@
   --size-grade: 64px;
   --size-gap: 5.5rem;
   --size-textarea: 88px;
+  --size-ring: 132px;
+  --size-ring-stroke: 10px;
+  --size-spark: 12px;
   --width-content: 600px;
   --width-path: 350px;
 

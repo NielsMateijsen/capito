@@ -54,11 +54,12 @@ export const S = {
   LESSON_DONE_TITLE: 'Les klaar!',
   LESSON_NOT_DONE_TITLE: 'Goed bezig!',
   LESSON_NOT_DONE_INFO: 'Een paar woorden hebben nog een ronde nodig. Met Verder maak je de les af.',
-  PERFECT_LESSON: '⭐ Perfecte les!',
+  PERFECT_LESSON: 'Perfecte les!',
   REFRESH_DONE_TITLE: 'Opgefrist!',
 
   // Exam result
   EXAM_SCORE: (pct: number) => `${pct}% goed`,
+  PERCENT: (pct: number) => `${pct}%`,
   EXAM_PASSED: 'Geslaagd!',
   EXAM_PASSED_NEXT: 'Geslaagd! De volgende unit is open.',
   EXAM_FAILED: (threshold: number) => `Nog niet gehaald: je hebt ${threshold}% nodig.`,
@@ -90,7 +91,7 @@ export const S = {
   REFRESH: 'Opfrissen',
   REFRESH_COUNT: (n: number) => `Opfrissen (${n})`,
   REFRESH_WARNING: (words: number) => `${words} woorden dreigen weg te zakken`,
-  STREAK: (days: number) => `🔥 ${days === 1 ? '1 dag' : `${days} dagen`} op rij`,
+  STREAK: (days: number) => (days === 1 ? '1 dag op rij' : `${days} dagen op rij`),
   STREAK_LONGEST: (days: number) => `langste: ${days}`,
   UNIT_LIST_HEADER: 'Eenheden',
   LOCKED: 'Vergrendeld',
