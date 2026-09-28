@@ -7,7 +7,7 @@ Naam: **Capito** (reponaam `capito`, PWA-naam "Capito").
 Persoonlijke webapp (PWA, mobile-first) om Italiaans te leren als Nederlandstalige beginner (A1-begin).
 
 Verbeteringen t.o.v. Duolingo:
-- Snel: geen animaties, geen levens, toetsenbord-first (Enter = controleer / volgende)
+- Snel: geen levens, toetsenbord-first (Enter = controleer / volgende). Alleen micro-animaties: in een sessie maximaal 150 ms, een viering (perfecte les, streak) alleen op het eindscherm. Animaties blokkeren nooit invoer (Enter en 1-4 werken altijd direct), duren staan als tokens in `src/ui/theme.css`, en alles gaat uit bij `prefers-reduced-motion`
 - Correcte, natuurlijke zinnen (vooraf gegenereerd en gecontroleerd, nooit live AI)
 - Nadruk op grammatica en vervoegingen
 - Niet te raden: getypte antwoorden, en altijd oude stof door de nieuwe gemixt
@@ -47,8 +47,9 @@ Succescriteria voor de pilot (unit 1 en 2 een week gebruiken) staan in `docs/pil
 - Voortgang en review-log in **IndexedDB** (`idb-keyval`) achter een asynchrone `ProgressStorage`-interface
 - Deploy via GitHub Actions naar GitHub Pages
 - Audio: Python + `edge-tts`, vooraf gegenereerd als mp3
-- Grammaticales: Markdown met frontmatter (`gray-matter`)
+- Grammaticales: Markdown met YAML-frontmatter (`yaml`, browservriendelijk)
 - Versiestempel bij elke build (zie 5, "Versiestempel")
+- Lettertype Figtree via `@fontsource/figtree` (zelf gehost); iconen via `@phosphor-icons/react`
 
 ### Mappenstructuur
 
@@ -70,7 +71,7 @@ Succescriteria voor de pilot (unit 1 en 2 een week gebruiken) staan in `docs/pil
   /engine/           conjugator, checker, srs, session-builder, unlock, plurals
   /exercises/        één bestand per oefentype + index.ts (auto-registry)
   /storage/          progress-store, migrations
-  /ui/               schermen, componenten, strings.nl.ts
+  /ui/               schermen, componenten, strings.nl.ts, theme.css (design tokens), icons.ts
   /generated/        audio-manifest.json (door script gemaakt, niet handmatig)
 ```
 
@@ -375,14 +376,18 @@ ReviewEntry = {
 
 ## 6. Schermen (mobile-first)
 
-1. **Home:** grote knop "Verder" met eronder de volgende stap (unit en les, of eindtoets), streak (huidige en langste reeks), "Opfrissen" (prominent bij een grote achterstand), unitlijst (vergrendeld/open/gehaald, lessen af van totaal), back-upbanner en installatieadvies (zie "Back-up en opslag")
-2. **Unit:** kan-doelen, lessenpad (vinkje / huidige les / slot, met de nieuwe woorden per les), eindtoets (ook als test-out, met beste score), woordenlijst met audio, dialogen, grammaticales
+1. **Home:** een verticaal, licht slingerend lessenpad met alle units onder elkaar. Elke unit is een sectie met een kop (titel, lessen af van totaal; tikken opent de unitpagina). Per les een knooppunt (vinkje / huidige les / slot), daarna Afronden en de eindtoets als laatste knooppunt (ook als test-out, met beste score). Het pad scrolt bij openen naar de huidige les. Bovenaan: streak en "Opfrissen" (prominent bij een grote achterstand), back-upbanner en installatieadvies (zie "Back-up en opslag"). Onderaan een vaste knop "Verder" met de volgende stap
+2. **Unit:** kan-doelen, eindtoets (met beste score), woordenlijst met audio, dialogen, grammaticales. Het lessenpad staat op Home
 3. **Sessie:** één oefening per scherm, Enter om te controleren en door te gaan, directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout". Meerkeuze met toetsen 1-4. Bij invuloefeningen staat de Nederlandse zin boven de Italiaanse zin met het gat. Eindscherm per soort: les klaar (of "goed bezig" als de les nog niet af is), perfecte les, opgefrist, of de uitslag van de eindtoets met gemiste vragen en kan-doelen; met de knoppen "Verder" en "Naar start"
 4. **Grammaticales:** Markdown + knop "oefen dit"
 5. **Dialoog:** regels met audio, NL-vertaling aan/uit, wissel informeel/formeel
 6. **Instellingen:** nieuwe woorden per les, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), testsessie met alle oefentypes, reset, versie-info (app, commit, content)
 7. **Meldingen:** lijst met gemelde fouten, exporteerbaar
 8. **Lastig:** lijst met leech-kaarten
+
+**Visuele stijl:** alle kleuren, lettergroottes, afstanden, radii en animatieduren staan als CSS-variabelen in `src/ui/theme.css` (licht en donker via `prefers-color-scheme`). Componenten gebruiken alleen deze variabelen, geen losse hex-waarden of pixelmaten. Contrast minimaal WCAG AA. Designs uit een Design-canvas worden vertaald naar deze tokens; teksten uit mockups gaan naar `strings.nl.ts` of komen uit `content/`.
+
+**Iconen:** Phosphor (`@phosphor-icons/react`), per bestand geïmporteerd en centraal gebundeld in `src/ui/icons.ts`. Een knop met alleen een icoon heeft een `aria-label` uit `strings.nl.ts`. Feedback goed/bijna/fout toont altijd icoon, tekst en kleur samen.
 
 ---
 

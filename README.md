@@ -30,7 +30,7 @@ content/ (JSON + Markdown)  →  validate  →  audio genereren  →  app bouwt 
 | `src/engine/` | Conjugator, antwoordcontrole, SRS, leerladder, zinnen en afleiders, sessie-opbouw, ontgrendelen |
 | `src/exercises/` | Eén bestand per oefentype, vanzelf geregistreerd |
 | `src/storage/` | Voortgang opslaan + migraties |
-| `src/ui/` | Schermen; alle tekst in `strings.nl.ts` |
+| `src/ui/` | Schermen en componenten; alle tekst in `strings.nl.ts`, design tokens (kleuren, maten, animatieduren) in `theme.css`, iconen via `icons.ts` |
 | `scripts/` | validate, audio, coverage, reports |
 | `e2e/` | Playwright-rooktest per functionaliteit (zie `e2e/README.md`) |
 | `prompts/` | Prompts voor het genereren en reviewen van content |
