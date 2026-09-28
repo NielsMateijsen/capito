@@ -29,7 +29,7 @@ Lokaal en in CI gedraagt de test zich hetzelfde: service workers staan uit en mp
 
 - **Teksten alleen via `S`** uit `src/ui/strings.nl.ts` (geïmporteerd via `support/app.ts`). Nooit een label letterlijk in een test. Verandert een tekst, dan blijft de test werken.
 - **Geen Italiaans en geen content-ID's in tests.** Tests kiezen "de eerste unit", "de eerste dialoog" enz. Zo overleven ze nieuwe of gewijzigde content.
-- **Sessies volgen via `data-*`-attributen** op `[data-testid="session"]`: `data-phase`, `data-pos`, `data-mode`, `data-card-key`, `data-exercise-type`, en `data-answered` op het eindscherm. Wijzig je `SessionScreen.tsx`, houd deze attributen dan kloppend.
+- **Sessies volgen via `data-*`-attributen** op `[data-testid="session"]`: `data-phase`, `data-pos`, `data-mode`, `data-card-key`, `data-exercise-type`, `data-result` (goed/bijna/fout na een antwoord), en `data-answered` op het eindscherm. Meerkeuzeopties dragen `data-option`, `data-option-label` en na het antwoord `data-state`; het getoonde juiste antwoord staat in `[data-correct-answer]`. Het antwoordveld vind je op zijn label (`S.ANSWER_LABEL`). Wijzig je `SessionScreen.tsx`, houd deze attributen dan kloppend.
 - **Specs bevatten geen CSS-selectors of test-ID's.** Alles wat de plek van iets op een scherm kent, staat in `support/app.ts`. Zoeken op een tekst uit `S` (`getByText`, `getByLabel`) mag wel in een spec.
 - **Toetsenbordmodus controleert ook de focus.** Vóór elke toets wacht de driver tot de focus binnen de sessie staat; staat hij daar niet, dan faalt de test met "focus is not inside the session".
 - **Elke test begint schoon:** Playwright geeft elke test een eigen browsercontext, dus een lege IndexedDB. Tests zijn onafhankelijk en draaien parallel.

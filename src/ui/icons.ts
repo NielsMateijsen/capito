@@ -24,3 +24,6 @@ export { DownloadSimpleIcon as IconDownload } from '@phosphor-icons/react/dist/c
 
 /** Shared icon props: every icon inherits the text colour and scales with the token size. */
 export const ICON = { weight: 'fill', size: '1em', 'aria-hidden': true } as const
+
+/** For line icons (close, arrows): the fill weight of these draws a frame around them. */
+export const ICON_LINE = { ...ICON, weight: 'bold' } as const

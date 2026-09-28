@@ -31,6 +31,7 @@ import LeechScreen from './ui/LeechScreen.tsx'
 import { S } from './ui/strings.nl.ts'
 import './ui/session.css'
 import './ui/app.css'
+import './ui/exercise.css'
 import appConfig from '../config/app.json'
 
 /** What a session screen practises; kept in the history entry, so it holds data only. */

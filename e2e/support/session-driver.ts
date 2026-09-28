@@ -5,9 +5,10 @@ import { S } from '../../src/ui/strings.nl.ts'
  * Plays a session from the current screen until the end screen, whatever the cards are.
  *
  * It follows the session through the data-* attributes on [data-testid="session"]
- * (data-phase, data-pos, data-card-key, data-exercise-type; see SessionScreen.tsx) and
- * recognises the question UI by its shape, not by exercise type: choice list, text input or
- * flashcard. A new exercise type that reuses one of those shapes needs no change here.
+ * (data-phase, data-pos, data-card-key, data-exercise-type, data-result; see SessionScreen.tsx)
+ * and recognises the question UI by its shape, not by exercise type: choice options
+ * ([data-option]), the answer text box or a flashcard. A new exercise type that reuses one of
+ * those shapes needs no change here.
  *
  * Strategy: the first time a card is seen it is answered wrong on purpose (typed) or with
  * the first option (choice), so feedback and retyping are exercised too. The correct answer
@@ -82,7 +83,7 @@ export async function runSession(page: Page, options: DriverOptions = {}): Promi
       await answerQuestion(session, cardKey, type, known.get(cardKey), input, press)
     } else if (phase === 'flashcard-reveal') {
       if (input === 'keyboard') await press('2')
-      else await session.locator('.flashcard-grades').getByRole('button', { name: S.FLASHCARD_GOOD }).click()
+      else await button(S.FLASHCARD_GOOD).click()
     } else if (phase === 'feedback') {
       run.results.push(await feedbackResult(session))
       const answer = await shownAnswer(session)
@@ -91,9 +92,9 @@ export async function runSession(page: Page, options: DriverOptions = {}): Promi
       else await button(S.NEXT).click()
     } else if (phase === 'lapse-retype') {
       run.retypes++
-      const answer = (await session.locator('.lapse-retype .feedback-answer strong').textContent()) ?? ''
+      const answer = (await session.locator('[data-correct-answer]').textContent()) ?? ''
       known.set(cardKey, answer)
-      await session.locator('.answer-input').fill(answer)
+      await session.getByRole('textbox', { name: S.LAPSE_RETYPE, exact: true }).fill(answer)
       if (input === 'keyboard') await press('Enter')
       else await button(S.LAPSE_CONFIRM).click()
     } else {
@@ -119,12 +120,12 @@ async function answerQuestion(
   input: InputMode,
   press: (key: string) => Promise<void>,
 ) {
-  const choices = session.locator('.choice')
-  const textInput = session.locator('input.answer-input')
+  const choices = session.locator('[data-option]')
+  const textInput = session.getByRole('textbox', { name: S.ANSWER_LABEL, exact: true })
   const reveal = session.getByRole('button', { name: S.FLASHCARD_REVEAL, exact: true })
 
   if (await choices.count() > 0) {
-    const labels = await session.locator('.choice > span:last-child').allTextContents()
+    const labels = await session.locator('[data-option-label]').allTextContents()
     const index = answer === undefined ? 0 : Math.max(0, labels.indexOf(answer))
     if (input === 'keyboard') await press(String(index + 1))
     else await choices.nth(index).click()
@@ -142,15 +143,14 @@ async function answerQuestion(
 }
 
 async function feedbackResult(session: Locator): Promise<string> {
-  const cls = (await session.locator('.feedback-label').getAttribute('class')) ?? ''
-  return cls.replace('feedback-label', '').trim()
+  return (await session.getAttribute('data-result')) ?? ''
 }
 
 /** The correct answer as the feedback shows it, or null when it is not shown (correct answer). */
 async function shownAnswer(session: Locator): Promise<string | null> {
-  const choice = session.locator('.choice.correct > span:last-child')
+  const choice = session.locator('[data-state="ok"] [data-option-label], [data-state="answer"] [data-option-label]')
   if (await choice.count() > 0) return (await choice.first().textContent()) ?? null
-  const typed = session.locator('.feedback-answer strong')
+  const typed = session.locator('[data-correct-answer]')
   if (await typed.count() > 0) return (await typed.textContent()) ?? null
   return null
 }

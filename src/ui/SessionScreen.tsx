@@ -21,6 +21,10 @@ import ReportModal from './ReportModal.tsx'
 import type { ReportEntry } from './ReportModal.tsx'
 import SentenceText from './SentenceText.tsx'
 import SessionEndScreen from './SessionEndScreen.tsx'
+import { useKeyboardInset } from './keyboard-inset.ts'
+import {
+  ICON, ICON_LINE, IconAlmost, IconAudio, IconCheck, IconClose, IconCorrect, IconHint, IconNext, IconReport, IconWrong,
+} from './icons.ts'
 
 type AppConfig = SessionBuilderConfig & { srs: SrsConfig; checker: CheckerConfig; exam: ExamConfig }
 
@@ -75,13 +79,32 @@ function buildHint(answer: string): string {
   return answer.slice(0, 3) + '…'
 }
 
+/** Every exercise says what to do; a new type without a label falls back to none. */
+const QUESTION_LABELS: Record<string, string> = {
+  'mc-sentence': S.MC_SENTENCE_QUESTION,
+  'mc-word': S.MC_WORD_QUESTION,
+  'cloze-word': S.CLOZE_WORD_QUESTION,
+  'article': S.ARTICLE_QUESTION,
+  'dictation': S.DICTATION_QUESTION,
+  'translate-nl-it': S.TRANSLATE_NL_IT_QUESTION,
+  'translate-it-nl': S.TRANSLATE_IT_NL_QUESTION,
+  'conjugate': S.CONJUGATE_QUESTION,
+  'cloze': S.CLOZE_QUESTION,
+  'flashcard': S.FLASHCARD_QUESTION,
+}
+
 function questionLabel(typeId: string): string | undefined {
-  if (typeId === 'mc-sentence') return S.MC_SENTENCE_QUESTION
-  if (typeId === 'mc-word') return S.MC_WORD_QUESTION
-  if (typeId === 'cloze-word') return S.CLOZE_WORD_QUESTION
-  if (typeId === 'article') return S.ARTICLE_QUESTION
-  if (typeId === 'dictation') return S.DICTATION_QUESTION
-  return undefined
+  return QUESTION_LABELS[typeId]
+}
+
+/** Types whose prompt is Italian. */
+const IT_PROMPT_TYPES = new Set(['translate-it-nl', 'conjugate', 'cloze', 'flashcard'])
+
+/** Types whose audio is the prompt itself, so it can play before answering. */
+const AUDIO_PROMPT_TYPES = new Set(['translate-it-nl', 'flashcard'])
+
+const RESULT_CLASS: Record<ReviewResult, 'ok' | 'almost' | 'wrong'> = {
+  correct: 'ok', good: 'ok', easy: 'ok', almost: 'almost', wrong: 'wrong', again: 'wrong',
 }
 
 export default function SessionScreen({
@@ -108,7 +131,9 @@ export default function SessionScreen({
   const [showReport, setShowReport] = useState(false)
   const [startTime, setStartTime] = useState(Date.now())
   const [retypeWrong, setRetypeWrong] = useState(false)
+  const [lastAnswer, setLastAnswer] = useState('')
   const submittingRef = useRef(false)
+  const keyboardInsetPx = useKeyboardInset()
 
   const sessionId = useRef(crypto.randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
@@ -252,6 +277,7 @@ export default function SessionScreen({
       await saveEntry(entry)
     }
     setAnsweredCount(answeredCount + 1)
+    setLastAnswer(answer)
     setResult(res)
 
     // A test session shows every card once: reinserted cards would push the last types past maxReviews.
@@ -366,7 +392,7 @@ export default function SessionScreen({
       return
     } else if (phase === 'question' && exercise?.typeId !== 'flashcard') {
       e.preventDefault()
-      void handleSubmitAnswer()
+      if (input.trim() !== '') void handleSubmitAnswer()
     } else if (phase === 'question' && exercise?.typeId === 'flashcard') {
       e.preventDefault()
       setPhase('flashcard-reveal')
@@ -419,47 +445,267 @@ export default function SessionScreen({
 
   const cardState = currentItem?.kind === 'exercise' ? progress.cards[currentItem.cardKey] : undefined
   const isLeechy = cardState !== undefined && isLeech(cardState, config.leech) && config.leech.showExtraContext
-  const sentence = exercise?.sentence
   const label = exercise ? questionLabel(exercise.typeId) : undefined
+  const totalQuestions = Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)
+  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0
+  const answered = phase === 'feedback' || phase === 'lapse-retype'
+  const typed = !!exercise && !isChoice && exercise.typeId !== 'flashcard'
+  const promptLang = exercise && IT_PROMPT_TYPES.has(exercise.typeId) ? 'it' : undefined
+  const answerLang = exercise?.typeId === 'translate-it-nl' ? undefined : 'it'
+  const canHint = mode !== 'exam' && typed && exercise?.typeId !== 'article'
+  // Audio next to the prompt only where it cannot give the answer away (before answering)
+  const promptAudio = !!exercise && exercise.typeId !== 'dictation' && (
+    AUDIO_PROMPT_TYPES.has(exercise.typeId) || exercise.sentence?.mode === 'highlight' || (answered && !!exercise.sentence)
+  )
 
-  function renderPrompt(ex: Exercise) {
-    if (ex.sentence?.mode === 'gap') {
+  function renderPrompt(ex: Exercise, showAnswer: boolean) {
+    if (ex.sentence) {
+      const textMode = ex.sentence.mode === 'gap' && !showAnswer ? 'gap' : 'highlight'
       return (
         <>
-          <div className="sentence-nl">{ex.sentence.nl}</div>
-          <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="gap" spaceAfterGap={ex.sentence.spaceAfterGap} />
+          {ex.sentence.mode === 'gap' && <p className="q-nl">{ex.sentence.nl}</p>}
+          <div className="q-row">
+            <SentenceText className="q-sentence" text={ex.sentence.it} span={ex.sentence.span} mode={textMode} spaceAfterGap={ex.sentence.spaceAfterGap} />
+            {promptAudio && audioButton()}
+          </div>
         </>
       )
     }
-    if (ex.sentence?.mode === 'highlight') {
-      return <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="highlight" />
+    if (ex.typeId === 'dictation') {
+      return (
+        <button className="play-btn" onClick={handleAudio} aria-label={S.PLAY}>
+          <IconAudio {...ICON} />
+        </button>
+      )
     }
-    return <div className="card-prompt">{ex.prompt}</div>
+    return (
+      <div className="q-row">
+        <div className="q-prompt" lang={promptLang}>{ex.prompt}</div>
+        {promptAudio && audioButton()}
+      </div>
+    )
   }
 
-  function renderOptions(ex: Exercise, answered: boolean) {
+  function audioButton() {
+    return (
+      <button className="icon-btn" onClick={handleAudio} aria-label={S.SPEAK}>
+        <IconAudio {...ICON} />
+      </button>
+    )
+  }
+
+  function reportButton() {
+    return (
+      <button className="icon-btn" onClick={() => setShowReport(true)} aria-label={S.REPORT}>
+        <IconReport {...ICON} />
+      </button>
+    )
+  }
+
+  function optionState(ex: Exercise, option: string): 'ok' | 'answer' | 'wrong' | 'dim' | undefined {
+    if (!answered) return undefined
+    const isAnswer = ex.answers.includes(option)
+    const isPicked = option === input
+    if (isAnswer) return isPicked ? 'ok' : 'answer'
+    return isPicked ? 'wrong' : 'dim'
+  }
+
+  function renderOptions(ex: Exercise) {
     const itOptions = ex.typeId !== 'mc-sentence'
     return (
-      <div className="choice-list">
+      <div className="options" role="group" aria-label={label}>
         {ex.options!.map((option, i) => {
-          const isAnswer = ex.answers.includes(option)
-          const isPicked = option === input
-          const state = !answered ? '' : isAnswer ? 'correct' : isPicked ? 'wrong' : 'dim'
+          const state = optionState(ex, option)
           return (
             <button
               key={option}
-              className={`choice ${state}`}
+              className="option"
+              data-option={i + 1}
+              data-state={state}
               disabled={answered}
-              lang={itOptions ? 'it' : undefined}
               onClick={() => handleChoose(option)}
             >
-              <span className="choice-key">{i + 1}</span>
-              <span>{option}</span>
+              <span className="option-key" aria-hidden="true">{i + 1}</span>
+              <span className="option-label" data-option-label lang={itOptions ? 'it' : undefined}>{option}</span>
+              {(state === 'ok' || state === 'answer') && <IconCorrect {...ICON} />}
+              {state === 'wrong' && <IconWrong {...ICON} />}
             </button>
           )
         })}
       </div>
     )
+  }
+
+  function renderAnswerField() {
+    const state = answered && result ? RESULT_CLASS[result] : undefined
+    const StateIcon = state === 'ok' ? IconCorrect : state === 'almost' ? IconAlmost : state === 'wrong' ? IconWrong : null
+    return (
+      <div className="answer-field">
+        <input
+          ref={answered ? undefined : inputRef}
+          className={`answer-input${state ? ` answer-input--${state}` : ''}`}
+          type="text"
+          aria-label={S.ANSWER_LABEL}
+          value={phase === 'lapse-retype' ? lastAnswer : input}
+          readOnly={answered}
+          onChange={e => setInput(e.target.value)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          lang={answerLang}
+        />
+        {StateIcon && <StateIcon {...ICON} className={`answer-state answer-state--${state}`} />}
+      </div>
+    )
+  }
+
+  function renderFeedback(ex: Exercise, res: ReviewResult) {
+    const kind = RESULT_CLASS[res]
+    const HeadIcon = kind === 'ok' ? IconCorrect : kind === 'almost' ? IconAlmost : IconWrong
+    const showAnswer = !isChoice && (kind === 'almost' || kind === 'wrong')
+    return (
+      <div className={`feedback feedback--${kind}`} role="status">
+        <div className="feedback-head">
+          <HeadIcon {...ICON} />
+          {kind === 'ok' ? S.CORRECT : kind === 'almost' ? S.ALMOST : S.WRONG}
+        </div>
+        {showAnswer && (
+          <p className="feedback-text">
+            {S.CORRECT_ANSWER} <b data-correct-answer lang={answerLang}>{ex.answers[0]}</b>
+          </p>
+        )}
+        {phase === 'lapse-retype' ? (
+          <div className="feedback-retype">
+            <label className="feedback-label" htmlFor="retype-input">{S.LAPSE_RETYPE}</label>
+            <input
+              id="retype-input"
+              ref={inputRef}
+              className={`answer-input${retypeWrong ? ' answer-input--wrong' : ''}`}
+              type="text"
+              value={input}
+              onChange={e => { setInput(e.target.value); setRetypeWrong(false) }}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              lang={answerLang}
+            />
+            {retypeWrong && <p className="feedback-text">{S.LAPSE_MISMATCH}</p>}
+            <button className={`btn btn--block btn--${kind}`} ref={primaryBtnRef} onClick={handleLapseRetypeNext}>
+              {S.LAPSE_CONFIRM}
+            </button>
+          </div>
+        ) : (
+          <button className={`btn btn--block btn--${kind}`} ref={primaryBtnRef} onClick={handleFeedbackNext}>
+            {S.NEXT}<IconNext {...ICON_LINE} />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  function renderIntro(itemId: string) {
+    const word = content.words.get(itemId)
+    const verb = content.verbs.get(itemId)
+    const match = introSentence(itemId, content)
+    const itemIt = word ? withArticle(word) : (verb?.inf ?? itemId)
+    const itemNl = (word?.nl ?? verb?.nl ?? []).join(', ')
+    const register = word?.register === 'formal' ? S.REGISTER_FORMAL : word?.register === 'informal' ? S.REGISTER_INFORMAL : null
+    return (
+      <>
+        <p className="q-label">{S.INTRO_HEADER}</p>
+        {match && (
+          <>
+            <SentenceText className="q-sentence" text={match.sentence.it} span={match.span} mode="highlight" />
+            <p className="q-nl">{match.sentence.nl[0]}</p>
+          </>
+        )}
+        <div className="intro-card">
+          <div className="q-row intro-card-top">
+            <div className="intro-word" lang="it">{itemIt}</div>
+            <button className="icon-btn" onClick={() => handleAudioIntro(itemId)} aria-label={S.SPEAK}>
+              <IconAudio {...ICON} />
+            </button>
+          </div>
+          {itemNl && <div className="intro-nl">{itemNl}</div>}
+          {register && <span className="pill pill--soft">{register}</span>}
+          {word?.note && <p className="q-note">{word.note}</p>}
+        </div>
+      </>
+    )
+  }
+
+  let body: React.ReactNode = null
+  let foot: React.ReactNode = null
+
+  if (phase === 'intro' && currentItem?.kind === 'intro') {
+    body = renderIntro(currentItem.itemId)
+    foot = (
+      <button className="btn btn--primary btn--block" ref={primaryBtnRef} onClick={() => void handleIntroNext()}>
+        {S.INTRO_DONE}<IconNext {...ICON_LINE} />
+      </button>
+    )
+  } else if (exercise) {
+    body = (
+      <>
+        <div className="q-head">
+          <p className="q-label">{exercise.typeId === 'flashcard' ? S.FLASHCARD_QUESTION : label}</p>
+          {isLeechy && <span className="pill pill--wrong">{S.LEECH_BADGE}</span>}
+        </div>
+        {renderPrompt(exercise, answered)}
+        {exercise.withArticle && <span className="pill pill--primary">{S.WITH_ARTICLE}</span>}
+        {exercise.hint && <span className="pill pill--primary" lang="it">{exercise.hint}</span>}
+        {phase === 'flashcard-reveal' && <p className="reveal">{exercise.answers.join(' / ')}</p>}
+        {isChoice && renderOptions(exercise)}
+        {typed && renderAnswerField()}
+        <div className="q-tools">
+          {canHint && !answered && (
+            <button className="icon-btn" onClick={handleHint} disabled={hintUsed} aria-label={S.HINT}>
+              <IconHint {...ICON} />
+            </button>
+          )}
+          {answered && !promptAudio && audioButton()}
+          {reportButton()}
+          {hintUsed && !answered && <span className="q-note">{S.HINT_USED}</span>}
+          {isChoice && !answered && <span className="q-note">{S.CHOICE_KEYS}</span>}
+        </div>
+      </>
+    )
+    if (answered && result) {
+      foot = renderFeedback(exercise, result)
+    } else if (phase === 'flashcard-reveal') {
+      foot = (
+        <div className="grades">
+          <button className="grade grade--again" onClick={() => void handleFlashcardGrade('again')}>
+            <span className="grade-key" aria-hidden="true">1</span>{S.FLASHCARD_AGAIN}
+          </button>
+          <button className="grade grade--good" ref={primaryBtnRef} onClick={() => void handleFlashcardGrade('good')}>
+            <span className="grade-key" aria-hidden="true">2</span>{S.FLASHCARD_GOOD}
+          </button>
+          <button className="grade grade--easy" onClick={() => void handleFlashcardGrade('easy')}>
+            <span className="grade-key" aria-hidden="true">3</span>{S.FLASHCARD_EASY}
+          </button>
+        </div>
+      )
+    } else if (exercise.typeId === 'flashcard') {
+      foot = (
+        <button className="btn btn--primary btn--block" ref={primaryBtnRef} onClick={() => setPhase('flashcard-reveal')}>
+          {S.FLASHCARD_REVEAL}
+        </button>
+      )
+    } else if (typed) {
+      foot = (
+        <button
+          className="btn btn--primary btn--block"
+          ref={primaryBtnRef}
+          disabled={input.trim() === ''}
+          onClick={() => void handleSubmitAnswer()}
+        >
+          <IconCheck {...ICON_LINE} />{S.CHECK}
+        </button>
+      )
+    }
   }
 
   return (
@@ -470,207 +716,34 @@ export default function SessionScreen({
       onKeyDown={handleScreenKeyDown}
       onKeyUp={handleFlashcardKey}
       tabIndex={-1}
+      style={{ '--keyboard-inset': `${keyboardInsetPx}px` } as React.CSSProperties}
       data-testid="session"
       data-phase={phase}
       data-pos={pos}
       data-mode={mode}
       data-card-key={currentKey ?? undefined}
       data-exercise-type={exercise?.typeId}
+      data-result={answered && result ? result : undefined}
     >
-      <div className="session-progress">
-        {answeredCount} / {Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)}
+      <div className="session-top">
+        <button className="icon-btn icon-btn--plain" onClick={onHome} aria-label={S.STOP}>
+          <IconClose {...ICON_LINE} />
+        </button>
+        <div
+          className="progress"
+          role="progressbar"
+          aria-label={S.PROGRESS_LABEL(answeredCount, totalQuestions)}
+          aria-valuemin={0}
+          aria-valuemax={totalQuestions}
+          aria-valuenow={answeredCount}
+        >
+          <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+        </div>
       </div>
 
-      <div className="card">
-        {/* ── INTRO ── */}
-        {phase === 'intro' && currentItem?.kind === 'intro' && (() => {
-          const { itemId } = currentItem
-          const word = content.words.get(itemId)
-          const verb = content.verbs.get(itemId)
-          const match = introSentence(itemId, content)
-          const itemIt = word ? withArticle(word) : (verb?.inf ?? itemId)
-          const itemNl = (word?.nl ?? verb?.nl ?? []).join(', ')
-          const register = word?.register === 'formal' ? S.REGISTER_FORMAL : word?.register === 'informal' ? S.REGISTER_INFORMAL : null
-          return (
-            <>
-              <div className="card-header">{S.INTRO_HEADER}</div>
-              {match && (
-                <div className="intro-sentence">
-                  <SentenceText className="intro-sentence-it" text={match.sentence.it} span={match.span} mode="highlight" />
-                  <div className="intro-sentence-nl">{match.sentence.nl[0]}</div>
-                </div>
-              )}
-              <div className="intro-item">
-                <div className="intro-italian" lang="it">{itemIt}</div>
-                {itemNl && <div className="intro-nl">{itemNl}</div>}
-                {register && <span className={`register-badge ${word?.register}`}>{register}</span>}
-                {word?.note && <div className="card-hint-text">{word.note}</div>}
-              </div>
-              <div className="action-row">
-                <button className="btn-primary" ref={primaryBtnRef} onClick={() => void handleIntroNext()}>
-                  {S.INTRO_DONE}
-                </button>
-                <button className="btn-secondary" onClick={() => handleAudioIntro(itemId)}>
-                  {S.AUDIO}
-                </button>
-              </div>
-            </>
-          )
-        })()}
+      <div className="session-body">{body}</div>
 
-        {/* ── QUESTION (multiple choice) ── */}
-        {phase === 'question' && exercise && isChoice && (
-          <>
-            <div className="card-header">
-              {label}
-              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
-            </div>
-            {renderPrompt(exercise)}
-            {renderOptions(exercise, false)}
-            <div className="action-row">
-              {sentence?.mode !== 'gap' && <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>}
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── QUESTION (typed) ── */}
-        {phase === 'question' && exercise && !isChoice && exercise.typeId !== 'flashcard' && (
-          <>
-            <div className="card-header">
-              {label}
-              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
-            </div>
-            {renderPrompt(exercise)}
-            {exercise.withArticle && <div className="card-hint-text">{S.WITH_ARTICLE}</div>}
-            {exercise.hint && <div className="card-hint-text">{exercise.hint}</div>}
-            <input
-              ref={inputRef}
-              className="answer-input"
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={() => void handleSubmitAnswer()}>
-                {S.CHECK}
-              </button>
-              {mode !== 'exam' && (
-                <button className="btn-secondary" onClick={handleHint} disabled={hintUsed}>
-                  {S.HINT}
-                </button>
-              )}
-              {sentence?.mode !== 'gap' && <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>}
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── FLASHCARD question ── */}
-        {phase === 'question' && exercise?.typeId === 'flashcard' && (
-          <>
-            <div className="card-header">
-              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
-            </div>
-            <div className="card-prompt">{exercise.prompt}</div>
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={() => setPhase('flashcard-reveal')}>
-                {S.FLASHCARD_REVEAL}
-              </button>
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── FLASHCARD reveal ── */}
-        {phase === 'flashcard-reveal' && exercise?.typeId === 'flashcard' && (
-          <>
-            <div className="card-prompt">{exercise.prompt}</div>
-            <div className="intro-nl">{exercise.answers.join(' / ')}</div>
-            <div className="flashcard-grades">
-              <button className="btn-again" onClick={() => void handleFlashcardGrade('again')}>
-                1 {S.FLASHCARD_AGAIN}
-              </button>
-              <button className="btn-good" ref={primaryBtnRef} onClick={() => void handleFlashcardGrade('good')}>
-                2 {S.FLASHCARD_GOOD}
-              </button>
-              <button className="btn-easy" onClick={() => void handleFlashcardGrade('easy')}>
-                3 {S.FLASHCARD_EASY}
-              </button>
-            </div>
-            <div className="action-row">
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── FEEDBACK ── */}
-        {phase === 'feedback' && exercise && result && (
-          <>
-            {sentence && (
-              <>
-                {sentence.mode === 'gap' && <div className="sentence-nl">{sentence.nl}</div>}
-                <SentenceText className="card-prompt" text={sentence.it} span={sentence.span} mode="highlight" />
-              </>
-            )}
-            {isChoice ? renderOptions(exercise, true) : (
-              <input
-                className={`answer-input ${result}`}
-                type="text"
-                value={input}
-                readOnly
-              />
-            )}
-            <div className="feedback">
-              <div className={`feedback-label ${result}`}>
-                {result === 'correct' ? S.CORRECT : result === 'almost' ? S.ALMOST : S.WRONG}
-              </div>
-              {!isChoice && (result === 'almost' || result === 'wrong') && (
-                <div className="feedback-answer">
-                  {S.CORRECT_ANSWER} <strong>{exercise.answers[0]}</strong>
-                </div>
-              )}
-            </div>
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={handleFeedbackNext}>
-                {S.NEXT}
-              </button>
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── LAPSE RETYPE ── */}
-        {phase === 'lapse-retype' && exercise && (
-          <div className="lapse-retype">
-            <label>{S.LAPSE_RETYPE}</label>
-            <div className="feedback-answer"><strong>{exercise.answers[0]}</strong></div>
-            <input
-              ref={inputRef}
-              className={`answer-input ${retypeWrong ? 'wrong' : ''}`}
-              type="text"
-              value={input}
-              onChange={e => { setInput(e.target.value); setRetypeWrong(false) }}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
-            {retypeWrong && <div className="feedback-label wrong">{S.LAPSE_MISMATCH}</div>}
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={handleLapseRetypeNext}>
-                {S.LAPSE_CONFIRM}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      {foot && <div className={`session-foot${answered ? ' session-foot--feedback' : ''}`}>{foot}</div>}
 
       {showReport && exercise && (
         <ReportModal

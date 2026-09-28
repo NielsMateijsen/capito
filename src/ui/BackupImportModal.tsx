@@ -29,19 +29,19 @@ export default function BackupImportModal({ current, backup, onConfirm, onClose 
 
   return (
     <div
-      className="modal-backdrop"
+      className="sheet-backdrop"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
         ref={dialogRef}
-        className="modal"
+        className="sheet"
         role="dialog"
         aria-modal="true"
         aria-labelledby="backup-import-title"
         tabIndex={-1}
         onKeyDown={e => { if (e.key === 'Escape') onClose() }}
       >
-        <h3 id="backup-import-title">{S.BACKUP_IMPORT_TITLE}</h3>
+        <h2 id="backup-import-title" className="sheet-title">{S.BACKUP_IMPORT_TITLE}</h2>
 
         <table className="backup-compare">
           <thead>
@@ -70,9 +70,9 @@ export default function BackupImportModal({ current, backup, onConfirm, onClose 
           </tbody>
         </table>
 
-        <div className="modal-actions">
-          <button className="btn-secondary" onClick={onClose}>{S.REPORT_CANCEL}</button>
-          <button className="btn-primary" onClick={onConfirm}>{S.BACKUP_CONFIRM}</button>
+        <div className="sheet-actions">
+          <button className="btn btn--secondary" onClick={onClose}>{S.REPORT_CANCEL}</button>
+          <button className="btn btn--primary" onClick={onConfirm}>{S.BACKUP_CONFIRM}</button>
         </div>
       </div>
     </div>

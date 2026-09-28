@@ -178,6 +178,12 @@ export class App {
     await expect(dialog).toBeHidden()
   }
 
+  /** The stop button at the top of a running session. */
+  async stopSession() {
+    await this.session().getByRole('button', { name: S.STOP, exact: true }).click()
+    await this.expectHome()
+  }
+
   /** From the end screen back to home. */
   async finishSession() {
     await this.button(S.TO_HOME).click()

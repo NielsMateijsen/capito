@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures.ts'
+import { S } from '../support/app.ts'
 import { runSession } from '../support/session-driver.ts'
 import { readProgress } from '../support/storage.ts'
 
@@ -22,6 +23,17 @@ test.describe('lesson', () => {
     await app.finishSession()
     await app.reload()
     expect((await readProgress(app.page))?.reviewLog).toHaveLength(run.answered)
+  })
+
+  test('stopping halfway returns home and keeps what was done', async ({ app }) => {
+    await app.goto()
+    await app.startContinue()
+    await expect(app.session()).toHaveAttribute('data-phase', 'intro')
+    await app.button(S.INTRO_DONE).click()
+    await expect(app.session()).toHaveAttribute('data-phase', 'question')
+
+    await app.stopSession()
+    expect((await readProgress(app.page))?.introduced).toHaveLength(1)
   })
 
   test('Verder on the end screen goes straight on along the path', async ({ app }) => {
