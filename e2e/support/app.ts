@@ -161,7 +161,7 @@ export class App {
 
   /** From the unit screen. */
   async startExam() {
-    await this.button(S.EXAM).click()
+    await this.button(S.EXAM_START).click()
     await expect(this.session()).toHaveAttribute('data-mode', 'exam')
   }
 

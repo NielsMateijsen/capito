@@ -73,63 +73,6 @@ body {
   margin: 0.4rem 0 0;
 }
 
-/* ── Unit screen ─────────────────────────────────────────── */
-
-.unit-screen {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 1rem 1rem 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.unit-screen h1 {
-  font-size: 1.5rem;
-  margin: 0;
-}
-
-.unit-screen h2 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #666;
-  margin: 0 0 0.4rem;
-}
-
-.cando-list,
-.word-list,
-.plain-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.cando-list li::before {
-  content: '\2713\0020';
-  color: #4c8bf5;
-  font-weight: 700;
-}
-
-.word-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.word-item strong {
-  min-width: 8ch;
-}
-
-.word-item .word-nl {
-  color: #555;
-  flex: 1;
-}
-
 /* ── Settings screen ─────────────────────────────────────── */
 
 .settings-screen {
@@ -464,11 +407,6 @@ body {
 
   .btn-secondary:hover { background: #333; }
 
-  /* Unit */
-  .unit-screen h2 { color: #888; }
-
-  .word-item .word-nl { color: #aaa; }
-
   /* Settings */
   .settings-section h2 { color: #777; }
 
@@ -539,77 +477,6 @@ body {
   .settings-error { color: #ef9a9a; }
 }
 
-.lesson-path {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.lesson-btn {
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0.85rem;
-  background: #fff;
-  color: inherit;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-
-.lesson-btn:disabled { cursor: default; }
-
-.lesson-step--current .lesson-btn {
-  border: 2px solid #4c8bf5;
-}
-
-.lesson-step--locked .lesson-btn { opacity: 0.55; }
-
-.lesson-mark {
-  flex: none;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  background: #eee;
-}
-
-.lesson-step--done .lesson-mark { background: #c8e6c9; color: #2e7d32; }
-.lesson-step--current .lesson-mark { background: #4c8bf5; color: #fff; }
-
-.lesson-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.lesson-title { font-weight: 600; }
-
-.lesson-words {
-  font-size: 0.85rem;
-  color: #666;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.exam-section p { margin: 0 0 0.5rem; }
-
 @media (prefers-color-scheme: dark) {
-
-  .lesson-btn { background: #252525; border-color: #3a3a3a; }
-  .lesson-mark { background: #333; }
-  .lesson-step--done .lesson-mark { background: #1b3a1d; color: #a5d6a7; }
-  .lesson-words { color: #aaa; }
 
 }

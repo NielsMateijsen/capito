@@ -34,6 +34,7 @@ import './ui/app.css'
 import './ui/exercise.css'
 import './ui/end.css'
 import './ui/home.css'
+import './ui/pages.css'
 import appConfig from '../config/app.json'
 
 /** What a session screen practises; kept in the history entry, so it holds data only. */
@@ -337,14 +338,13 @@ export default function App() {
       return (
         <UnitScreen
           unit={unit}
-          content={data.content}
+          unitNumber={[...data.units].sort((a, b) => a.order - b.order).indexOf(unit) + 1}
           path={path}
           passed={current.passed.has(unit.id)}
           bestScore={current.bestScore.get(unit.id)}
           passThreshold={appConfig.exam.passThreshold}
           grammarMap={data.grammarMap}
           onBack={() => nav.back(HOME)}
-          onStartLesson={lessonId => openSession({ mode: 'lesson', lessonId })}
           onExam={unitId => openSession({ mode: 'exam', unitId })}
           onOpenGrammar={grammarId => nav.navigate({ screen: 'grammar', grammarId, fromUnitId: view.unitId })}
           onOpenDialogue={dialogueId => nav.navigate({ screen: 'dialogue', dialogueId, unitId: view.unitId })}

@@ -1,0 +1,117 @@
+/* List pages: unit, settings, reports, leeches, grammar and dialogue. Only tokens from theme.css. */
+
+.unit-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cando-list,
+.word-list,
+.link-list,
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cando-list {
+  gap: var(--space-3);
+}
+
+.cando-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font: var(--text-md);
+}
+
+.cando-list svg {
+  flex: none;
+  width: var(--size-icon);
+  height: var(--size-icon);
+  color: var(--color-ok);
+}
+
+.exam-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.exam-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.exam-card-title {
+  margin: 0;
+  font: var(--text-strong);
+}
+
+.exam-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-touch);
+  height: var(--size-touch);
+  border-radius: 50%;
+  background: var(--color-exam);
+  color: var(--color-on-exam);
+}
+
+.exam-icon svg {
+  width: 50%;
+  height: 50%;
+}
+
+.word-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  border: var(--border) solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.word-it {
+  font: var(--text-lg);
+  font-weight: 800;
+}
+
+.word-nl {
+  flex-grow: 1;
+  font: var(--text-md);
+  color: var(--color-ink-muted);
+}
+
+.link-card {
+  width: 100%;
+  min-height: var(--size-control);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border) solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: var(--text-md);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link-card svg {
+  flex: none;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  color: var(--color-ink-muted);
+}
