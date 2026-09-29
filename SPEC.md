@@ -219,7 +219,7 @@ cloze-word:w_caffe
 De SRS (SM-2) slaat per `cardKey` op: `ease, interval, due, reps, lapses`. De score per antwoord komt uit `config/app.json` → `grading`. SRS-parameters staan in `srs.*` (`algorithm`, `startEase`, `minEase`, `maxIntervalDays`) en de typfoutdrempels in `checker.*` (`typoMinLength`, `typoMaxDistance`). Kaarten van onbekende of gedeprecateerde content worden genegeerd, niet verwijderd. De kaartstatus is afleidbaar uit de review-log (zie "Review-log").
 
 ### Antwoordcontrole (`checker.ts`)
-- Normaliseren: trim, kleine letters, dubbele spaties, eind-leestekens, `’` naar `'`
+- Normaliseren: trim, kleine letters, dubbele spaties, `’` naar `'`, en leestekens (`. , ! ? ; : ¡ ¿ …`, aanhalingstekens, haakjes) overal negeren: een ontbrekende komma of uitroepteken rekent niets fout. Apostrofs blijven staan, die horen bij het woord
 - Meerdere geldige antwoorden (`nl` is een lijst); bij NL-antwoorden optioneel leidend de/het/een negeren
 - Uitkomsten: `correct` | `almost` | `wrong`
 - **Accentfout** (caffe i.p.v. caffè): `almost`, met de juiste vorm getoond. Uitzondering: als de accentloze vorm zelf een ander geldig woord is (e/è, da/dà), dan `wrong`
