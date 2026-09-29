@@ -19,6 +19,7 @@ Je reviewt codewijzigingen in dit project. Je past niets aan en rapporteert alle
 - Formaatwijzigingen: schema-versie, migratie en test aanwezig
 - Tests: nieuwe logica gedekt, geen tests die alleen de implementatie herhalen, geen aangepaste `tests/golden/`
 - Eenvoud: geen onnodige abstracties of dependencies
+- Rooktest: bij een wijziging aan een scherm of flow is `e2e/` bijgewerkt volgens `e2e/README.md` en `npm run test:e2e` groen; geen afgezwakte asserties om een test groen te krijgen
 - Docs: `README.md`/`SPEC.md` bijgewerkt als structuur veranderde
 
 ## Teruggeven

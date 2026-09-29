@@ -8,7 +8,7 @@ description: Maakt een complete nieuwe leerunit end-to-end (genereren, valideren
 Argument: `$ARGUMENTS` (unit-ID zoals `u03_ordering`). Ontbreekt het, vraag dan welke unit uit `SPEC.md` §9.
 
 ## Pilotpoort (eerst controleren)
-Lees `docs/pilot.md`. Is de unit niet `u01_greetings` en staat er niet `Pilot-status: afgerond`, stop dan. Meld dat units na unit 1 pas worden gemaakt na de pilotweek, en verwijs naar `docs/pilot.md`.
+Lees `docs/pilot.md`. Is de unit niet `u01_greetings` of `u02_introductions` en staat er niet `Pilot-status: afgerond`, stop dan. Meld dat units na unit 2 pas worden gemaakt na de pilotweek, en verwijs naar `docs/pilot.md`.
 
 ## Stappen
 1. Controleer dat de vorige unit bestaat in `content/units/` (behalve bij unit 1) en dat `content/units/<unit-id>.json` nog niet bestaat.

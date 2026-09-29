@@ -1,0 +1,305 @@
+/* Home: header, banners, the lesson path per unit and the fixed Verder dock. Only tokens. */
+
+.home {
+  max-width: var(--width-content);
+  margin: 0 auto;
+  padding-bottom: var(--size-dock-space);
+}
+
+.home-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-2);
+}
+
+.brand {
+  margin: 0;
+  font: var(--text-brand);
+  color: var(--color-primary-text);
+}
+
+.home-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.streak {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--size-touch);
+  padding: 0 var(--space-4);
+  border: var(--border) solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font: var(--text-lg);
+  font-weight: 800;
+}
+
+.streak svg {
+  width: var(--size-icon);
+  height: var(--size-icon);
+  color: var(--color-streak);
+}
+
+.streak--open svg {
+  color: var(--color-locked-ink);
+}
+
+.home-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-5);
+}
+
+.home-stack:empty {
+  display: none;
+}
+
+.unit-section {
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+.unit-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: none;
+  border-radius: var(--radius-lg);
+  text-align: left;
+  cursor: pointer;
+}
+
+.unit-head > svg {
+  flex: none;
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+.unit-head--open {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.unit-head--passed {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: var(--border) solid var(--color-line);
+}
+
+.unit-head--locked {
+  background: var(--color-locked);
+  color: var(--color-ink-muted);
+  cursor: default;
+}
+
+.unit-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.unit-kicker {
+  font: var(--text-2xs);
+}
+
+.unit-title {
+  font: var(--text-strong);
+}
+
+.unit-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font: var(--text-xs);
+}
+
+.path {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-5) 0 var(--space-6);
+  list-style: none;
+}
+
+.path-step {
+  display: flex;
+  justify-content: center;
+}
+
+/* The path swings left and right: eight positions, repeated */
+.path-step--0, .path-step--4 { --swing: 0; }
+.path-step--1, .path-step--3 { --swing: calc(0.7 * var(--path-swing)); }
+.path-step--2 { --swing: var(--path-swing); }
+.path-step--5, .path-step--7 { --swing: calc(-0.7 * var(--path-swing)); }
+.path-step--6 { --swing: calc(-1 * var(--path-swing)); }
+
+.path-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  transform: translateX(var(--swing, 0));
+}
+
+.node {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-node);
+  height: var(--size-node);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+.node svg {
+  width: 44%;
+  height: 44%;
+}
+
+.node:disabled {
+  cursor: default;
+}
+
+.node--done {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: var(--shadow-node-done);
+}
+
+.node--current {
+  width: var(--size-node-current);
+  height: var(--size-node-current);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-node-current);
+  outline: var(--space-2) solid var(--color-primary-soft);
+  outline-offset: var(--space-1);
+}
+
+.node--current:active {
+  transform: translateY(var(--press-offset));
+}
+
+.node--locked {
+  background: var(--color-locked);
+  color: var(--color-locked-ink);
+}
+
+.node--exam {
+  background: var(--color-exam);
+  color: var(--color-on-exam);
+}
+
+.node--exam:disabled {
+  background: var(--color-locked);
+  color: var(--color-locked-ink);
+}
+
+.node-badge {
+  position: absolute;
+  top: calc(-1 * var(--space-1));
+  right: calc(-1 * var(--space-1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-badge);
+  height: var(--size-badge);
+  border: var(--border) solid var(--color-bg);
+  border-radius: 50%;
+  background: var(--color-ok);
+  color: var(--color-on-ok);
+}
+
+.node-badge svg {
+  width: 55%;
+  height: 55%;
+}
+
+.node-label {
+  font: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-ink-muted);
+}
+
+.bubble {
+  display: flex;
+  flex-direction: column;
+  max-width: var(--size-bubble);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border) solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.bubble-title {
+  font: var(--text-button-sm);
+}
+
+.bubble-words {
+  font: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+
+.home-links {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--color-wrong);
+  color: var(--color-on-wrong);
+  font: var(--text-2xs);
+}
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  max-width: var(--width-content);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
+  border-top: var(--border) solid var(--color-line);
+  background: var(--color-bg);
+}
+
+.dock-sub {
+  font: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+
+.dock-done {
+  margin: 0;
+  font: var(--text-lg);
+  font-weight: 800;
+}

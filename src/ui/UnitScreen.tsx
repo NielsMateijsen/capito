@@ -1,94 +1,97 @@
 import type { Unit } from '../content/schemas.ts'
-import type { ProgressState } from '../storage/types.ts'
 import type { GrammarDoc } from '../content/loader.ts'
-import { unitMastery } from '../engine/unlock.ts'
+import type { UnitPath } from '../engine/lessons.ts'
 import { S } from './strings.nl.ts'
 import { playAudio } from './speak.ts'
-
-interface AppConfig {
-  unlock: { minRepsPerCard: number }
-  exam: { availableFromMastery: number }
-}
+import { ICON, ICON_LINE, IconAudio, IconBack, IconCorrect, IconExam, IconOpen } from './icons.ts'
 
 interface Props {
   unit: Unit
-  cardKeysByUnit: Map<string, string[]>
-  progress: ProgressState
-  config: AppConfig
+  /** Position of the unit on the path, from 1. */
+  unitNumber: number
+  path: UnitPath
+  passed: boolean
+  bestScore?: number
+  passThreshold: number
   grammarMap?: Map<string, GrammarDoc>
   onBack: () => void
-  onOefen: (unitId: string) => void
-  onEindtoets: (unitId: string) => void
+  onExam: (unitId: string) => void
   onOpenGrammar: (grammarId: string) => void
   onOpenDialogue: (dialogueId: string) => void
 }
 
-export default function UnitScreen({ unit, cardKeysByUnit, progress, config, grammarMap, onBack, onOefen, onEindtoets, onOpenGrammar, onOpenDialogue }: Props) {
-  const keys = cardKeysByUnit.get(unit.id) ?? []
-  const mastery = unitMastery(keys, progress.cards, config.unlock)
-  const masteryPct = Math.round(mastery * 100)
-  const examAvailable = mastery >= config.exam.availableFromMastery
-  const examThresholdPct = Math.round(config.exam.availableFromMastery * 100)
-
+function WordRow({ it, nl }: { it: string; nl: string }) {
   return (
-    <div className="unit-screen">
-      <button className="btn-secondary" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
-        {S.BACK}
+    <li className="word-row">
+      <strong className="word-it" lang="it">{it}</strong>
+      <span className="word-nl">{nl}</span>
+      <button className="icon-btn icon-btn--plain" onClick={() => void playAudio(it)} aria-label={S.SPEAK}>
+        <IconAudio {...ICON} />
       </button>
+    </li>
+  )
+}
 
-      <h1>{unit.title}</h1>
+export default function UnitScreen({ unit, unitNumber, path, passed, bestScore, passThreshold, grammarMap, onBack, onExam, onOpenGrammar, onOpenDialogue }: Props) {
+  return (
+    <div className="page">
+      <div className="page-top">
+        <button className="icon-btn" onClick={onBack} aria-label={S.BACK}><IconBack {...ICON_LINE} /></button>
+        <span className="page-kicker">{S.UNIT_KICKER(unitNumber)}</span>
+      </div>
+      <h1 className="page-title">{unit.title}</h1>
 
       {unit.canDo.length > 0 && (
-        <section>
-          <h2>{S.UNIT_CANDO_HEADER}</h2>
+        <section className="unit-block">
+          <h2 className="section-title">{S.UNIT_CANDO_HEADER}</h2>
           <ul className="cando-list">
-            {unit.canDo.map((goal, i) => <li key={i}>{goal}</li>)}
+            {unit.canDo.map((goal, i) => <li key={i}><IconCorrect {...ICON} />{goal}</li>)}
           </ul>
         </section>
       )}
 
+      <section className="card exam-card">
+        <div className="exam-card-head">
+          <span className="exam-icon"><IconExam {...ICON} /></span>
+          <h2 className="exam-card-title">{S.EXAM}</h2>
+        </div>
+        <p className="muted">
+          {passed || path.doneCount > 0 ? S.EXAM_INFO(Math.round(passThreshold * 100)) : S.EXAM_TESTOUT_INFO}
+        </p>
+        {bestScore !== undefined && (
+          <p className="muted">{passed ? S.EXAM_BEST_PASSED(Math.round(bestScore * 100)) : S.EXAM_BEST(Math.round(bestScore * 100))}</p>
+        )}
+        <div>
+          <button className="btn btn--secondary" onClick={() => onExam(unit.id)}><IconExam {...ICON} />{S.EXAM_START}</button>
+        </div>
+      </section>
+
       {unit.words.length > 0 && (
-        <section>
-          <h2>{S.UNIT_WORDS_HEADER}</h2>
+        <section className="unit-block">
+          <h2 className="section-title">{S.UNIT_WORDS_HEADER}</h2>
           <ul className="word-list">
-            {unit.words.map(w => (
-              <li key={w.id} className="word-item">
-                <strong>{w.it}</strong>
-                <span className="word-nl">{w.nl.join(' / ')}</span>
-                <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => void playAudio(w.it)}>
-                  {S.AUDIO}
-                </button>
-              </li>
-            ))}
+            {unit.words.map(w => <WordRow key={w.id} it={w.it} nl={w.nl.join(' / ')} />)}
           </ul>
         </section>
       )}
 
       {unit.verbs.length > 0 && (
-        <section>
-          <h2>{S.UNIT_VERBS_HEADER}</h2>
+        <section className="unit-block">
+          <h2 className="section-title">{S.UNIT_VERBS_HEADER}</h2>
           <ul className="word-list">
-            {unit.verbs.map(v => (
-              <li key={v.id} className="word-item">
-                <strong>{v.inf}</strong>
-                <span className="word-nl">{v.nl.join(' / ')}</span>
-                <button className="btn-secondary" style={{ padding: '2px 8px' }} onClick={() => void playAudio(v.inf)}>
-                  {S.AUDIO}
-                </button>
-              </li>
-            ))}
+            {unit.verbs.map(v => <WordRow key={v.id} it={v.inf} nl={v.nl.join(' / ')} />)}
           </ul>
         </section>
       )}
 
       {unit.dialogues.length > 0 && (
-        <section>
-          <h2>{S.UNIT_DIALOGUES_HEADER}</h2>
-          <ul className="plain-list">
+        <section className="unit-block">
+          <h2 className="section-title">{S.UNIT_DIALOGUES_HEADER}</h2>
+          <ul className="link-list">
             {unit.dialogues.map(d => (
               <li key={d.id}>
-                <button className="btn-secondary" style={{ textAlign: 'left', width: '100%' }} onClick={() => onOpenDialogue(d.id)}>
-                  {d.title}
+                <button className="link-card" onClick={() => onOpenDialogue(d.id)}>
+                  <span>{d.title}</span><IconOpen {...ICON_LINE} />
                 </button>
               </li>
             ))}
@@ -97,40 +100,19 @@ export default function UnitScreen({ unit, cardKeysByUnit, progress, config, gra
       )}
 
       {unit.grammar.length > 0 && (
-        <section>
-          <h2>{S.UNIT_GRAMMAR_HEADER}</h2>
-          <ul className="plain-list">
+        <section className="unit-block">
+          <h2 className="section-title">{S.UNIT_GRAMMAR_HEADER}</h2>
+          <ul className="link-list">
             {unit.grammar.map(g => (
               <li key={g}>
-                <button className="btn-secondary" style={{ textAlign: 'left', width: '100%' }} onClick={() => onOpenGrammar(g)}>
-                  {grammarMap?.get(g)?.frontmatter.title ?? g}
+                <button className="link-card" onClick={() => onOpenGrammar(g)}>
+                  <span>{grammarMap?.get(g)?.frontmatter.title ?? g}</span><IconOpen {...ICON_LINE} />
                 </button>
               </li>
             ))}
           </ul>
         </section>
       )}
-
-      <div className="unit-actions">
-        <button className="btn-primary" onClick={() => onOefen(unit.id)}>
-          {S.PRACTICE_UNIT}
-        </button>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <button
-            className="btn-secondary"
-            disabled={!examAvailable}
-            onClick={() => examAvailable && onEindtoets(unit.id)}
-          >
-            {S.EXAM}
-          </button>
-          {!examAvailable && (
-            <span className="exam-unavailable">
-              {S.EXAM_UNAVAILABLE(examThresholdPct, masteryPct)}
-            </span>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

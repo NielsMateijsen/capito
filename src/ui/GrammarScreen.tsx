@@ -3,6 +3,7 @@ import type { GrammarDoc } from '../content/loader.ts'
 import type { DrillItem } from '../content/schemas.ts'
 import type { SessionItem } from '../engine/session-builder.ts'
 import { S } from './strings.nl.ts'
+import { ICON_LINE, IconBack } from './icons.ts'
 
 interface Props {
   grammarId: string
@@ -26,31 +27,27 @@ export default function GrammarScreen({ grammarId: _grammarId, doc, allCardKeys,
   const canDrill = drillQueue.length > 0
 
   return (
-    <div className="grammar-screen">
-      <button className="btn-secondary" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
-        {S.BACK}
-      </button>
+    <div className="page grammar-screen">
+      <div className="page-top">
+        <button className="icon-btn" onClick={onBack} aria-label={S.BACK}><IconBack {...ICON_LINE} /></button>
+      </div>
 
       {doc === undefined ? (
-        <>
-          <p className="grammar-no-content">{S.GRAMMAR_NO_CONTENT}</p>
-        </>
+        <p className="muted">{S.GRAMMAR_NO_CONTENT}</p>
       ) : (
         <>
-          <h1>{doc.frontmatter.title}</h1>
+          <h1 className="page-title">{doc.frontmatter.title}</h1>
           <div
-            className="grammar-body"
+            className="card grammar-body"
             dangerouslySetInnerHTML={{ __html: marked.parse(doc.body) as string }}
           />
-          <div>
-            <button
-              className="btn-primary"
-              disabled={!canDrill}
-              onClick={() => canDrill && onDrill(drillQueue)}
-            >
-              {S.GRAMMAR_PRACTICE}
-            </button>
-          </div>
+          <button
+            className="btn btn--primary btn--block"
+            disabled={!canDrill}
+            onClick={() => canDrill && onDrill(drillQueue)}
+          >
+            {S.GRAMMAR_PRACTICE}
+          </button>
         </>
       )}
     </div>

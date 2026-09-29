@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Content } from '../exercises/types.ts'
 import type { ProgressState, ProgressStorage } from '../storage/types.ts'
 import type { Session, SessionBuilderConfig, SessionItem } from '../engine/session-builder.ts'
-import { buildSession, gradeFromResult, isLeech, itemIdFromKey, replanAfterWrong } from '../engine/session-builder.ts'
-import type { LadderItem } from '../engine/ladder.ts'
+import { gradeFromResult, isLeech, itemIdFromKey, replanAfterWrong } from '../engine/session-builder.ts'
 import { rebuildCards } from '../engine/review-log.ts'
 import type { ReviewEntry } from '../engine/review-log.ts'
+import type { ExamConfig } from '../engine/exam.ts'
+import type { Streak } from '../engine/streak.ts'
+import type { Unit } from '../content/schemas.ts'
 import type { SrsConfig } from '../engine/srs.ts'
 import type { CheckerConfig } from '../engine/checker.ts'
 import { introSentence } from '../engine/sentences.ts'
@@ -18,23 +20,44 @@ import { playAudio } from './speak.ts'
 import ReportModal from './ReportModal.tsx'
 import type { ReportEntry } from './ReportModal.tsx'
 import SentenceText from './SentenceText.tsx'
+import SessionEndScreen from './SessionEndScreen.tsx'
+import { useKeyboardInset } from './keyboard-inset.ts'
+import { exerciseUi } from './exercise-ui.ts'
+import {
+  ICON, ICON_LINE, IconAlmost, IconAudio, IconCheck, IconClose, IconCorrect, IconHint, IconNext, IconReport, IconWrong,
+} from './icons.ts'
 
-type AppConfig = SessionBuilderConfig & { srs: SrsConfig; checker: CheckerConfig }
+type AppConfig = SessionBuilderConfig & { srs: SrsConfig; checker: CheckerConfig; exam: ExamConfig }
+
+/** 'test' tries out exercise types without saving answers or introductions. */
+export type SessionMode = 'lesson' | 'refresh' | 'exam' | 'drill' | 'test'
+
+/** What the end screen shows about the learner's progress after the session. */
+export interface SessionSummary {
+  /** Only for a lesson: is the lesson done now? */
+  lessonDone?: boolean
+  streak: Streak
+}
 
 interface Props {
   content: Content
-  allCardKeys: string[]
-  cardToUnit: Map<string, string>
-  ladderItems?: LadderItem[]
-  cardRequires?: Map<string, string[]>
-  targetUnitId?: string
+  /** Called once, when the screen opens. */
+  makeSession: () => Session
   initialProgress: ProgressState
   storage: ProgressStorage
   config: AppConfig
-  mode?: 'daily' | 'unit' | 'exam'
-  overrideQueue?: SessionItem[]
+  mode: SessionMode
+  lessonId?: string
+  examUnit?: Unit
+  /** Passing the exam opens another unit. */
+  examUnlocksNext?: boolean
   autoplayAudio?: boolean
-  onDone: () => void
+  summarize?: (progress: ProgressState) => SessionSummary
+  onHome: () => void
+  /** "Verder" on the end screen: the next step on the path. */
+  onContinue?: () => void
+  onRefreshMissed?: (cardKeys: string[]) => void
+  onRetryExam?: (unitId: string) => void
 }
 
 type Phase =
@@ -57,38 +80,21 @@ function buildHint(answer: string): string {
   return answer.slice(0, 3) + '…'
 }
 
-function questionLabel(typeId: string): string | undefined {
-  if (typeId === 'mc-sentence') return S.MC_SENTENCE_QUESTION
-  if (typeId === 'mc-word') return S.MC_WORD_QUESTION
-  if (typeId === 'cloze-word') return S.CLOZE_WORD_QUESTION
-  if (typeId === 'dictation') return S.DICTATION_QUESTION
-  return undefined
+const RESULT_CLASS: Record<ReviewResult, 'ok' | 'almost' | 'wrong'> = {
+  correct: 'ok', good: 'ok', easy: 'ok', almost: 'almost', wrong: 'wrong', again: 'wrong',
 }
 
+const RESULT_TEXT = { ok: S.CORRECT, almost: S.ALMOST, wrong: S.WRONG }
+
 export default function SessionScreen({
-  content, allCardKeys, cardToUnit, ladderItems, cardRequires, targetUnitId,
-  initialProgress, storage, config,
-  mode = 'daily', overrideQueue, autoplayAudio = false,
-  onDone,
+  content, makeSession, initialProgress, storage, config,
+  mode, lessonId, examUnit, examUnlocksNext, autoplayAudio = false, summarize,
+  onHome, onContinue, onRefreshMissed, onRetryExam,
 }: Props) {
   const sessionRef = useRef<Session | null>(null)
-  if (sessionRef.current === null) {
-    const now = Date.now()
-    sessionRef.current = overrideQueue
-      ? { queue: overrideQueue, isReturn: false, maxReviews: overrideQueue.length, newItemIds: [], ladderStages: {} }
-      : buildSession({
-          now,
-          seed: now,
-          allCardKeys,
-          cardToUnit,
-          progress: initialProgress,
-          config,
-          targetUnitId: mode === 'unit' ? targetUnitId : undefined,
-          ladderItems,
-          cardRequires,
-        })
-  }
+  if (sessionRef.current === null) sessionRef.current = makeSession()
   const session = sessionRef.current
+  const examSize = session.queue.filter(i => i.kind === 'exercise').length
 
   const [queue, setQueue] = useState<SessionItem[]>(() => [...session.queue])
   const [pos, setPos] = useState(0)
@@ -104,7 +110,9 @@ export default function SessionScreen({
   const [showReport, setShowReport] = useState(false)
   const [startTime, setStartTime] = useState(Date.now())
   const [retypeWrong, setRetypeWrong] = useState(false)
+  const [lastAnswer, setLastAnswer] = useState('')
   const submittingRef = useRef(false)
+  const keyboardInsetPx = useKeyboardInset()
 
   const sessionId = useRef(crypto.randomUUID())
   const inputRef = useRef<HTMLInputElement>(null)
@@ -135,23 +143,27 @@ export default function SessionScreen({
     if (phase === 'question' && currentKey && !exercise) advanceToNext(queue, pos + 1, answeredCount)
   }, [phase, currentKey, exercise])
 
-  // Focus management
-  useEffect(() => {
+  // Focus management: keys (Enter, 1-4) are handled on the session, so the focus must stay inside it
+  function focusForPhase() {
     if (phase === 'question' && inputRef.current && exercise?.typeId !== 'flashcard' && !isChoice) {
       inputRef.current.focus()
     } else if (phase === 'question' && isChoice) {
       screenRef.current?.focus()
     } else if (phase === 'lapse-retype') {
       inputRef.current?.focus()
-    } else if (
-      phase === 'intro' ||
-      phase === 'question' ||
-      phase === 'flashcard-reveal' ||
-      phase === 'feedback'
-    ) {
-      primaryBtnRef.current?.focus()
+    } else if (primaryBtnRef.current) {
+      primaryBtnRef.current.focus()
+    } else {
+      screenRef.current?.focus()
     }
-  }, [phase, exercise?.typeId, isChoice])
+  }
+
+  useEffect(focusForPhase, [phase, exercise?.typeId, isChoice])
+
+  // Back from the report sheet: the keys work again right away
+  useEffect(() => {
+    if (!showReport) focusForPhase()
+  }, [showReport])
 
   // Autoplay audio on feedback
   useEffect(() => {
@@ -182,24 +194,32 @@ export default function SessionScreen({
     setStartTime(Date.now())
   }, [session.maxReviews])
 
-  async function saveEntry(entry: ReviewEntry, updatedProgress: ProgressState) {
-    const newLog = [...updatedProgress.reviewLog, entry]
-    const newCards = Object.fromEntries(rebuildCards(newLog, config.srs))
-    const newProgress = { ...updatedProgress, reviewLog: newLog, cards: newCards }
-    await storage.save(newProgress)
-    setProgress(newProgress)
-    return newProgress
+  /**
+   * Every save starts from what is stored now, not from this screen's copy: a copy from before
+   * the previous session would otherwise overwrite its answers (the log is append-only).
+   */
+  async function persist(change: (latest: ProgressState) => ProgressState): Promise<ProgressState> {
+    const next = change(await storage.load())
+    await storage.save(next)
+    setProgress(next)
+    return next
+  }
+
+  async function saveEntry(entry: ReviewEntry) {
+    return persist(latest => {
+      const reviewLog = [...latest.reviewLog, entry]
+      return { ...latest, reviewLog, cards: Object.fromEntries(rebuildCards(reviewLog, config.srs)) }
+    })
   }
 
   async function handleIntroNext() {
     if (!currentItem || currentItem.kind !== 'intro') return
+    if (mode === 'test') {
+      advanceToNext(queue, pos + 1, answeredCount)
+      return
+    }
     const itemId = currentItem.itemId
-    const newIntroduced = progress.introduced.includes(itemId)
-      ? progress.introduced
-      : [...progress.introduced, itemId]
-    const updated = { ...progress, introduced: newIntroduced }
-    await storage.save(updated)
-    setProgress(updated)
+    await persist(latest => latest.introduced.includes(itemId) ? latest : { ...latest, introduced: [...latest.introduced, itemId] })
     advanceToNext(queue, pos + 1, answeredCount)
   }
 
@@ -216,28 +236,36 @@ export default function SessionScreen({
     }
   }
 
+  /** Where the answer was given, as stored in the log. Never called in a test session. */
+  function entryContext(): Pick<ReviewEntry, 'mode' | 'lesson' | 'unit' | 'examSize'> {
+    if (mode === 'lesson') return { mode, lesson: lessonId }
+    if (mode === 'exam') return { mode, unit: examUnit?.id, examSize }
+    return { mode: mode === 'test' ? 'drill' : mode }
+  }
+
   async function submitAnswer(answer: string, cardKey: string, res: ReviewResult) {
-    const grade = gradeFromResult(res, hintUsed, config.grading)
-    const ms = Date.now() - startTime
-
-    const entry: ReviewEntry = {
-      t: new Date().toISOString(),
-      key: cardKey,
-      result: res,
-      grade,
-      ms,
-      hint: hintUsed,
-      answer: res !== 'correct' ? answer.slice(0, 100) : undefined,
-      session: sessionId.current,
-      mode,
-      cv: 'dev',
+    if (mode !== 'test') {
+      const entry: ReviewEntry = {
+        t: new Date().toISOString(),
+        key: cardKey,
+        result: res,
+        grade: gradeFromResult(res, hintUsed, config.grading),
+        ms: Date.now() - startTime,
+        hint: hintUsed,
+        answer: res !== 'correct' ? answer.slice(0, 100) : undefined,
+        session: sessionId.current,
+        ...entryContext(),
+        cv: 'dev',
+      }
+      await saveEntry(entry)
     }
-
-    await saveEntry(entry, progress)
     setAnsweredCount(answeredCount + 1)
+    setLastAnswer(answer)
     setResult(res)
 
-    if (res === 'wrong') {
+    // A test session shows every card once: reinserted cards would push the last types past maxReviews.
+    // An exam asks every question once, so its score is the first answer.
+    if (res === 'wrong' && mode !== 'test' && mode !== 'exam') {
       setQueue(replanAfterWrong(queue, pos, cardKey, session.ladderStages, config))
     }
     setPhase('feedback')
@@ -262,22 +290,20 @@ export default function SessionScreen({
   }
 
   async function gradeFlashcard(cardKey: string, res: ReviewResult) {
-    const numGrade = gradeFromResult(res, false, config.grading)
-    const ms = Date.now() - startTime
-
-    const entry: ReviewEntry = {
-      t: new Date().toISOString(),
-      key: cardKey,
-      result: res,
-      grade: numGrade,
-      ms,
-      hint: false,
-      session: sessionId.current,
-      mode,
-      cv: 'dev',
+    if (mode !== 'test') {
+      const entry: ReviewEntry = {
+        t: new Date().toISOString(),
+        key: cardKey,
+        result: res,
+        grade: gradeFromResult(res, false, config.grading),
+        ms: Date.now() - startTime,
+        hint: false,
+        session: sessionId.current,
+        ...entryContext(),
+        cv: 'dev',
+      }
+      await saveEntry(entry)
     }
-
-    await saveEntry(entry, progress)
     const newCount = answeredCount + 1
     setAnsweredCount(newCount)
     advanceToNext(queue, pos + 1, newCount)
@@ -324,9 +350,7 @@ export default function SessionScreen({
   }
 
   async function handleReport(entry: ReportEntry) {
-    const newProgress = { ...progress, flags: [...progress.flags, entry as unknown as Record<string, unknown>] }
-    await storage.save(newProgress)
-    setProgress(newProgress)
+    await persist(latest => ({ ...latest, flags: [...latest.flags, entry as unknown as Record<string, unknown>] }))
   }
 
   function handleScreenKeyDown(e: React.KeyboardEvent) {
@@ -351,7 +375,7 @@ export default function SessionScreen({
       return
     } else if (phase === 'question' && exercise?.typeId !== 'flashcard') {
       e.preventDefault()
-      void handleSubmitAnswer()
+      if (input.trim() !== '') void handleSubmitAnswer()
     } else if (phase === 'question' && exercise?.typeId === 'flashcard') {
       e.preventDefault()
       setPhase('flashcard-reveal')
@@ -368,60 +392,128 @@ export default function SessionScreen({
   }
 
   function handleFlashcardKey(e: React.KeyboardEvent) {
-    if (phase !== 'flashcard-reveal') return
+    if (phase !== 'flashcard-reveal' || showReport) return
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
     if (e.key === '1') { e.preventDefault(); void handleFlashcardGrade('again') }
     if (e.key === '2') { e.preventDefault(); void handleFlashcardGrade('good') }
     if (e.key === '3') { e.preventDefault(); void handleFlashcardGrade('easy') }
   }
 
+  async function handleSaveCanDo(unitId: string, answers: boolean[]) {
+    await persist(latest => ({
+      ...latest,
+      unitMeta: { ...latest.unitMeta, [unitId]: { ...latest.unitMeta[unitId], canDo: answers } },
+    }))
+  }
+
   if (phase === 'done') {
     return (
-      <div className="end-screen">
-        <h2>{S.SESSION_DONE}</h2>
-        <p>{S.REVIEWED(answeredCount)}</p>
-        <button className="btn-primary" autoFocus onClick={onDone}>{S.ANOTHER_ROUND}</button>
-      </div>
+      <SessionEndScreen
+        mode={mode}
+        answeredCount={answeredCount}
+        entries={progress.reviewLog.filter(e => e.session === sessionId.current)}
+        content={content}
+        progress={progress}
+        config={config}
+        examUnit={examUnit}
+        unlocksNext={examUnlocksNext}
+        summary={summarize && mode !== 'test' ? summarize(progress) : undefined}
+        onHome={onHome}
+        onContinue={onContinue}
+        onRefreshMissed={onRefreshMissed}
+        onRetryExam={onRetryExam}
+        onSaveCanDo={handleSaveCanDo}
+      />
     )
   }
 
   const cardState = currentItem?.kind === 'exercise' ? progress.cards[currentItem.cardKey] : undefined
   const isLeechy = cardState !== undefined && isLeech(cardState, config.leech) && config.leech.showExtraContext
-  const sentence = exercise?.sentence
-  const label = exercise ? questionLabel(exercise.typeId) : undefined
+  const ui = exercise ? exerciseUi(exercise.typeId) : undefined
+  const label = ui?.label
+  const totalQuestions = Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)
+  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0
+  const answered = phase === 'feedback' || phase === 'lapse-retype'
+  const typed = !!exercise && !isChoice && exercise.typeId !== 'flashcard'
+  const promptLang = ui?.italianPrompt ? 'it' : undefined
+  const answerLang = ui?.dutchAnswer ? undefined : 'it'
+  const canHint = mode !== 'exam' && typed && !ui?.noHint
+  // Audio next to the prompt only where it cannot give the answer away (before answering)
+  const promptAudio = !!exercise && exercise.typeId !== 'dictation' && (
+    !!ui?.promptAudio || exercise.sentence?.mode === 'highlight' || (answered && !!exercise.sentence)
+  )
 
-  function renderPrompt(ex: Exercise) {
-    if (ex.sentence?.mode === 'gap') {
+  function renderPrompt(ex: Exercise, showAnswer: boolean) {
+    if (ex.sentence) {
+      const textMode = ex.sentence.mode === 'gap' && !showAnswer ? 'gap' : 'highlight'
       return (
         <>
-          <div className="sentence-nl">{ex.sentence.nl}</div>
-          <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="gap" />
+          {ex.sentence.mode === 'gap' && <p className="q-nl">{ex.sentence.nl}</p>}
+          <div className="q-row">
+            <SentenceText className="q-sentence" text={ex.sentence.it} span={ex.sentence.span} mode={textMode} spaceAfterGap={ex.sentence.spaceAfterGap} />
+            {promptAudio && audioButton()}
+          </div>
         </>
       )
     }
-    if (ex.sentence?.mode === 'highlight') {
-      return <SentenceText className="card-prompt" text={ex.sentence.it} span={ex.sentence.span} mode="highlight" />
+    if (ex.typeId === 'dictation') {
+      return (
+        <button className="play-btn" onClick={handleAudio} aria-label={S.PLAY}>
+          <IconAudio {...ICON} />
+        </button>
+      )
     }
-    return <div className="card-prompt">{ex.prompt}</div>
+    return (
+      <div className="q-row">
+        <div className="q-prompt" lang={promptLang}>{ex.prompt}</div>
+        {promptAudio && audioButton()}
+      </div>
+    )
   }
 
-  function renderOptions(ex: Exercise, answered: boolean) {
+  function audioButton() {
+    return (
+      <button className="icon-btn" onClick={handleAudio} aria-label={S.SPEAK}>
+        <IconAudio {...ICON} />
+      </button>
+    )
+  }
+
+  function reportButton() {
+    return (
+      <button className="icon-btn" onClick={() => setShowReport(true)} aria-label={S.REPORT}>
+        <IconReport {...ICON} />
+      </button>
+    )
+  }
+
+  function optionState(ex: Exercise, option: string): 'ok' | 'answer' | 'wrong' | 'dim' | undefined {
+    if (!answered) return undefined
+    const isAnswer = ex.answers.includes(option)
+    const isPicked = option === input
+    if (isAnswer) return isPicked ? 'ok' : 'answer'
+    return isPicked ? 'wrong' : 'dim'
+  }
+
+  function renderOptions(ex: Exercise) {
     const itOptions = ex.typeId !== 'mc-sentence'
     return (
-      <div className="choice-list">
+      <div className="options" role="group" aria-label={label}>
         {ex.options!.map((option, i) => {
-          const isAnswer = ex.answers.includes(option)
-          const isPicked = option === input
-          const state = !answered ? '' : isAnswer ? 'correct' : isPicked ? 'wrong' : 'dim'
+          const state = optionState(ex, option)
           return (
             <button
               key={option}
-              className={`choice ${state}`}
+              className="option"
+              data-option={i + 1}
+              data-state={state}
               disabled={answered}
-              lang={itOptions ? 'it' : undefined}
               onClick={() => handleChoose(option)}
             >
-              <span className="choice-key">{i + 1}</span>
-              <span>{option}</span>
+              <span className="option-key" aria-hidden="true">{i + 1}</span>
+              <span className="option-label" data-option-label lang={itOptions ? 'it' : undefined}>{option}</span>
+              {(state === 'ok' || state === 'answer') && <IconCorrect {...ICON} />}
+              {state === 'wrong' && <IconWrong {...ICON} />}
             </button>
           )
         })}
@@ -429,187 +521,52 @@ export default function SessionScreen({
     )
   }
 
-  return (
-    <div className="session" ref={screenRef} onKeyDown={handleScreenKeyDown} onKeyUp={handleFlashcardKey} tabIndex={-1}>
-      {session.isReturn && <div className="welcome-back">{S.WELCOME_BACK}</div>}
-
-      <div className="session-progress">
-        {answeredCount} / {Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)}
+  function renderAnswerField() {
+    const state = answered && result ? RESULT_CLASS[result] : undefined
+    const StateIcon = state === 'ok' ? IconCorrect : state === 'almost' ? IconAlmost : state === 'wrong' ? IconWrong : null
+    return (
+      <div className="answer-field">
+        <input
+          ref={answered ? undefined : inputRef}
+          className={`answer-input${state ? ` answer-input--${state}` : ''}`}
+          type="text"
+          aria-label={S.ANSWER_LABEL}
+          value={phase === 'lapse-retype' ? lastAnswer : input}
+          readOnly={answered}
+          onChange={e => setInput(e.target.value)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          lang={answerLang}
+        />
+        {StateIcon && <StateIcon {...ICON} className={`answer-state answer-state--${state}`} />}
       </div>
+    )
+  }
 
-      <div className="card">
-        {/* ── INTRO ── */}
-        {phase === 'intro' && currentItem?.kind === 'intro' && (() => {
-          const { itemId } = currentItem
-          const word = content.words.get(itemId)
-          const verb = content.verbs.get(itemId)
-          const match = introSentence(itemId, content)
-          const itemIt = word ? withArticle(word) : (verb?.inf ?? itemId)
-          const itemNl = (word?.nl ?? verb?.nl ?? []).join(', ')
-          const register = word?.register === 'formal' ? S.REGISTER_FORMAL : word?.register === 'informal' ? S.REGISTER_INFORMAL : null
-          return (
-            <>
-              <div className="card-header">{S.INTRO_HEADER}</div>
-              {match && (
-                <div className="intro-sentence">
-                  <SentenceText className="intro-sentence-it" text={match.sentence.it} span={match.span} mode="highlight" />
-                  <div className="intro-sentence-nl">{match.sentence.nl[0]}</div>
-                </div>
-              )}
-              <div className="intro-item">
-                <div className="intro-italian" lang="it">{itemIt}</div>
-                {itemNl && <div className="intro-nl">{itemNl}</div>}
-                {register && <span className={`register-badge ${word?.register}`}>{register}</span>}
-                {word?.note && <div className="card-hint-text">{word.note}</div>}
-              </div>
-              <div className="action-row">
-                <button className="btn-primary" ref={primaryBtnRef} onClick={() => void handleIntroNext()}>
-                  {S.INTRO_DONE}
-                </button>
-                <button className="btn-secondary" onClick={() => handleAudioIntro(itemId)}>
-                  {S.AUDIO}
-                </button>
-              </div>
-            </>
-          )
-        })()}
-
-        {/* ── QUESTION (multiple choice) ── */}
-        {phase === 'question' && exercise && isChoice && (
-          <>
-            <div className="card-header">
-              {label}
-              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
-            </div>
-            {renderPrompt(exercise)}
-            {renderOptions(exercise, false)}
-            <div className="action-row">
-              {sentence?.mode !== 'gap' && <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>}
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
+  function renderFeedback(ex: Exercise, res: ReviewResult) {
+    const kind = RESULT_CLASS[res]
+    const HeadIcon = kind === 'ok' ? IconCorrect : kind === 'almost' ? IconAlmost : IconWrong
+    const showAnswer = !isChoice && (kind === 'almost' || kind === 'wrong')
+    return (
+      <div className={`feedback feedback--${kind}`}>
+        <div className="feedback-head">
+          <HeadIcon {...ICON} />
+          {kind === 'ok' ? S.CORRECT : kind === 'almost' ? S.ALMOST : S.WRONG}
+        </div>
+        {showAnswer && (
+          <p className="feedback-text">
+            {S.CORRECT_ANSWER} <b data-correct-answer lang={answerLang}>{ex.answers[0]}</b>
+          </p>
         )}
-
-        {/* ── QUESTION (typed) ── */}
-        {phase === 'question' && exercise && !isChoice && exercise.typeId !== 'flashcard' && (
-          <>
-            <div className="card-header">
-              {label}
-              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
-            </div>
-            {renderPrompt(exercise)}
-            {exercise.withArticle && <div className="card-hint-text">{S.WITH_ARTICLE}</div>}
-            {exercise.hint && <div className="card-hint-text">{exercise.hint}</div>}
+        {phase === 'lapse-retype' ? (
+          <div className="feedback-retype">
+            <label className="feedback-label" htmlFor="retype-input">{S.LAPSE_RETYPE}</label>
             <input
+              id="retype-input"
               ref={inputRef}
-              className="answer-input"
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-            />
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={() => void handleSubmitAnswer()}>
-                {S.CHECK}
-              </button>
-              {mode !== 'exam' && (
-                <button className="btn-secondary" onClick={handleHint} disabled={hintUsed}>
-                  {S.HINT}
-                </button>
-              )}
-              {sentence?.mode !== 'gap' && <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>}
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── FLASHCARD question ── */}
-        {phase === 'question' && exercise?.typeId === 'flashcard' && (
-          <>
-            <div className="card-header">
-              {isLeechy && <span className="leech-badge">{S.LEECH_BADGE}</span>}
-            </div>
-            <div className="card-prompt">{exercise.prompt}</div>
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={() => setPhase('flashcard-reveal')}>
-                {S.FLASHCARD_REVEAL}
-              </button>
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── FLASHCARD reveal ── */}
-        {phase === 'flashcard-reveal' && exercise?.typeId === 'flashcard' && (
-          <>
-            <div className="card-prompt">{exercise.prompt}</div>
-            <div className="intro-nl">{exercise.answers.join(' / ')}</div>
-            <div className="flashcard-grades">
-              <button className="btn-again" onClick={() => void handleFlashcardGrade('again')}>
-                1 {S.FLASHCARD_AGAIN}
-              </button>
-              <button className="btn-good" ref={primaryBtnRef} onClick={() => void handleFlashcardGrade('good')}>
-                2 {S.FLASHCARD_GOOD}
-              </button>
-              <button className="btn-easy" onClick={() => void handleFlashcardGrade('easy')}>
-                3 {S.FLASHCARD_EASY}
-              </button>
-            </div>
-            <div className="action-row">
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── FEEDBACK ── */}
-        {phase === 'feedback' && exercise && result && (
-          <>
-            {sentence && (
-              <>
-                {sentence.mode === 'gap' && <div className="sentence-nl">{sentence.nl}</div>}
-                <SentenceText className="card-prompt" text={sentence.it} span={sentence.span} mode="highlight" />
-              </>
-            )}
-            {isChoice ? renderOptions(exercise, true) : (
-              <input
-                className={`answer-input ${result}`}
-                type="text"
-                value={input}
-                readOnly
-              />
-            )}
-            <div className="feedback">
-              <div className={`feedback-label ${result}`}>
-                {result === 'correct' ? S.CORRECT : result === 'almost' ? S.ALMOST : S.WRONG}
-              </div>
-              {!isChoice && (result === 'almost' || result === 'wrong') && (
-                <div className="feedback-answer">
-                  {S.CORRECT_ANSWER} <strong>{exercise.answers[0]}</strong>
-                </div>
-              )}
-            </div>
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={handleFeedbackNext}>
-                {S.NEXT}
-              </button>
-              <button className="btn-secondary" onClick={handleAudio}>{S.AUDIO}</button>
-              <button className="btn-secondary" onClick={() => setShowReport(true)}>{S.REPORT}</button>
-            </div>
-          </>
-        )}
-
-        {/* ── LAPSE RETYPE ── */}
-        {phase === 'lapse-retype' && exercise && (
-          <div className="lapse-retype">
-            <label>{S.LAPSE_RETYPE}</label>
-            <div className="feedback-answer"><strong>{exercise.answers[0]}</strong></div>
-            <input
-              ref={inputRef}
-              className={`answer-input ${retypeWrong ? 'wrong' : ''}`}
+              className={`answer-input${retypeWrong ? ' answer-input--wrong' : ''}`}
               type="text"
               value={input}
               onChange={e => { setInput(e.target.value); setRetypeWrong(false) }}
@@ -617,16 +574,170 @@ export default function SessionScreen({
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
+              lang={answerLang}
             />
-            {retypeWrong && <div className="feedback-label wrong">{S.LAPSE_MISMATCH}</div>}
-            <div className="action-row">
-              <button className="btn-primary" ref={primaryBtnRef} onClick={handleLapseRetypeNext}>
-                {S.LAPSE_CONFIRM}
-              </button>
-            </div>
+            {retypeWrong && <p className="feedback-text">{S.LAPSE_MISMATCH}</p>}
+            <button className={`btn btn--block btn--${kind}`} ref={primaryBtnRef} onClick={handleLapseRetypeNext}>
+              {S.LAPSE_CONFIRM}
+            </button>
           </div>
+        ) : (
+          <button className={`btn btn--block btn--${kind}`} ref={primaryBtnRef} onClick={handleFeedbackNext}>
+            {S.NEXT}<IconNext {...ICON_LINE} />
+          </button>
         )}
       </div>
+    )
+  }
+
+  function renderIntro(itemId: string) {
+    const word = content.words.get(itemId)
+    const verb = content.verbs.get(itemId)
+    const match = introSentence(itemId, content)
+    const itemIt = word ? withArticle(word) : (verb?.inf ?? itemId)
+    const itemNl = (word?.nl ?? verb?.nl ?? []).join(', ')
+    const register = word?.register === 'formal' ? S.REGISTER_FORMAL : word?.register === 'informal' ? S.REGISTER_INFORMAL : null
+    return (
+      <>
+        <p className="q-label">{S.INTRO_HEADER}</p>
+        {match && (
+          <>
+            <SentenceText className="q-sentence" text={match.sentence.it} span={match.span} mode="highlight" />
+            <p className="q-nl">{match.sentence.nl[0]}</p>
+          </>
+        )}
+        <div className="intro-card">
+          <div className="q-row intro-card-top">
+            <div className="intro-word" lang="it">{itemIt}</div>
+            <button className="icon-btn" onClick={() => handleAudioIntro(itemId)} aria-label={S.SPEAK}>
+              <IconAudio {...ICON} />
+            </button>
+          </div>
+          {itemNl && <div className="intro-nl">{itemNl}</div>}
+          {register && <span className="pill pill--soft">{register}</span>}
+          {word?.note && <p className="q-note">{word.note}</p>}
+        </div>
+      </>
+    )
+  }
+
+  let body: React.ReactNode = null
+  let foot: React.ReactNode = null
+
+  if (phase === 'intro' && currentItem?.kind === 'intro') {
+    body = renderIntro(currentItem.itemId)
+    foot = (
+      <button className="btn btn--primary btn--block" ref={primaryBtnRef} onClick={() => void handleIntroNext()}>
+        {S.INTRO_DONE}<IconNext {...ICON_LINE} />
+      </button>
+    )
+  } else if (exercise) {
+    body = (
+      <>
+        <div className="q-head">
+          <p className="q-label">{exercise.typeId === 'flashcard' ? S.FLASHCARD_QUESTION : label}</p>
+          {isLeechy && <span className="pill pill--wrong">{S.LEECH_BADGE}</span>}
+        </div>
+        {renderPrompt(exercise, answered)}
+        {exercise.withArticle && <span className="pill pill--primary">{S.WITH_ARTICLE}</span>}
+        {exercise.hint && <span className="pill pill--primary" lang="it">{exercise.hint}</span>}
+        {phase === 'flashcard-reveal' && <p className="reveal">{exercise.answers.join(' / ')}</p>}
+        {isChoice && renderOptions(exercise)}
+        {typed && renderAnswerField()}
+        <div className="q-tools">
+          {canHint && !answered && (
+            <button className="icon-btn" onClick={handleHint} disabled={hintUsed} aria-label={S.HINT}>
+              <IconHint {...ICON} />
+            </button>
+          )}
+          {answered && !promptAudio && exercise.typeId !== 'dictation' && audioButton()}
+          {reportButton()}
+          {hintUsed && !answered && <span className="q-note">{S.HINT_USED}</span>}
+          {isChoice && !answered && <span className="q-note">{S.CHOICE_KEYS(exercise.options!.length)}</span>}
+        </div>
+      </>
+    )
+    if (answered && result) {
+      foot = renderFeedback(exercise, result)
+    } else if (phase === 'flashcard-reveal') {
+      foot = (
+        <div className="grades">
+          <button className="grade grade--again" onClick={() => void handleFlashcardGrade('again')}>
+            <span className="grade-key" aria-hidden="true">1</span>{S.FLASHCARD_AGAIN}
+          </button>
+          <button className="grade grade--good" ref={primaryBtnRef} onClick={() => void handleFlashcardGrade('good')}>
+            <span className="grade-key" aria-hidden="true">2</span>{S.FLASHCARD_GOOD}
+          </button>
+          <button className="grade grade--easy" onClick={() => void handleFlashcardGrade('easy')}>
+            <span className="grade-key" aria-hidden="true">3</span>{S.FLASHCARD_EASY}
+          </button>
+        </div>
+      )
+    } else if (exercise.typeId === 'flashcard') {
+      foot = (
+        <button className="btn btn--primary btn--block" ref={primaryBtnRef} onClick={() => setPhase('flashcard-reveal')}>
+          {S.FLASHCARD_REVEAL}
+        </button>
+      )
+    } else if (typed) {
+      // An empty answer is not sent by accident (Enter does nothing); "Weet ik niet" sends it on purpose
+      foot = (
+        <div className="foot-actions">
+          <button
+            className="btn btn--primary btn--block"
+            ref={primaryBtnRef}
+            disabled={input.trim() === ''}
+            onClick={() => void handleSubmitAnswer()}
+          >
+            <IconCheck {...ICON_LINE} />{S.CHECK}
+          </button>
+          <button className="btn btn--text" onClick={() => void handleSubmitAnswer('')}>{S.DONT_KNOW}</button>
+        </div>
+      )
+    }
+  }
+
+  return (
+    // data-* attributes let the e2e session driver follow the flow (see e2e/README.md)
+    <div
+      className="session"
+      ref={screenRef}
+      onKeyDown={handleScreenKeyDown}
+      onKeyUp={handleFlashcardKey}
+      tabIndex={-1}
+      style={{ '--keyboard-inset': `${keyboardInsetPx}px` } as React.CSSProperties}
+      data-testid="session"
+      data-phase={phase}
+      data-pos={pos}
+      data-mode={mode}
+      data-card-key={currentKey ?? undefined}
+      data-exercise-type={exercise?.typeId}
+      data-result={answered && result ? result : undefined}
+    >
+      <div className="session-top">
+        <button className="icon-btn icon-btn--plain" onClick={onHome} aria-label={S.STOP}>
+          <IconClose {...ICON_LINE} />
+        </button>
+        <div
+          className="progress"
+          role="progressbar"
+          aria-label={S.PROGRESS_LABEL(answeredCount, totalQuestions)}
+          aria-valuemin={0}
+          aria-valuemax={totalQuestions}
+          aria-valuenow={answeredCount}
+        >
+          <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+        </div>
+      </div>
+
+      <div className="session-body">{body}</div>
+
+      {foot && <div className={`session-foot${answered ? ' session-foot--feedback' : ''}`}>{foot}</div>}
+
+      {/* Read out every result, also when the feedback bar replaces the buttons */}
+      <p className="visually-hidden" role="status" aria-live="polite">
+        {answered && result ? RESULT_TEXT[RESULT_CLASS[result]] : ''}
+      </p>
 
       {showReport && exercise && (
         <ReportModal

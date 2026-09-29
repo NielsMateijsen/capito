@@ -16,6 +16,26 @@ describe('normalization', () => {
   it('collapse double spaces', () => {
     expect(check('goeie  dag', ['goeie dag'], 'translation', config)).toBe('correct')
   })
+
+  it('missing comma and exclamation mark → correct', () => {
+    expect(check('Hallo Anna', ['Hallo, Anna!'], 'translation', config)).toBe('correct')
+  })
+
+  it('extra punctuation in input → correct', () => {
+    expect(check('Ja, graag. Dank je!', ['ja graag dank je'], 'translation', config)).toBe('correct')
+  })
+
+  it('punctuation without surrounding space still separates words', () => {
+    expect(check('ja,graag', ['ja, graag'], 'translation', config)).toBe('correct')
+  })
+
+  it('ignores punctuation when typo tolerance is off (cloze)', () => {
+    expect(check('hallo anna', ['Hallo, Anna!'], 'cloze', config)).toBe('correct')
+  })
+
+  it('keeps apostrophes: they are part of the word', () => {
+    expect(check('zon', ["zo'n"], 'translation', config)).not.toBe('correct')
+  })
 })
 
 describe('multiple valid answers', () => {

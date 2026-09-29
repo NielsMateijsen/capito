@@ -17,6 +17,8 @@ export interface SentenceView {
   nl: string
   span: Span
   mode: 'highlight' | 'gap'
+  /** Gap view only: keep a space after the gap, also when the text has none (an elided article: l'amica). */
+  spaceAfterGap?: boolean
 }
 
 export interface Exercise {

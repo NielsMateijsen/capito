@@ -7,7 +7,7 @@ Naam: **Capito** (reponaam `capito`, PWA-naam "Capito").
 Persoonlijke webapp (PWA, mobile-first) om Italiaans te leren als Nederlandstalige beginner (A1-begin).
 
 Verbeteringen t.o.v. Duolingo:
-- Snel: geen animaties, geen levens, toetsenbord-first (Enter = controleer / volgende)
+- Snel: geen levens, toetsenbord-first (Enter = controleer / volgende). Alleen micro-animaties: in een sessie maximaal 150 ms, een viering (perfecte les, streak) alleen op het eindscherm. Animaties blokkeren nooit invoer (Enter en 1-4 werken altijd direct), duren staan als tokens in `src/ui/theme.css`, en alles gaat uit bij `prefers-reduced-motion`
 - Correcte, natuurlijke zinnen (vooraf gegenereerd en gecontroleerd, nooit live AI)
 - Nadruk op grammatica en vervoegingen
 - Niet te raden: getypte antwoorden, en altijd oude stof door de nieuwe gemixt
@@ -15,7 +15,7 @@ Verbeteringen t.o.v. Duolingo:
 
 Randvoorwaarden: geen kosten, geen accounts, één gebruiker, statisch gehost (GitHub Pages). UI-teksten in het Nederlands.
 
-Succescriteria voor de pilot (unit 1 een week gebruiken) staan in `docs/pilot.md`.
+Succescriteria voor de pilot (unit 1 en 2 een week gebruiken) staan in `docs/pilot.md`.
 
 **Belangrijkste eis: bestendig tegen uitbreiding.** Later komen er woorden, units, grammatica, tijden en oefenvormen bij. Dat moet kunnen zonder bestaande code of voortgang te breken.
 
@@ -47,8 +47,9 @@ Succescriteria voor de pilot (unit 1 een week gebruiken) staan in `docs/pilot.md
 - Voortgang en review-log in **IndexedDB** (`idb-keyval`) achter een asynchrone `ProgressStorage`-interface
 - Deploy via GitHub Actions naar GitHub Pages
 - Audio: Python + `edge-tts`, vooraf gegenereerd als mp3
-- Grammaticales: Markdown met frontmatter (`gray-matter`)
+- Grammaticales: Markdown met YAML-frontmatter (`yaml`, browservriendelijk)
 - Versiestempel bij elke build (zie 5, "Versiestempel")
+- Lettertype Figtree via `@fontsource/figtree` (zelf gehost); iconen via `@phosphor-icons/react`
 
 ### Mappenstructuur
 
@@ -70,7 +71,7 @@ Succescriteria voor de pilot (unit 1 een week gebruiken) staan in `docs/pilot.md
   /engine/           conjugator, checker, srs, session-builder, unlock, plurals
   /exercises/        één bestand per oefentype + index.ts (auto-registry)
   /storage/          progress-store, migrations
-  /ui/               schermen, componenten, strings.nl.ts
+  /ui/               schermen, componenten, strings.nl.ts, theme.css (design tokens), icons.ts
   /generated/        audio-manifest.json (door script gemaakt, niet handmatig)
 ```
 
@@ -218,7 +219,7 @@ cloze-word:w_caffe
 De SRS (SM-2) slaat per `cardKey` op: `ease, interval, due, reps, lapses`. De score per antwoord komt uit `config/app.json` → `grading`. SRS-parameters staan in `srs.*` (`algorithm`, `startEase`, `minEase`, `maxIntervalDays`) en de typfoutdrempels in `checker.*` (`typoMinLength`, `typoMaxDistance`). Kaarten van onbekende of gedeprecateerde content worden genegeerd, niet verwijderd. De kaartstatus is afleidbaar uit de review-log (zie "Review-log").
 
 ### Antwoordcontrole (`checker.ts`)
-- Normaliseren: trim, kleine letters, dubbele spaties, eind-leestekens, `’` naar `'`
+- Normaliseren: trim, kleine letters, dubbele spaties, `’` naar `'`, en leestekens (`. , ! ? ; : ¡ ¿ …`, aanhalingstekens, haakjes) overal negeren: een ontbrekende komma of uitroepteken rekent niets fout. Apostrofs blijven staan, die horen bij het woord
 - Meerdere geldige antwoorden (`nl` is een lijst); bij NL-antwoorden optioneel leidend de/het/een negeren
 - Uitkomsten: `correct` | `almost` | `wrong`
 - **Accentfout** (caffe i.p.v. caffè): `almost`, met de juiste vorm getoond. Uitzondering: als de accentloze vorm zelf een ander geldig woord is (e/è, da/dà), dan `wrong`
@@ -228,21 +229,35 @@ De SRS (SM-2) slaat per `cardKey` op: `ease, interval, due, reps, lapses`. De sc
 ### Conjugator (`conjugator.ts`)
 `conjugate(verb, tense, person)`: gebruikt `irregular`-tabel indien aanwezig, anders regels uit de tijd + spellingregels. Tests vergelijken de uitvoer met `tests/golden/conjugation-presente.json` (door de gebruiker gecontroleerd, agents wijzigen dit bestand niet zonder toestemming).
 
-### Sessie-opbouw en leerbeleid (`session-builder.ts`)
-Invoer: voortgang, config, ontgrendelde units. **Alle getallen komen uit `config/app.json`.**
+### Lessenpad (`lessons.ts`, `overview.ts`)
+Elke unit is een pad: les 1 → les 2 → … → Afronden, met aan het eind de eindtoets. Je bepaalt zelf je tempo: er zijn geen daglimieten. **Alle getallen komen uit `config/app.json`** (`lesson.*`, `refresh.*`, `streak.*`).
 
-- **Mix:** minimaal `session.minOldMaterialRatio` (30%) kaarten uit eerdere units, ook bij "oefen deze unit"
-- **Nieuwe woorden en werkwoorden** doorlopen eerst de leerladder (zie "Leerladder")
-- **Dag:** alle daglimieten (nieuwe woorden, nieuwe kaarten, treden per dag) tellen per kalenderdag in `session.timeZone` (`Europe/Amsterdam`), dus de dag wisselt om middernacht Nederlandse tijd, ook bij zomer- en wintertijd
-- **Sessielengte:** maximaal `session.maxReviewsPerSession` (30). Daarna een afrondscherm met de knop "Nog een ronde"
-- **Nieuwe herhaalkaarten:** kaarten die vrijkomen als een item de ladder heeft afgerond (bijv. `article`, `conjugate`, `dictation`), maximaal `session.newCardsPerDay` per dag
-- **Uitgesloten types:** `session.excludedTypes` komen niet als herhaalkaart in de sessie: `flashcard` en `cloze` (de kaarten blijven bestaan), en `mc-sentence` en `mc-word` (die bestaan alleen als trede op de ladder)
-- **Volgorde:** willekeurig (met een seed, dus deterministisch testbaar), ongeacht ladderstatus. Wel geldt: een introductie staat direct voor de eerste vraag over dat item, treden van één item staan in volgorde met minstens `ladder.minGapSameItem` andere kaarten ertussen, en maximaal `session.maxSameTypeInRow` kaarten van hetzelfde type achter elkaar
-- **Achterstand:** per dag maximaal `backlog.maxDueShownPerDay` achterstallige kaarten, de meest achterstallige eerst (`backlog.order`). Boven `backlog.pauseNewCardsAboveDue` achterstallige kaarten komen er geen nieuwe kaarten bij
-- **Terugkeer na een pauze:** na `backlog.returnAfterDays` dagen afwezigheid krijg je lichte sessies (maximaal `backlog.returnMaxSessionReviews`) met een vriendelijk "welkom terug", zonder nieuwe kaarten tot de achterstand onder de drempel is
-- **Fout antwoord:** het juiste antwoord één keer overtypen (`lapse.retypeCorrectAnswer`); de kaart komt in dezelfde sessie terug (`lapse.reinsertInSession`) na `lapse.reinsertAfterCards` kaarten
+- **Indeling:** de woorden en werkwoorden (items) van een unit, in leervolgorde, worden automatisch verdeeld over lessen van `lesson.itemsPerLesson` (3; instelbaar in Instellingen als "Nieuwe woorden per les"). Daarna komt de les **Afronden** zonder nieuwe items
+- **Stabiel:** de indeling volgt de log. Een item hoort bij de les van zijn eerste antwoord (`lesson` in de log-entry), dus een begonnen les verandert nooit meer, ook niet als er content bijkomt of de instelling verandert. Onaangeroerde items vullen eerst de laatst begonnen les aan (zolang die niet af is) en vormen daarna nieuwe lessen. Items die buiten de lessen zijn geleerd (test-out, oude log) slaan de lessen over
+- **Volgorde op het pad:** alleen de eerste les die niet af is, kun je starten. Afgeronde lessen staan met een vinkje, latere zijn op slot
+- **Les af:** elk item van de les heeft ooit de lesdoel-trede bereikt (`lesson.maxStepsPerItemPerLesson` treden, of de hele ladder). Een latere fout maakt een les niet opnieuw open. Afronden is af als alle items van de unit de ladder hebben afgerond
+- **Inhoud van een les:**
+  1. De nieuwe items van de les: introductie en de eerste `lesson.maxStepsPerItemPerLesson` (2) treden. Een item van de les komt in die les nooit verder dan dat doel, ook niet als je de les hervat
+  2. Onafgemaakte items uit eerdere lessen (bijvoorbeeld die van de vorige les): hun volgende 2 treden, maximaal `lesson.maxFinishItemsPerLesson`; items van de eigen unit eerst, daarna langst niet geoefend eerst. Hervat je een les, dan krijgen deze items opnieuw 2 treden (de nieuwe items van de les blijven op hun lesdoel)
+  3. Herhaling: maximaal `lesson.maxReviewsPerLesson` (4) herhaalkaarten die aan de beurt zijn (meest achterstallig eerst), plus maximaal `lesson.newReviewCardsPerLesson` (2) herhaalkaarten die nog nooit zijn gevraagd (van items die het eerst de ladder afrondden)
+- **Verder:** de knop op Home opent de eerste open les van de eerste unit die nog niet gehaald is, of de eindtoets als alle lessen af zijn. Het eindscherm van een les heeft dezelfde knop, zodat je door kunt gaan
+- **Perfecte les:** geen fout antwoord en geen hint in de les. "Bijna goed" (accent) telt niet als fout
+- **Volgorde binnen een les:** willekeurig (met een seed, dus deterministisch testbaar). Wel geldt: een introductie staat direct voor de eerste vraag over dat item, elk nieuw item krijgt zijn eerste vraag voordat een nieuw item zijn tweede krijgt (zo heeft een halverwege verlaten les al zijn nieuwe items begonnen en blijft de indeling stabiel), treden van één item staan in volgorde met minstens `ladder.minGapSameItem` andere kaarten ertussen, en maximaal `session.maxSameTypeInRow` kaarten van hetzelfde type achter elkaar
+- **Uitgesloten types:** `session.excludedTypes` komen niet als herhaalkaart in een les of opfrisronde: `flashcard` en `cloze` (de kaarten blijven bestaan), en `mc-sentence` en `mc-word` (die bestaan alleen als trede op de ladder)
+- **Fout antwoord:** het juiste antwoord één keer overtypen (`lapse.retypeCorrectAnswer`); de kaart komt in dezelfde sessie terug (`lapse.reinsertInSession`) na `lapse.reinsertAfterCards` kaarten. In een les zakt een ladderitem een trede (zie "Leerladder")
 - **Leech:** na `leech.lapseThreshold` fouten wordt een kaart gemarkeerd als "lastig". Ze komt in de lijst "Lastig", krijgt extra context (voorbeeldzin + audio, `leech.showExtraContext`) en blijft in de SRS
 - **Score per antwoord** (`grading`): correct 4, bijna goed (accent/typfout) 3, hint gebruikt (`grading.hintUsed`) 3, fout 1; flashcard opnieuw 1, goed 4, makkelijk 5
+
+### Opfrissen (`buildRefresh` in `session-builder.ts`)
+- Een losse ronde met de meest achterstallige herhaalkaarten, daarna lastige kaarten die nog niet aan de beurt zijn, daarna herhaalkaarten die nog nooit zijn gevraagd, tot `refresh.maxCards` (15)
+- Altijd optioneel: opfrissen blokkeert nooit een les. Home toont "Opfrissen (n)" zodra er kaarten aan de beurt zijn, en bovenaan een melding "N woorden dreigen weg te zakken" vanaf `refresh.prominentAboveDueItems` (10) woorden
+- Na een niet-gehaalde eindtoets kun je direct de gemiste vragen opfrissen (precies die kaarten)
+- Een fout antwoord brengt dezelfde kaart terug; opfrissen zakt nooit de ladder af
+
+### Streak (`streak.ts`)
+- Een dag (in `session.timeZone`) telt als je een les afrondde, een opfrisronde met minstens `streak.minRefreshAnswers` (5) antwoorden deed, of een eindtoets helemaal maakte
+- Home toont de huidige reeks en de langste. De reeks blijft staan tot en met gisteren zolang je vandaag nog niets deed; er is geen straf voor een gemiste dag, de reeks begint gewoon opnieuw
+- Alles wordt uit de log berekend (lesdoel-tijden, opfrissessies, eindtoetsen); er is geen losse teller
 
 ### Leerladder (`ladder.ts`, `sentences.ts`, `distractors.ts`)
 Elk woord en werkwoord (een **item**) doorloopt de treden uit `ladder.stages`, na een introductie:
@@ -255,25 +270,30 @@ Elk woord en werkwoord (een **item**) doorloopt de treden uit `ladder.stages`, n
 
 Een trede die voor een item niet bestaat (bijv. `translate-nl-it` bij werkwoorden) wordt overgeslagen. Na de laatste trede is het item **afgerond** en gaan de herhaalkaarten via de SRS.
 
-- **Trede afleiden uit de log:** een item stijgt een trede bij een antwoord uit `ladder.passResults` (standaard alleen goed, dus "bijna goed", bijvoorbeeld zonder lidwoord, laat het item op zijn trede staan) op de trede van dat moment, en zakt `ladder.dropOnWrong` treden bij een fout. Afgerond blijft afgerond. Antwoorden uit de eindtoets tellen niet mee. Een item waarvan het eerste antwoord niet op de eerste trede staat, is geoefend vóór de ladder bestond en geldt als afgerond. Er is geen apart opgeslagen veld
-- **Tempo:** een item stijgt maximaal `ladder.maxStepsPerItemPerDay` treden per dag. Daardoor staan items in een sessie op verschillende treden
-- **Nieuwe items:** maximaal `ladder.newItemsPerDay` per dag (instelbaar in Instellingen), en alleen zolang er minder dan `ladder.maxItemsInProgress` items op de ladder staan. Volgorde: unit-volgorde, binnen een unit de volgorde waarin items voor het eerst in de zinnen voorkomen
-- **Verdeling:** eerst maximaal `ladder.reviewShare` van de sessie aan achterstallige herhalingen, dan de items op de ladder (langst niet geoefend eerst), dan nieuwe items, en de rest weer herhalingen
-- **Fout op een trede:** het item zakt, de latere treden van dat item verdwijnen uit de sessie en de lagere trede komt na `lapse.reinsertAfterCards` kaarten terug. Bij meerkeuze wordt het antwoord niet overgetypt
-- **Zinnen:** per item de zinnen waarin het voorkomt. De introductiezin is de eerste zin in de unit met dat item; daarna wisselt de zin bij elke kaart van het item (op basis van het aantal eerdere antwoorden op dat item)
+- **Trede afleiden uit de log:** een item stijgt een trede bij een antwoord uit `ladder.passResults` (standaard alleen goed, dus "bijna goed", bijvoorbeeld zonder lidwoord, laat het item op zijn trede staan) op de trede van dat moment, en zakt `ladder.dropOnWrong` treden bij een fout. Afgerond blijft afgerond. De hoogste trede ooit (`maxLevel`) en het moment waarop elke trede voor het eerst werd bereikt, worden bijgehouden (voor "les af" en de streak). Er is geen apart opgeslagen veld
+- **Starten en bewegen:** alleen een antwoord in een les start of verplaatst een item (en in oude logs `daily`/`unit`). Antwoorden bij opfrissen of een grammaticadrill tellen voor de SRS, niet voor de ladder
+- **Test-out:** een goed antwoord (`exam.passResults`) in een **gehaalde** eindtoets rondt het item van die kaart meteen af (`testedOut`). Andere eindtoetsantwoorden tellen niet voor de ladder
+- **Oude logs:** een item waarvan het eerste `daily`/`unit`-antwoord niet op de eerste trede staat, is geoefend vóór de ladder bestond en geldt als afgerond
+- **Tempo:** een item stijgt maximaal `lesson.maxStepsPerItemPerLesson` (2) treden per les. Een item doorloopt de ladder dus over twee lessen: eerst herkennen (meerkeuze), in de volgende les zelf typen. De eerste SRS-herhaling komt een dag later
+- **Fout op een trede:** het item zakt, de latere treden van dat item verdwijnen uit de les en de lagere trede komt na `lapse.reinsertAfterCards` kaarten terug. Bij meerkeuze wordt het antwoord niet overgetypt
+- **Zinnen:** per item de zinnen waarin het voorkomt. De introductiezin is de eerste zin in de unit met dat item; daarna wisselt de zin bij elke kaart van het item (op basis van het aantal eerdere antwoorden op dat item). Oude woorden komen zo vanzelf terug in de zinnen van nieuwe lessen
 - **Afleiders** komen alleen uit bestaande content: vertalingen van andere zinnen, andere woorden van dezelfde woordsoort, of andere vormen van hetzelfde werkwoord. Volgorde van de opties is deterministisch
-- Herhaalkaarten van een item (`translate-it-nl`, `article`, `conjugate`) komen pas vrij als het item is afgerond; `dictation` als alle items uit `uses` zijn afgerond. Mastery (ontgrendelen, eindtoets) telt alleen herhaalkaarten
+- Herhaalkaarten van een item (`translate-it-nl`, `article`, `conjugate`) komen pas vrij als het item is afgerond; `dictation` als alle items uit `uses` zijn afgerond
 
 ### Ontgrendelen (`unlock.ts`)
-Unit ontgrendeld als alle `requires` een mastery ≥ `unlock.masteryThreshold` hebben (standaard 0.8). Mastery = aandeel kaarten van de unit met `reps ≥ unlock.minRepsPerCard` en laatste antwoord goed. Met `unlock.requireExam: true` moet daarnaast de eindtoets gehaald zijn (standaard uit, want dat maakt leren traag). In instellingen: "alles ontgrendelen" (het is je eigen app).
+Een unit gaat open als de eindtoets van elke unit uit `requires` is gehaald (afgeleid uit de log, zie "Eindtoets"). Een test-out telt ook. Eindtoetsen uit logs van vóór schema 3 (zonder `unit`/`examSize`) en de oude mastery-drempel tellen niet meer. In instellingen: "alles ontgrendelen" (het is je eigen app); Verder wijst dan nog steeds naar de eerste unit die niet gehaald is.
 
-### Eindtoets (`mode: exam`)
-Per unit beschikbaar vanaf mastery `exam.availableFromMastery` (0.6).
-- `exam.itemCount` (15) kaarten, `exam.unitShare` (60%) uit de unit en de rest uit eerdere units
-- Alleen getypte typen (`translate-nl-it`, `sentence-translate`, `conjugate`, `cloze`, `dictation`), geen flashcards met zelfbeoordeling, geen hints (`exam.allowHints: false`)
-- Resultaat: percentage, uitsplitsing per grammaticaonderwerp en de gemiste items. Geslaagd bij `exam.passThreshold` (0.8)
+### Eindtoets en test-out (`exam.ts`, `mode: exam`)
+Altijd beschikbaar. Na de lessen is het de afsluiting van de unit; vóór de lessen is het de test-out.
+- `exam.itemCount` (15) vragen: per woord of werkwoord van de unit één vraag (het eerste type uit `exam.itemTypes` dat voor het item bestaat: `translate-nl-it`, anders `conjugate`), aangevuld met zinskaarten van de unit tot `exam.unitShare` (60%), de rest uit **eerdere** units (geoefende kaarten eerst). Heeft de unit geen eerdere units, dan komt de hele toets uit de unit
+- Alleen getypte typen (`translate-nl-it`, `sentence-translate`, `conjugate`, `cloze`, `dictation`) en alleen kaarten die uit de huidige content te bouwen zijn, geen hints (`exam.allowHints: false`). Elke vraag komt één keer: een fout antwoord wordt overgetypt, maar komt niet terug, zodat de score het eerste antwoord is
+- Gehaald bij `exam.passThreshold` (0.8), waarbij `exam.passResults` (goed en bijna goed) meetellen. Alleen een volledig gemaakte toets kan gehaald worden
+- Gehaald: de volgende unit gaat open en de goed beantwoorde items gelden als afgerond. Niet gehaald: je ziet de gemiste vragen met het juiste antwoord en kunt ze direct opfrissen, of meteen opnieuw proberen
 - Daarna vraagt de app bij elk kan-doel (`canDo`) "Kan ik dit nu?" (ja / nog niet). Het antwoord wordt bewaard in `unitMeta`
-- Antwoorden komen in de review-log met `mode: "exam"`
+- Antwoorden komen in de review-log met `mode: "exam"`, `unit` en `examSize`. Uitslag, beste score en gehaalde units worden daaruit afgeleid (`examOutcomes`)
+
+### Testsessie (`mode: test`)
+Via Instellingen → Testen: één kaart per oefentype (de eerste die te bouwen is, ook uitgesloten types), met één intro vooraf (`buildTestQueue` in `src/engine/test-session.ts`). Bedoeld om oefenschermen te controleren, met de hand en door de rooktest (`e2e/`). Antwoorden en intro's worden niet opgeslagen en komen niet in de review-log; meldingen wel. Elke kaart komt precies één keer: een fout antwoord toont feedback en overtypen, maar zet de kaart niet opnieuw in de sessie (anders drukken herhaalde kaarten de laatste types weg).
 
 ### Oefentypes (`src/exercises/*.ts`)
 Elk bestand exporteert:
@@ -287,12 +307,12 @@ Elk bestand exporteert:
   requires?(cardKey, content): ItemId[]      // items die afgerond moeten zijn (standaard het item uit de key)
 }
 ```
-`ctx.seq` is het aantal eerdere antwoorden op het item; daarmee wisselen zin en optievolgorde. `index.ts` verzamelt ze automatisch. Types: `flashcard` (zelf beoordelen: opnieuw/goed/makkelijk), `translate-it-nl`, `translate-nl-it` (met lidwoord; zonder lidwoord is "bijna goed"), `sentence-translate`, `conjugate`, `article`, `cloze`, `dictation`, `mc-sentence`, `mc-word`, `cloze-word`. Meerkeuze telt niet mee in de eindtoets.
+`ctx.seq` is het aantal eerdere antwoorden op het item; daarmee wisselen zin en optievolgorde. `index.ts` verzamelt ze automatisch. Types: `flashcard` (zelf beoordelen: opnieuw/goed/makkelijk), `translate-it-nl`, `translate-nl-it` (met lidwoord; zonder lidwoord is "bijna goed"), `sentence-translate`, `conjugate`, `article` ("Vul het lidwoord in": de Nederlandse betekenis boven het woord met een streep op de plek van het lidwoord; ook bij een afgekort lidwoord staat er een spatie tussen streep en woord, zodat dat niet opvalt), `cloze`, `dictation`, `mc-sentence`, `mc-word`, `cloze-word`. Meerkeuze telt niet mee in de eindtoets.
 
 ### Voortgang (`storage/`)
 ```ts
 {
-  schema: 2,
+  schema: 3,
   cards: Record<CardKey, CardState>,   // afgeleid van de log (cache)
   reviewLog: ReviewEntry[],            // append-only, bron van waarheid
   introduced: string[],
@@ -302,7 +322,9 @@ Elk bestand exporteert:
   meta: { lastExportAt?: string, persistGranted?: boolean }
 }
 ```
-- `settings.newItemsPerDay` (nieuwe woorden op de ladder) en `settings.newCardsPerDay` (nieuwe herhaalkaarten) overschrijven `ladder.newItemsPerDay` en `session.newCardsPerDay`. Schema 2 voegde `newItemsPerDay` toe; de migratie 1 → 2 laat bestaande instellingen ongemoeid
+- `settings.newItemsPerLesson` overschrijft `lesson.itemsPerLesson`
+- Schema 3 (lessenpad): de daglimieten `settings.newItemsPerDay` en `settings.newCardsPerDay` (schema 2) vervallen; de migratie 2 → 3 haalt ze uit de instellingen en laat al het andere, ook de review-log, precies zoals het was
+- `unitMeta` bewaart de antwoorden op "Kan ik dit nu?"; eindtoetsscores worden uit de log afgeleid
 - Statistieken worden uit de log afgeleid en niet apart opgeslagen
 - `migrations: Record<number, (old) => new>`, uitgevoerd bij laden en bij importeren
 - Opslag: IndexedDB via een asynchrone `ProgressStorage`-interface
@@ -319,10 +341,14 @@ ReviewEntry = {
   hint: boolean,
   answer?: string,  // getypt antwoord (max 100 tekens), alleen bij almost/wrong
   session: string,  // sessie-ID
-  mode: "daily" | "unit" | "exam",
-  cv: string        // contentversie (zie Versiestempel)
+  mode: "lesson" | "refresh" | "exam" | "drill" | "daily" | "unit",
+  cv: string,       // contentversie (zie Versiestempel)
+  lesson?: string,  // les-ID (`<unitId>#<n>` of `<unitId>#final`), alleen bij mode "lesson"
+  unit?: string,    // unit van de eindtoets, alleen bij mode "exam"
+  examSize?: number // aantal vragen in de eindtoets, alleen bij mode "exam"
 }
 ```
+- `daily` en `unit` komen alleen in logs van vóór schema 3 voor; `drill` is "oefen dit" bij een grammaticales
 - `rebuildCards(log, config)` is een pure functie in `src/engine/`. Een test controleert dat opnieuw afspelen van de log dezelfde kaartstatus geeft als de live status. Zo is overstappen naar een ander algoritme (bijvoorbeeld FSRS) een engine-wijziging zonder dataverlies
 - Omvang: ongeveer 100 bytes per entry, ruim genoeg voor jaren gebruik
 
@@ -350,14 +376,18 @@ ReviewEntry = {
 
 ## 6. Schermen (mobile-first)
 
-1. **Home:** knop "Vandaag" (te herhalen + nieuwe kaarten), unitlijst (vergrendeld/open/voortgang), back-upbanner en installatieadvies (zie "Back-up en opslag")
-2. **Unit:** kan-doelen, grammaticales, woordenlijst met audio, dialogen, knoppen "Oefen deze unit" en "Eindtoets"
-3. **Sessie:** één oefening per scherm, Enter om te controleren en door te gaan, directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout". Meerkeuze met toetsen 1-4. Bij invuloefeningen staat de Nederlandse zin boven de Italiaanse zin met het gat
+1. **Home:** een verticaal, licht slingerend lessenpad met alle units onder elkaar. Elke unit is een sectie met een kop (titel, lessen af van totaal; tikken opent de unitpagina). Per les een knooppunt (vinkje / huidige les / slot), daarna Afronden en de eindtoets als laatste knooppunt (ook als test-out, met beste score). Het pad scrolt bij openen naar de huidige les. Bovenaan: streak en "Opfrissen" (prominent bij een grote achterstand), back-upbanner en installatieadvies (zie "Back-up en opslag"). Onderaan een vaste knop "Verder" met de volgende stap
+2. **Unit:** kan-doelen, eindtoets (met beste score), woordenlijst met audio, dialogen, grammaticales. Het lessenpad staat op Home
+3. **Sessie:** één oefening per scherm, met altijd een vraaglabel dat zegt wat je moet doen. Enter om te controleren en door te gaan (Enter op een leeg veld doet niets; "Weet ik niet" telt bewust als fout, met overtypen), directe feedback, audio-knop, hint-knop (eerste letters, telt als `hint`; uit tijdens de eindtoets), "meld fout". Meerkeuze met toetsen 1-4. Bij invuloefeningen staat de Nederlandse zin boven de Italiaanse zin met het gat. Eindscherm per soort: les klaar (of "goed bezig" als de les nog niet af is), perfecte les, opgefrist, of de uitslag van de eindtoets met gemiste vragen en kan-doelen; met de knoppen "Verder" en "Naar start"
 4. **Grammaticales:** Markdown + knop "oefen dit"
 5. **Dialoog:** regels met audio, NL-vertaling aan/uit, wissel informeel/formeel
-6. **Instellingen:** nieuwe woorden per dag, nieuwe herhaalkaarten per dag, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), reset, versie-info (app, commit, content)
+6. **Instellingen:** nieuwe woorden per les, autoplay, alles ontgrendelen, back-up (export/import, laatste back-up, opslagbescherming), testsessie met alle oefentypes, reset, versie-info (app, commit, content)
 7. **Meldingen:** lijst met gemelde fouten, exporteerbaar
 8. **Lastig:** lijst met leech-kaarten
+
+**Visuele stijl:** alle kleuren, lettergroottes, afstanden, radii en animatieduren staan als CSS-variabelen in `src/ui/theme.css` (licht en donker via `prefers-color-scheme`). Componenten gebruiken alleen deze variabelen, geen losse hex-waarden of pixelmaten. Contrast minimaal WCAG AA. Designs uit een Design-canvas worden vertaald naar deze tokens; teksten uit mockups gaan naar `strings.nl.ts` of komen uit `content/`.
+
+**Iconen:** Phosphor (`@phosphor-icons/react`), per bestand geïmporteerd en centraal gebundeld in `src/ui/icons.ts`. Een knop met alleen een icoon heeft een `aria-label` uit `strings.nl.ts`. Feedback goed/bijna/fout toont altijd icoon, tekst en kleur samen.
 
 ---
 
@@ -371,6 +401,7 @@ ReviewEntry = {
 | `npm run reports` | Leest geëxporteerde meldingen leesbaar uit, om aan Claude te geven |
 | `npm run stats -- <export.json>` | Leest een back-up en toont per dag de sessies, mediane sessieduur, aantal antwoorden en % goed, eindtoetsresultaten en de meest gemiste kaarten. Wordt gebruikt voor de pilot |
 | `npm test` | Vitest |
+| `npm run test:e2e` | Playwright-rooktest tegen de productiebuild (Chromium, 360 px): starten, navigeren, instellingen, elk oefentype via de testsessie, lessen (Verder), unit met lessenpad, eindtoets en opfrissen, meldingen. Opbouw en onderhoud: `e2e/README.md`. Draait ook in CI |
 
 **Meldingen:** `{ itemId, kind: "wrong-content" | "also-correct" | "audio", userAnswer, note, date, build }`. Exporteer, geef ze aan Claude Code, laat het de content fixen.
 
@@ -415,18 +446,18 @@ Alle units in volgorde (`requires` = vorige unit). Per unit ~20-25 scenariowoord
 
 ## 10. Bouwvolgorde
 
-Elke fase eindigt met werkende, geteste code. Begin met een **kleine handgeschreven unit 1** (~10 woorden) om alles te testen. Daarna geldt de **pilotregel**: maak eerst alleen unit 1 volledig af en gebruik die een week (fase 7a) voordat units 2-10 worden gegenereerd. Content opnieuw genereren kost veel meer dan de aanpak bijstellen.
+Elke fase eindigt met werkende, geteste code. Begin met een **kleine handgeschreven unit 1** (~10 woorden) om alles te testen. Daarna geldt de **pilotregel**: maak eerst alleen unit 1 en 2 volledig af en gebruik die een week (fase 7a) voordat units 3-10 worden gegenereerd. (Oorspronkelijk alleen unit 1; met het lessenpad kwam unit 2 erbij, zodat er een echt pad is om te testen.) Content opnieuw genereren kost veel meer dan de aanpak bijstellen.
 
 0. **Setup:** repo, Vite/TS/React, zod, Vitest, GitHub Pages-workflow, `CLAUDE.md` (zie 12)
 1. **Content-fundament:** zod-schema's, loader (`import.meta.glob`), `validate`-script, mini-unit 1
 2. **Engines + tests:** conjugator, plurals/lidwoorden, checker, SRS, review-log + `rebuildCards`, progress-store (IndexedDB) met migraties, versiestempel
-3. **Oefentypes + sessie-builder (leerbeleid uit config) + unlock + eindtoets**
+3. **Oefentypes + sessie-builder (leerbeleid uit config) + unlock + eindtoets** (later vervangen door het lessenpad, zie §5)
 4. **UI:** eerst het sessiescherm (speelbaar), dan home, unit, grammatica, dialoog, instellingen
 5. **Audio:** script, manifest, TTS-fallback
 6. **PWA + deploy:** update-melding, persistente opslag, back-up (export/import) met herinnering
 7. **Pilot, daarna content**
-   - **7a Pilot:** unit 1 volledig genereren (echte content, audio, review, stijlgids toegepast), deployen en een week zelf gebruiken op je telefoon. Evalueren met `docs/pilot.md` (3 succescriteria en `npm run stats`). Bijsturen kan aan de generator-prompt, stijlgids, config of oefenmix. Pas na een positief besluit door naar 7b
-   - **7b Content:** units 2-10 genereren (`/new-unit`), reviewen, `coverage` draaien, aanvullen
+   - **7a Pilot:** unit 1 en 2 volledig genereren (echte content, audio, review, stijlgids toegepast), deployen en een week zelf gebruiken op je telefoon. Evalueren met `docs/pilot.md` (3 succescriteria en `npm run stats`). Bijsturen kan aan de generator-prompt, stijlgids, config of oefenmix. Pas na een positief besluit door naar 7b
+   - **7b Content:** units 3-10 genereren (`/new-unit`), reviewen, `coverage` draaien, aanvullen
 8. **Afwerking:** meldingsflow, statistieken, kleine UX-verbeteringen
 
 ---
@@ -461,4 +492,4 @@ Elke fase eindigt met werkende, geteste code. Begin met een **kleine handgeschre
 - Leerbeleid (limieten, drempels, scores) komt uit `config/app.json`, nooit hardcoded.
 - De review-log is append-only. Bestaande entries wijzig of verwijder je nooit.
 - Content volgt `docs/style-guide.md`.
-- Pilotregel: genereer geen units na `u01` zolang `docs/pilot.md` niet op `Pilot-status: afgerond` staat.
+- Pilotregel: genereer geen units na `u02` zolang `docs/pilot.md` niet op `Pilot-status: afgerond` staat.

@@ -1,10 +1,22 @@
 import { useRef } from 'react'
 import type { Flag } from '../storage/types.ts'
 import { S } from './strings.nl.ts'
+import { ICON, ICON_LINE, IconBack, IconDownload } from './icons.ts'
 
 interface Props {
   flags: Flag[]
   onBack: () => void
+}
+
+const KIND_LABEL: Record<string, string> = {
+  'wrong-content': S.REPORT_KIND_WRONG,
+  'also-correct': S.REPORT_KIND_ALSO,
+  'audio': S.REPORT_KIND_AUDIO,
+}
+
+function shortDate(value: unknown): string {
+  const d = new Date(String(value ?? ''))
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('nl-NL')
 }
 
 export default function ReportsScreen({ flags, onBack }: Props) {
@@ -22,38 +34,35 @@ export default function ReportsScreen({ flags, onBack }: Props) {
   }
 
   return (
-    <div className="reports-screen">
-      <button className="btn-secondary" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
-        {S.BACK}
-      </button>
-
-      <h1>{S.REPORTS}</h1>
+    <div className="page">
+      <div className="page-top">
+        <button className="icon-btn" onClick={onBack} aria-label={S.BACK}><IconBack {...ICON_LINE} /></button>
+        <h1 className="page-title">{S.REPORTS}</h1>
+      </div>
 
       {flags.length === 0 ? (
-        <p className="settings-meta">{S.REPORTS_EMPTY}</p>
+        <p className="muted">{S.REPORTS_EMPTY}</p>
       ) : (
         <>
-          <button className="btn-secondary" style={{ alignSelf: 'flex-start' }} onClick={handleExport}>
-            {S.REPORTS_EXPORT}
-          </button>
-          <div className="reports-list">
+          <ul className="item-list" aria-label={S.REPORTS}>
             {[...flags].reverse().map((flag, i) => (
-              <div key={String(flag.date ?? i)} className="report-card">
-                <div className="report-card-meta">
-                  {String(flag.date ?? '—')} · {String(flag.kind ?? '—')} · {String(flag.itemId ?? '—')}
+              <li key={String(flag.date ?? i)} className="card report-card">
+                <div className="report-top">
+                  <span className="pill pill--soft">{KIND_LABEL[String(flag.kind)] ?? String(flag.kind ?? '')}</span>
+                  <span className="muted">{shortDate(flag.date)}</span>
                 </div>
-                {!!flag.userAnswer && (
-                  <div className="report-card-answer">{S.REPORTS_ANSWER(String(flag.userAnswer))}</div>
-                )}
-                {!!flag.note && <div>{String(flag.note)}</div>}
-              </div>
+                <span className="report-id">{String(flag.itemId ?? '')}</span>
+                {!!flag.userAnswer && <span className="muted">{S.REPORTS_ANSWER(String(flag.userAnswer))}</span>}
+                {!!flag.note && <span className="muted">{String(flag.note)}</span>}
+              </li>
             ))}
-          </div>
+          </ul>
+          <button className="btn btn--primary btn--block" onClick={handleExport}><IconDownload {...ICON} />{S.REPORTS_EXPORT}</button>
         </>
       )}
 
       {/* Hidden anchor for download trigger */}
-      <a ref={linkRef} style={{ display: 'none' }} aria-hidden="true" />
+      <a ref={linkRef} className="visually-hidden" aria-hidden="true" tabIndex={-1} />
     </div>
   )
 }

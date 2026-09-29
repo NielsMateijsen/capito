@@ -9,7 +9,7 @@ Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige s
 - `npm test` (moet `vitest run` zijn, geen watch-modus)
 - `npm run validate` (content) · `npm run audio` · `npm run coverage` · `npm run reports`
 - `npm run stats -- <export.json>` (statistieken uit een back-up, voor de pilot)
-- `npm run test:e2e` (Playwright)
+- `npm run test:e2e` (Playwright-rooktest, ~1 min; opbouw en onderhoud in `e2e/README.md`)
 
 ## Harde regels
 1. Geen Italiaanse woorden of zinnen in `src/`. Alleen in `content/`. UI-teksten alleen in `src/ui/strings.nl.ts`.
@@ -23,11 +23,12 @@ Persoonlijke PWA om Italiaans te leren (Nederlandstalig, niveau A1). Volledige s
 9. Leerbeleid (limieten, drempels, scores, intervallen) komt uit `config/app.json`, nooit hardcoded.
 10. De review-log is append-only. Wijzig of verwijder nooit bestaande entries. Kaartstatus moet altijd opnieuw uit de log te berekenen zijn.
 11. Content volgt `docs/style-guide.md` en elke unit heeft `canDo`-kan-doelen.
-12. Pilotregel: genereer geen units na `u01` zolang `docs/pilot.md` niet op `Pilot-status: afgerond` staat.
+12. Pilotregel: genereer geen units na `u02` zolang `docs/pilot.md` niet op `Pilot-status: afgerond` staat.
 
 ## Definition of done
 - `typecheck`, `validate` en `test` zijn groen (de Stop-hook controleert dit)
 - Nieuwe logica is getest, nieuwe content valideert
+- Raakt de wijziging een scherm of flow: `npm run test:e2e` is groen en `e2e/` is bijgewerkt (niet in de Stop-hook, zelf draaien)
 - `README.md` en/of `SPEC.md` zijn bijgewerkt als structuur of afspraken veranderden
 - Kleine, duidelijke commit op een branch
 - Bij een nieuw of gewijzigd opslagformaat: schema-versie, migratie, migratietest en een werkende export/import-roundtrip

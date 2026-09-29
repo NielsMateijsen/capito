@@ -13,8 +13,8 @@ Argument: `$ARGUMENTS` (naam van het type, kebab-case, bijvoorbeeld `listen-choo
 3. Maak een branch `feat/exercise-<naam>`.
 4. Schrijf eerst de tests in `src/exercises/<naam>.test.ts`: cards genereren, `build`, `check` (correct, almost, wrong), en dat het `cardKey`-formaat `<type>:<itemId>[:<variant>]` volgt.
 5. Implementeer `src/exercises/<naam>.ts`. Het register pakt het automatisch op; pas de SRS of sessie-builder niet aan.
-6. Voeg indien nodig de UI-component toe in `src/ui/`, met teksten in `src/ui/strings.nl.ts`.
-7. Voeg het type toe aan de Playwright-rooktest als het een eigen scherm heeft.
+6. Geef het type een regel in `src/ui/exercise-ui.ts`: het vraaglabel (tekst in `src/ui/strings.nl.ts`) en of de prompt Italiaans is, of audio vóór het antwoord mag, of het antwoord Nederlands is en of een hint het antwoord verklapt. `tests/ui/exercise-ui.test.ts` faalt zolang dat ontbreekt. Voeg indien nodig de UI-component toe in `src/ui/`, met teksten in `src/ui/strings.nl.ts` en alleen tokens uit `src/ui/theme.css`.
+7. Draai `npm run test:e2e`. De rooktest pakt het type automatisch op via de testsessie (`e2e/smoke/exercise-types.spec.ts`). Heeft het een nieuwe vraagvorm (geen keuzelijst, tekstveld of flashcard), breid dan `answerQuestion` in `e2e/support/session-driver.ts` uit.
 8. Werk de lijst met oefentypes bij in `SPEC.md` §5 en `README.md`.
 9. Laat subagent **code-reviewer** de wijziging beoordelen en verwerk blokkerende punten.
 10. Commit met `feat: add <naam> exercise type`.

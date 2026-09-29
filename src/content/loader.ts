@@ -1,4 +1,4 @@
-import matter from 'gray-matter'
+import { parseFrontmatter } from './frontmatter.ts'
 import { GrammarFrontmatterSchema, TenseSchema, UnitSchema } from './schemas.ts'
 import type { GrammarFrontmatter, Tense, Unit } from './schemas.ts'
 
@@ -37,11 +37,11 @@ export function loadTenses(): Tense[] {
 
 export function loadGrammarDocs(): GrammarDoc[] {
   return Object.entries(grammarModules).map(([path, raw]) => {
-    const { data, content } = matter(raw as string)
+    const { data, body } = parseFrontmatter(raw as string)
     const result = GrammarFrontmatterSchema.safeParse(data)
     if (!result.success) {
       throw new Error(`Invalid grammar frontmatter at ${path}: ${result.error.message}`)
     }
-    return { frontmatter: result.data, body: content }
+    return { frontmatter: result.data, body }
   })
 }

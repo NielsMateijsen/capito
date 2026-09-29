@@ -8,14 +8,17 @@ export interface CheckerConfig {
 
 const TYPO_DISABLED: ReadonlySet<ExerciseType> = new Set(['conjugation', 'article', 'cloze'])
 
+// Punctuation never makes an answer wrong. Apostrophes are kept: they are part of the word.
+const PUNCTUATION = /[.,!?;:¡¿…"“”«»()]/g
+
 function normalize(s: string): string {
   return s
     .normalize("NFC")
-    .trim()
     .toLowerCase()
     .replace(/’/g, "'")
+    .replace(PUNCTUATION, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/[.?!,]+$/, '')
+    .trim()
 }
 
 function stripAccents(s: string): string {

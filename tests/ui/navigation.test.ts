@@ -88,6 +88,22 @@ describe('createNavigator', () => {
     expect(history.entries).toHaveLength(1)
   })
 
+  it('replace swaps the current screen, so back skips it', () => {
+    nav.navigate({ screen: 'session' })
+    nav.replace({ screen: 'next-session' })
+    expect(current()).toEqual({ screen: 'next-session' })
+    expect(history.entries).toHaveLength(2)
+    history.go(-1)
+    expect(current()).toEqual({ screen: 'home' })
+  })
+
+  it('home after replace still returns to the root entry', () => {
+    nav.navigate({ screen: 'session' })
+    nav.replace({ screen: 'next-session' })
+    nav.home({ screen: 'home' })
+    expect(history.index).toBe(0)
+  })
+
   it('ignores popstate entries it did not create', () => {
     expect(nav.handlePop(null)).toBe(false)
     expect(nav.handlePop({ foo: 1 })).toBe(false)

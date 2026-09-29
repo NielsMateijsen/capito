@@ -18,4 +18,4 @@ paths:
 - Leerbeleid (limieten, drempels, scores, intervallen) komt uit `config/app.json`. Nooit getallen hardcoden in de engine
 - Review-log: append-only. Elk antwoord wordt gelogd met alle velden uit `SPEC.md` §5. Nooit bestaande entries wijzigen of verwijderen
 - `rebuildCards(log, config)` moet uit de log dezelfde kaartstatus opleveren als de live status. Houd de test daarvoor groen
-- Sessie-builder: schrijf tests voor de limieten (sessielengte, achterstand, terugkeer na pauze, leech, mix met oude stof)
+- Sessie-builder en lessenpad: schrijf tests voor de limieten (treden per les, herhalingen per les, opfrissen, leech) en voor een stabiele lesindeling

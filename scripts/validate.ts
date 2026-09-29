@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
-import matter from 'gray-matter'
+import { parseFrontmatter } from '../src/content/frontmatter.ts'
 import {
   GrammarFrontmatterSchema,
   TenseSchema,
@@ -99,7 +99,7 @@ if (existsSync(TENSES_DIR)) {
 if (existsSync(GRAMMAR_DIR)) {
   for (const f of readdirSync(GRAMMAR_DIR).filter(f => f.endsWith('.md'))) {
     const path = join(GRAMMAR_DIR, f)
-    const { data } = matter(readFileSync(path, 'utf-8'))
+    const { data } = parseFrontmatter(readFileSync(path, 'utf-8'))
     console.log(`[${f}]`)
     const result = GrammarFrontmatterSchema.safeParse(data)
     if (!result.success) {
