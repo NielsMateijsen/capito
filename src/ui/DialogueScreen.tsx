@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Dialogue, Sentence } from '../content/schemas.ts'
 import { S } from './strings.nl.ts'
+import { ICON, ICON_LINE, IconAudio, IconBack } from './icons.ts'
 import { playAudio, VOICE_A, VOICE_B } from './speak.ts'
 
 interface Props {
@@ -18,55 +19,45 @@ export default function DialogueScreen({ dialogue, unitDialogues, sentences, onB
   const alternate = unitDialogues.find(d => d.id !== active.id && d.register !== active.register)
 
   return (
-    <div className="dialogue-screen">
-      <button className="btn-secondary" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
-        {S.BACK}
-      </button>
+    <div className="page dialogue-screen">
+      <div className="page-top">
+        <button className="icon-btn" onClick={onBack} aria-label={S.BACK}><IconBack {...ICON_LINE} /></button>
+      </div>
 
-      <h1>{active.title}</h1>
+      <h1 className="page-title">{active.title}</h1>
 
-      <div className="dialogue-controls">
-        <button
-          className="btn-secondary"
-          onClick={() => setShowNl(v => !v)}
-          aria-pressed={showNl}
-        >
+      <div className="btn-row">
+        <button className="btn btn--secondary" onClick={() => setShowNl(v => !v)} aria-pressed={showNl}>
           {S.DIALOGUE_NL_TOGGLE}
         </button>
         {alternate && (
-          <button
-            className="btn-secondary"
-            onClick={() => setActiveId(alternate.id)}
-          >
+          <button className="btn btn--secondary" onClick={() => setActiveId(alternate.id)}>
             {alternate.register === 'formal' ? S.DIALOGUE_SWITCH_TO_FORMAL : S.DIALOGUE_SWITCH_TO_INFORMAL}
           </button>
         )}
       </div>
 
-      <div className="dialogue-lines">
+      <ol className="dialogue-lines">
         {active.lines.map((line, i) => {
           const sentence = sentences.get(line.sentence)
           return (
-            <div key={i} className="dialogue-line">
-              <div className="dialogue-line-top">
-                <span className="speaker">{line.speaker}:</span>
+            <li key={i} className={`dialogue-line dialogue-line--${line.speaker === 'A' ? 'a' : 'b'}`}>
+              <span className="dialogue-speaker">{line.speaker}</span>
+              <div className="dialogue-bubble">
                 <span className="dialogue-it" lang="it">{sentence?.it ?? line.sentence}</span>
-                <button
-                  className="btn-secondary"
-                  style={{ padding: '2px 8px' }}
-                  onClick={() => void playAudio(sentence?.audioText ?? sentence?.it ?? line.sentence, line.speaker === 'A' ? VOICE_A : VOICE_B)}
-                  aria-label={S.SPEAK}
-                >
-                  {S.AUDIO}
-                </button>
+                {showNl && sentence?.nl[0] && <span className="dialogue-nl">{sentence.nl[0]}</span>}
               </div>
-              {showNl && sentence?.nl[0] && (
-                <span className="dialogue-nl">{sentence.nl[0]}</span>
-              )}
-            </div>
+              <button
+                className="icon-btn icon-btn--plain"
+                onClick={() => void playAudio(sentence?.audioText ?? sentence?.it ?? line.sentence, line.speaker === 'A' ? VOICE_A : VOICE_B)}
+                aria-label={S.SPEAK}
+              >
+                <IconAudio {...ICON} />
+              </button>
+            </li>
           )
         })}
-      </div>
+      </ol>
     </div>
   )
 }

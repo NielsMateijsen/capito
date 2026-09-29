@@ -96,6 +96,11 @@ export class App {
 
   // ── Settings ──
 
+  /** The "unlock everything" switch in settings. */
+  unlockSwitch() {
+    return this.page.getByRole('switch', { name: S.SETTINGS_UNLOCK, exact: true })
+  }
+
   versionInfo() {
     return this.page.locator('.settings-version')
   }

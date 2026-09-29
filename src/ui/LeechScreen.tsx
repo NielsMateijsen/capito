@@ -4,6 +4,7 @@ import type { ProgressState } from '../storage/types.ts'
 import { isLeech } from '../engine/session-builder.ts'
 import { S } from './strings.nl.ts'
 import { playAudio } from './speak.ts'
+import { ICON, ICON_LINE, IconAudio, IconBack } from './icons.ts'
 
 interface AppConfig {
   leech: { lapseThreshold: number }
@@ -33,63 +34,53 @@ export default function LeechScreen({ content, progress, config, onBack }: Props
   }, [content.sentences])
 
   return (
-    <div className="leech-screen">
-      <button className="btn-secondary" onClick={onBack} style={{ alignSelf: 'flex-start' }}>
-        {S.BACK}
-      </button>
-
-      <h1>{S.LEECH}</h1>
+    <div className="page">
+      <div className="page-top">
+        <button className="icon-btn" onClick={onBack} aria-label={S.BACK}><IconBack {...ICON_LINE} /></button>
+        <h1 className="page-title">{S.LEECH}</h1>
+      </div>
 
       {leeches.length === 0 ? (
-        <p className="settings-meta">{S.LEECH_EMPTY}</p>
+        <p className="muted">{S.LEECH_EMPTY}</p>
       ) : (
-        <div className="leech-list">
+        <ul className="item-list" aria-label={S.LEECH}>
           {leeches.map(({ cardKey, state }) => {
-            const parts = cardKey.split(':')
-            const itemId = parts[1] ?? ''
+            const itemId = cardKey.split(':')[1] ?? ''
             const word = content.words.get(itemId)
             const verb = content.verbs.get(itemId)
             const sentence = content.sentences.get(itemId)
             const it = word?.it ?? verb?.inf ?? sentence?.it ?? itemId
-            const nl = word?.nl[0] ?? verb?.nl[0] ?? sentence?.nl[0] ?? ''
+            const nl = word?.nl.join(', ') ?? verb?.nl.join(', ') ?? sentence?.nl[0] ?? ''
             const example = exampleByItem.get(itemId)
 
             return (
-              <div key={cardKey} className="leech-card">
-                <div className="leech-card-top">
-                  <span className="leech-card-it" lang="it">{it}</span>
-                  <button
-                    className="btn-secondary"
-                    style={{ padding: '2px 8px' }}
-                    onClick={() => void playAudio(it)}
-                    aria-label={S.SPEAK}
-                  >
-                    {S.AUDIO}
+              <li key={cardKey} className="card leech-card">
+                <div className="leech-top">
+                  <div className="leech-word">
+                    <span className="leech-it" lang="it">{it}</span>
+                    {nl && <span className="muted">{nl}</span>}
+                  </div>
+                  <span className="pill pill--wrong">{S.LEECH_LAPSES(state.lapses)}</span>
+                  <button className="icon-btn icon-btn--plain" onClick={() => void playAudio(it)} aria-label={S.SPEAK}>
+                    <IconAudio {...ICON} />
                   </button>
-                  <span className="leech-card-lapses">{S.LEECH_LAPSES(state.lapses)}</span>
                 </div>
-                {nl && <div className="leech-card-nl">{nl}</div>}
                 {example && (
-                  <div className="leech-card-example">
-                    <div className="leech-card-example-label">{S.LEECH_EXAMPLE}</div>
-                    <div className="leech-card-example-it">
-                      <span lang="it">{example.it}</span>
-                      <button
-                        className="btn-secondary"
-                        style={{ padding: '2px 8px' }}
-                        onClick={() => void playAudio(example.it)}
-                        aria-label={S.SPEAK}
-                      >
-                        {S.AUDIO}
-                      </button>
+                  <div className="leech-example">
+                    <div className="leech-example-text">
+                      <span className="muted">{S.LEECH_EXAMPLE}</span>
+                      <span className="leech-example-it" lang="it">{example.it}</span>
+                      <span className="muted">{example.nl[0]}</span>
                     </div>
-                    <div className="leech-card-example-nl">{example.nl[0]}</div>
+                    <button className="icon-btn icon-btn--plain" onClick={() => void playAudio(example.it)} aria-label={S.SPEAK}>
+                      <IconAudio {...ICON} />
+                    </button>
                   </div>
                 )}
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
     </div>
   )
