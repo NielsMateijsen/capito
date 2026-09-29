@@ -21,6 +21,8 @@ export { StarIcon as IconPerfect } from '@phosphor-icons/react/dist/csr/Star'
 export { FlagCheckeredIcon as IconFinal } from '@phosphor-icons/react/dist/csr/FlagCheckered'
 export { InfoIcon as IconInfo } from '@phosphor-icons/react/dist/csr/Info'
 export { DownloadSimpleIcon as IconDownload } from '@phosphor-icons/react/dist/csr/DownloadSimple'
+export { MinusIcon as IconMinus } from '@phosphor-icons/react/dist/csr/Minus'
+export { PlusIcon as IconPlus } from '@phosphor-icons/react/dist/csr/Plus'
 
 /** Shared icon props: every icon inherits the text colour and scales with the token size. */
 export const ICON = { weight: 'fill', size: '1em', 'aria-hidden': true } as const

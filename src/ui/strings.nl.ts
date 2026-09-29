@@ -16,7 +16,8 @@ export const S = {
   CONJUGATE_QUESTION: 'Vervoeg het werkwoord',
   CLOZE_QUESTION: 'Vul de zin aan',
   FLASHCARD_QUESTION: 'Weet je wat dit betekent?',
-  CHOICE_KEYS: 'Tik of druk 1-4',
+  CHOICE_KEYS: (count: number) => `Tik of druk 1-${count}`,
+  DONT_KNOW: 'Weet ik niet',
   ANSWER_LABEL: 'Antwoord',
   PROGRESS_LABEL: (answered: number, total: number) => `${answered} van ${total} vragen`,
   STOP: 'Stoppen',
@@ -99,6 +100,7 @@ export const S = {
   STATE_DONE: 'af',
   STATE_START: 'start',
   STATE_LOCKED: 'op slot',
+  NODE_LABEL: (name: string, state: string) => `${name}, ${state}`,
   EXAM_NODE: 'Eindtoets, ook als test-out',
   EXAM_NODE_PASSED: (pct: number) => `Gehaald · ${pct}%`,
   NAV_MORE: 'Meer',
@@ -123,6 +125,7 @@ export const S = {
   EXAM_TESTOUT_INFO: 'Ken je dit al? Haal de eindtoets en sla de lessen over.',
   EXAM_INFO: (threshold: number) => `Haal ${threshold}% om de volgende unit te openen.`,
   EXAM_BEST: (pct: number) => `Beste score: ${pct}%`,
+  EXAM_BEST_PASSED: (pct: number) => `Beste score: ${pct}% · Geslaagd`,
   BACK: '← Terug',
 
   // Settings screen

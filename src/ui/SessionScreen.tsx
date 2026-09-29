@@ -22,6 +22,7 @@ import type { ReportEntry } from './ReportModal.tsx'
 import SentenceText from './SentenceText.tsx'
 import SessionEndScreen from './SessionEndScreen.tsx'
 import { useKeyboardInset } from './keyboard-inset.ts'
+import { exerciseUi } from './exercise-ui.ts'
 import {
   ICON, ICON_LINE, IconAlmost, IconAudio, IconCheck, IconClose, IconCorrect, IconHint, IconNext, IconReport, IconWrong,
 } from './icons.ts'
@@ -79,33 +80,11 @@ function buildHint(answer: string): string {
   return answer.slice(0, 3) + '…'
 }
 
-/** Every exercise says what to do; a new type without a label falls back to none. */
-const QUESTION_LABELS: Record<string, string> = {
-  'mc-sentence': S.MC_SENTENCE_QUESTION,
-  'mc-word': S.MC_WORD_QUESTION,
-  'cloze-word': S.CLOZE_WORD_QUESTION,
-  'article': S.ARTICLE_QUESTION,
-  'dictation': S.DICTATION_QUESTION,
-  'translate-nl-it': S.TRANSLATE_NL_IT_QUESTION,
-  'translate-it-nl': S.TRANSLATE_IT_NL_QUESTION,
-  'conjugate': S.CONJUGATE_QUESTION,
-  'cloze': S.CLOZE_QUESTION,
-  'flashcard': S.FLASHCARD_QUESTION,
-}
-
-function questionLabel(typeId: string): string | undefined {
-  return QUESTION_LABELS[typeId]
-}
-
-/** Types whose prompt is Italian. */
-const IT_PROMPT_TYPES = new Set(['translate-it-nl', 'conjugate', 'cloze', 'flashcard'])
-
-/** Types whose audio is the prompt itself, so it can play before answering. */
-const AUDIO_PROMPT_TYPES = new Set(['translate-it-nl', 'flashcard'])
-
 const RESULT_CLASS: Record<ReviewResult, 'ok' | 'almost' | 'wrong'> = {
   correct: 'ok', good: 'ok', easy: 'ok', almost: 'almost', wrong: 'wrong', again: 'wrong',
 }
+
+const RESULT_TEXT = { ok: S.CORRECT, almost: S.ALMOST, wrong: S.WRONG }
 
 export default function SessionScreen({
   content, makeSession, initialProgress, storage, config,
@@ -164,23 +143,27 @@ export default function SessionScreen({
     if (phase === 'question' && currentKey && !exercise) advanceToNext(queue, pos + 1, answeredCount)
   }, [phase, currentKey, exercise])
 
-  // Focus management
-  useEffect(() => {
+  // Focus management: keys (Enter, 1-4) are handled on the session, so the focus must stay inside it
+  function focusForPhase() {
     if (phase === 'question' && inputRef.current && exercise?.typeId !== 'flashcard' && !isChoice) {
       inputRef.current.focus()
     } else if (phase === 'question' && isChoice) {
       screenRef.current?.focus()
     } else if (phase === 'lapse-retype') {
       inputRef.current?.focus()
-    } else if (
-      phase === 'intro' ||
-      phase === 'question' ||
-      phase === 'flashcard-reveal' ||
-      phase === 'feedback'
-    ) {
-      primaryBtnRef.current?.focus()
+    } else if (primaryBtnRef.current) {
+      primaryBtnRef.current.focus()
+    } else {
+      screenRef.current?.focus()
     }
-  }, [phase, exercise?.typeId, isChoice])
+  }
+
+  useEffect(focusForPhase, [phase, exercise?.typeId, isChoice])
+
+  // Back from the report sheet: the keys work again right away
+  useEffect(() => {
+    if (!showReport) focusForPhase()
+  }, [showReport])
 
   // Autoplay audio on feedback
   useEffect(() => {
@@ -409,7 +392,8 @@ export default function SessionScreen({
   }
 
   function handleFlashcardKey(e: React.KeyboardEvent) {
-    if (phase !== 'flashcard-reveal') return
+    if (phase !== 'flashcard-reveal' || showReport) return
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
     if (e.key === '1') { e.preventDefault(); void handleFlashcardGrade('again') }
     if (e.key === '2') { e.preventDefault(); void handleFlashcardGrade('good') }
     if (e.key === '3') { e.preventDefault(); void handleFlashcardGrade('easy') }
@@ -445,17 +429,18 @@ export default function SessionScreen({
 
   const cardState = currentItem?.kind === 'exercise' ? progress.cards[currentItem.cardKey] : undefined
   const isLeechy = cardState !== undefined && isLeech(cardState, config.leech) && config.leech.showExtraContext
-  const label = exercise ? questionLabel(exercise.typeId) : undefined
+  const ui = exercise ? exerciseUi(exercise.typeId) : undefined
+  const label = ui?.label
   const totalQuestions = Math.min(queue.length - queue.filter(i => i.kind === 'intro').length, session.maxReviews)
   const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0
   const answered = phase === 'feedback' || phase === 'lapse-retype'
   const typed = !!exercise && !isChoice && exercise.typeId !== 'flashcard'
-  const promptLang = exercise && IT_PROMPT_TYPES.has(exercise.typeId) ? 'it' : undefined
-  const answerLang = exercise?.typeId === 'translate-it-nl' ? undefined : 'it'
-  const canHint = mode !== 'exam' && typed && exercise?.typeId !== 'article'
+  const promptLang = ui?.italianPrompt ? 'it' : undefined
+  const answerLang = ui?.dutchAnswer ? undefined : 'it'
+  const canHint = mode !== 'exam' && typed && !ui?.noHint
   // Audio next to the prompt only where it cannot give the answer away (before answering)
   const promptAudio = !!exercise && exercise.typeId !== 'dictation' && (
-    AUDIO_PROMPT_TYPES.has(exercise.typeId) || exercise.sentence?.mode === 'highlight' || (answered && !!exercise.sentence)
+    !!ui?.promptAudio || exercise.sentence?.mode === 'highlight' || (answered && !!exercise.sentence)
   )
 
   function renderPrompt(ex: Exercise, showAnswer: boolean) {
@@ -565,7 +550,7 @@ export default function SessionScreen({
     const HeadIcon = kind === 'ok' ? IconCorrect : kind === 'almost' ? IconAlmost : IconWrong
     const showAnswer = !isChoice && (kind === 'almost' || kind === 'wrong')
     return (
-      <div className={`feedback feedback--${kind}`} role="status">
+      <div className={`feedback feedback--${kind}`}>
         <div className="feedback-head">
           <HeadIcon {...ICON} />
           {kind === 'ok' ? S.CORRECT : kind === 'almost' ? S.ALMOST : S.WRONG}
@@ -665,10 +650,10 @@ export default function SessionScreen({
               <IconHint {...ICON} />
             </button>
           )}
-          {answered && !promptAudio && audioButton()}
+          {answered && !promptAudio && exercise.typeId !== 'dictation' && audioButton()}
           {reportButton()}
           {hintUsed && !answered && <span className="q-note">{S.HINT_USED}</span>}
-          {isChoice && !answered && <span className="q-note">{S.CHOICE_KEYS}</span>}
+          {isChoice && !answered && <span className="q-note">{S.CHOICE_KEYS(exercise.options!.length)}</span>}
         </div>
       </>
     )
@@ -695,15 +680,19 @@ export default function SessionScreen({
         </button>
       )
     } else if (typed) {
+      // An empty answer is not sent by accident (Enter does nothing); "Weet ik niet" sends it on purpose
       foot = (
-        <button
-          className="btn btn--primary btn--block"
-          ref={primaryBtnRef}
-          disabled={input.trim() === ''}
-          onClick={() => void handleSubmitAnswer()}
-        >
-          <IconCheck {...ICON_LINE} />{S.CHECK}
-        </button>
+        <div className="foot-actions">
+          <button
+            className="btn btn--primary btn--block"
+            ref={primaryBtnRef}
+            disabled={input.trim() === ''}
+            onClick={() => void handleSubmitAnswer()}
+          >
+            <IconCheck {...ICON_LINE} />{S.CHECK}
+          </button>
+          <button className="btn btn--text" onClick={() => void handleSubmitAnswer('')}>{S.DONT_KNOW}</button>
+        </div>
       )
     }
   }
@@ -744,6 +733,11 @@ export default function SessionScreen({
       <div className="session-body">{body}</div>
 
       {foot && <div className={`session-foot${answered ? ' session-foot--feedback' : ''}`}>{foot}</div>}
+
+      {/* Read out every result, also when the feedback bar replaces the buttons */}
+      <p className="visually-hidden" role="status" aria-live="polite">
+        {answered && result ? RESULT_TEXT[RESULT_CLASS[result]] : ''}
+      </p>
 
       {showReport && exercise && (
         <ReportModal

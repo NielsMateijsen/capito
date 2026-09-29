@@ -20,7 +20,7 @@ Lokaal en in CI gedraagt de test zich hetzelfde: service workers staan uit en mp
 |---|---|
 | `smoke/*.spec.ts` | Eén bestand per functionaliteit. Beschrijft **wat** er moet werken |
 | `support/app.ts` | `App`: hoe je bij een scherm komt (knoppen, koppen, navigatie) |
-| `support/session-driver.ts` | `runSession()`: speelt elke sessie uit tot het eindscherm, ongeacht welke kaarten erin zitten |
+| `support/session-driver.ts` | `runSession()`: speelt elke sessie uit tot het eindscherm, ongeacht welke kaarten erin zitten. Met `until` stopt hij eerder, bijvoorbeeld bij de eerste vraag van een bepaald type |
 | `support/storage.ts` | Leest de opgeslagen voortgang uit IndexedDB. Enige plek die het opslagformaat kent |
 | `support/exercise-types.ts` | Leest de geregistreerde oefentypes uit `src/exercises/` |
 | `support/fixtures.ts` | `test` met de `app`-fixture en de console-bewaker: elke `console.error` of crash laat de test falen (met een allowlist mét reden) |

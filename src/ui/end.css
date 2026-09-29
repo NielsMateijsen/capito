@@ -132,7 +132,7 @@
 .end-streak svg {
   width: var(--size-icon);
   height: var(--size-icon);
-  color: var(--color-accent);
+  color: var(--color-streak);
 }
 
 /* Exam result */

@@ -87,7 +87,7 @@ export default function HomeScreen({
               role="img"
               aria-label={streak.today ? S.STREAK(streak.current) : S.STREAK_OPEN(streak.current)}
             >
-              <IconStreak {...ICON} /><span aria-hidden="true">{streak.current}</span>
+              <IconStreak {...ICON} weight={streak.today ? 'fill' : 'regular'} /><span aria-hidden="true">{streak.current}</span>
             </div>
           )}
           <button className="icon-btn" onClick={onOpenSettings} aria-label={S.NAV_SETTINGS}>
@@ -167,7 +167,7 @@ export default function HomeScreen({
                         data-lesson-state={state}
                         disabled={state !== 'current'}
                         aria-current={state === 'current' ? 'step' : undefined}
-                        aria-label={`${name}, ${STATE_LABEL[state]}`}
+                        aria-label={S.NODE_LABEL(name, STATE_LABEL[state])}
                         onClick={() => onStartLesson(lesson.id)}
                       >
                         <Icon {...(state === 'done' ? ICON_LINE : ICON)} />
@@ -192,10 +192,14 @@ export default function HomeScreen({
                     <button
                       className="node node--exam"
                       disabled={!unlocked}
-                      aria-label={passed && best !== undefined ? `${S.EXAM}, ${S.EXAM_NODE_PASSED(Math.round(best * 100))}` : S.EXAM_NODE}
+                      aria-label={
+                        !unlocked ? S.NODE_LABEL(S.EXAM, S.STATE_LOCKED)
+                          : passed && best !== undefined ? S.NODE_LABEL(S.EXAM, S.EXAM_NODE_PASSED(Math.round(best * 100)))
+                            : S.EXAM_NODE
+                      }
                       onClick={() => onExam(unit.id)}
                     >
-                      <IconExam {...ICON} />
+                      {unlocked ? <IconExam {...ICON} /> : <IconLocked {...ICON} />}
                       {passed && <span className="node-badge"><IconCheck {...ICON_LINE} /></span>}
                     </button>
                     <span className="node-label" aria-hidden="true">

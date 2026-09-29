@@ -88,6 +88,14 @@ select {
   color: var(--color-wrong);
 }
 
+.btn--text {
+  min-height: var(--size-touch);
+  padding: 0 var(--space-4);
+  background: transparent;
+  color: var(--color-primary-text);
+  font: var(--text-button-sm);
+}
+
 .btn--ok { background: var(--color-ok); color: var(--color-on-ok); }
 .btn--almost { background: var(--color-almost); color: var(--color-on-almost); }
 .btn--wrong { background: var(--color-wrong); color: var(--color-on-wrong); }

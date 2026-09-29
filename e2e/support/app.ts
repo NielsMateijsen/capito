@@ -63,9 +63,14 @@ export class App {
     return this.page.getByRole('list', { name: S.UNIT_PATH_HEADER }).first().getByRole('listitem')
   }
 
-  /** The lesson that is open now on the home path (the only one that can be started). */
+  /** The lessons that can be started on the path of the first unit (there should be exactly one). */
+  currentLessonsOfFirstUnit() {
+    return this.page.getByRole('list', { name: S.UNIT_PATH_HEADER }).first().locator('[aria-current="step"]')
+  }
+
+  /** The lesson that is open now on the home path. */
   currentLesson() {
-    return this.page.locator('[aria-current="step"]').first()
+    return this.currentLessonsOfFirstUnit().first()
   }
 
   /** Lessons marked as done on the home path. */
@@ -174,6 +179,21 @@ export class App {
     await this.openSettings()
     await this.button(S.SETTINGS_TEST_START).click()
     await expect(this.session()).toHaveAttribute('data-mode', 'test')
+  }
+
+  /** The report sheet ("meld fout") of the card on screen. */
+  reportDialog() {
+    return this.page.getByRole('dialog', { name: S.REPORT_TITLE })
+  }
+
+  async openReport() {
+    await this.session().getByRole('button', { name: S.REPORT, exact: true }).click()
+    await expect(this.reportDialog()).toBeVisible()
+  }
+
+  async cancelReport() {
+    await this.reportDialog().getByRole('button', { name: S.REPORT_CANCEL, exact: true }).click()
+    await expect(this.reportDialog()).toBeHidden()
   }
 
   /** Reports the card on screen with the default kind and an empty note. */

@@ -163,6 +163,11 @@ export default function App() {
     void load()
   }, [])
 
+  // Every screen but home (which scrolls to the current lesson) opens at the top
+  useEffect(() => {
+    if (view.screen !== 'home' && view.screen !== 'loading') window.scrollTo(0, 0)
+  }, [view])
+
   async function reloadProgress(): Promise<ProgressState> {
     const progress = await storage.load()
     setData(d => d ? { ...d, progress } : d)

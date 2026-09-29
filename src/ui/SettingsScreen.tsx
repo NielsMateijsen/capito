@@ -3,7 +3,7 @@ import type { ProgressState, Settings } from '../storage/types.ts'
 import { importJson } from '../storage/migrations.ts'
 import BackupImportModal from './BackupImportModal.tsx'
 import { S } from './strings.nl.ts'
-import { ICON, ICON_LINE, IconBack, IconDownload } from './icons.ts'
+import { ICON, ICON_LINE, IconBack, IconDownload, IconMinus, IconPlus } from './icons.ts'
 
 interface AppConfig {
   lesson: { itemsPerLesson: number; minItemsPerLesson: number; maxItemsPerLesson: number }
@@ -104,7 +104,7 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
               onClick={() => setPerLesson(newItemsPerLesson - 1)}
               disabled={newItemsPerLesson <= config.lesson.minItemsPerLesson}
               aria-label={S.STEP_DOWN}
-            >−</button>
+            ><IconMinus {...ICON_LINE} /></button>
             <input
               id="new-items-per-lesson"
               className="stepper-input"
@@ -120,7 +120,7 @@ export default function SettingsScreen({ progress, config, onSave, onReset, onBa
               onClick={() => setPerLesson(newItemsPerLesson + 1)}
               disabled={newItemsPerLesson >= config.lesson.maxItemsPerLesson}
               aria-label={S.STEP_UP}
-            >+</button>
+            ><IconPlus {...ICON_LINE} /></button>
           </div>
         </div>
         <div className="setting">

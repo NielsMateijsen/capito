@@ -17,6 +17,7 @@ test.describe('home', () => {
     // At least one lesson with words, the final lesson and the exam
     expect(await app.lessonSteps().count()).toBeGreaterThanOrEqual(3)
     await expect(app.doneLessons()).toHaveCount(0)
+    await expect(app.currentLessonsOfFirstUnit()).toHaveCount(1)
     await app.startCurrentLesson()
 
     const run = await runSession(app.page)

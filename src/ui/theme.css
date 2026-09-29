@@ -1,7 +1,7 @@
 /*
  * Design tokens (richting A · Abrikoos). Components use only these variables: no loose hex
- * values, pixel sizes or durations. Every text pair meets WCAG AA (4.5:1), icons and borders 3:1,
- * in both themes. The design lives in the "Capito UI-richting" canvas (page Design system).
+ * values, pixel sizes or durations. Every text pair meets WCAG AA (4.5:1); icons and the borders of
+ * controls (--color-control-border) 3:1, in both themes. --color-line is decoration only. The design lives in the "Capito UI-richting" canvas (page Design system).
  */
 
 :root {
@@ -15,6 +15,7 @@
   --color-ink-muted: #6F5443;
   --color-line: #EBD6C4;
   --color-line-strong: #6F5443;
+  --color-control-border: #9C7D67;
   --color-track: #F1DFD0;
   --color-primary: #B9532B;
   --color-primary-deep: #8A3A1B;
@@ -24,6 +25,7 @@
   --color-accent: #E9A23B;
   --color-accent-deep: #B97A1F;
   --color-accent-core: #FFD98A;
+  --color-streak: #B97A1F;
   --color-on-accent: #3B2618;
   --color-mark: #FBE0CF;
   --color-ok: #2F6E40;
@@ -139,6 +141,7 @@
     --color-ink-muted: #C9B3A2;
     --color-line: #4A382C;
     --color-line-strong: #C9B3A2;
+    --color-control-border: #947A68;
     --color-track: #3F2F24;
     --color-primary: #F08A5D;
     --color-primary-deep: #B8633C;
@@ -148,6 +151,7 @@
     --color-accent: #F2B04D;
     --color-accent-deep: #B07A2A;
     --color-accent-core: #FFE3A3;
+    --color-streak: #F2B04D;
     --color-on-accent: #221812;
     --color-mark: #5A3624;
     --color-ok: #8EDBA6;

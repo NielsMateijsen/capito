@@ -118,7 +118,7 @@
   width: 100%;
   height: var(--size-control);
   padding: 0 var(--space-10) 0 var(--space-4);
-  border: var(--border) solid var(--color-line);
+  border: var(--border) solid var(--color-control-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-ink);
@@ -163,7 +163,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: var(--border) solid var(--color-line);
+  border: var(--border) solid var(--color-control-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   color: var(--color-ink);
@@ -190,7 +190,7 @@
   justify-content: center;
   width: var(--size-key);
   height: var(--size-key);
-  border: var(--border) solid var(--color-line);
+  border: var(--border) solid var(--color-control-border);
   border-radius: var(--radius-pill);
   color: var(--color-ink-muted);
   font: var(--text-2xs);
@@ -313,6 +313,12 @@
 .session-foot--feedback {
   padding: 0;
   background: transparent;
+}
+
+.foot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .grades {
@@ -448,7 +454,7 @@
   gap: var(--space-3);
   min-height: var(--size-touch);
   padding: 0 var(--space-4);
-  border: var(--border) solid var(--color-line);
+  border: var(--border) solid var(--color-control-border);
   border-radius: var(--radius-md);
   font: var(--text-lg);
   cursor: pointer;
@@ -470,7 +476,7 @@
   width: 100%;
   height: var(--size-textarea);
   padding: var(--space-3) var(--space-4);
-  border: var(--border) solid var(--color-line);
+  border: var(--border) solid var(--color-control-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   font: var(--text-md);

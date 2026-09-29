@@ -59,7 +59,7 @@ export default function UnitScreen({ unit, unitNumber, path, passed, bestScore, 
           {passed || path.doneCount > 0 ? S.EXAM_INFO(Math.round(passThreshold * 100)) : S.EXAM_TESTOUT_INFO}
         </p>
         {bestScore !== undefined && (
-          <p className="muted">{S.EXAM_BEST(Math.round(bestScore * 100))}{passed && ` · ${S.UNIT_PASSED}`}</p>
+          <p className="muted">{passed ? S.EXAM_BEST_PASSED(Math.round(bestScore * 100)) : S.EXAM_BEST(Math.round(bestScore * 100))}</p>
         )}
         <div>
           <button className="btn btn--secondary" onClick={() => onExam(unit.id)}><IconExam {...ICON} />{S.EXAM_START}</button>

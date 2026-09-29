@@ -34,13 +34,15 @@ export interface DriverOptions {
   maxSteps?: number
   /** Called on every question before it is answered, e.g. to report an error. */
   onQuestion?: (info: { type: string; cardKey: string }) => Promise<void>
+  /** Stop early (without answering) as soon as this returns true for the current step. */
+  until?: (info: { phase: string; type: string }) => boolean
 }
 
 /** Answer that is never correct, to trigger the wrong-answer flow. */
 const WRONG_ANSWER = 'x'
 
 export async function runSession(page: Page, options: DriverOptions = {}): Promise<SessionRun> {
-  const { input = 'click', maxSteps = 200, onQuestion } = options
+  const { input = 'click', maxSteps = 200, onQuestion, until } = options
   const session = page.getByTestId('session')
   const button = (name: string) => session.getByRole('button', { name, exact: true })
   const known = new Map<string, string>()
@@ -63,6 +65,8 @@ export async function runSession(page: Page, options: DriverOptions = {}): Promi
     const cardKey = (await session.getAttribute('data-card-key')) ?? ''
     const type = (await session.getAttribute('data-exercise-type')) ?? ''
     current = await stateOf(session)
+
+    if (until?.({ phase: phase ?? '', type })) return run
 
     if (phase === 'done') {
       run.answered = Number(await session.getAttribute('data-answered'))
