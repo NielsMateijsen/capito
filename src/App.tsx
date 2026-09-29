@@ -33,6 +33,7 @@ import './ui/session.css'
 import './ui/app.css'
 import './ui/exercise.css'
 import './ui/end.css'
+import './ui/home.css'
 import appConfig from '../config/app.json'
 
 /** What a session screen practises; kept in the history entry, so it holds data only. */
@@ -93,7 +94,11 @@ export default function App() {
   const [data, setData] = useState<AppData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const loaded = useRef(false)
-  const [nav] = useState(() => createNavigator<View>(window.history, setView))
+  const [nav] = useState(() => {
+    // Screens choose their own scroll position (home opens on the current lesson)
+    window.history.scrollRestoration = 'manual'
+    return createNavigator<View>(window.history, setView)
+  })
 
   useEffect(() => {
     function onPopState(e: PopStateEvent) {
@@ -318,9 +323,9 @@ export default function App() {
   const leechCount = Object.values(data.progress.cards).filter(s => isLeech(s, appConfig.leech)).length
 
   const banner = needRefresh ? (
-    <div className="banner update-banner">
+    <div className="banner banner--update" role="status">
       <span>{S.UPDATE_BANNER}</span>
-      <button className="btn-primary" onClick={() => void updateServiceWorker(true)}>{S.UPDATE_BTN}</button>
+      <button className="btn btn--primary" onClick={() => void updateServiceWorker(true)}>{S.UPDATE_BTN}</button>
     </div>
   ) : null
 
@@ -446,6 +451,7 @@ export default function App() {
     return (
       <HomeScreen
         units={data.units}
+        content={data.content}
         overview={current}
         progress={data.progress}
         config={appConfig}
@@ -453,6 +459,8 @@ export default function App() {
         leechCount={leechCount}
         onContinue={() => void handleContinue(false)}
         onRefresh={() => openSession({ mode: 'refresh' })}
+        onStartLesson={lessonId => openSession({ mode: 'lesson', lessonId })}
+        onExam={unitId => openSession({ mode: 'exam', unitId })}
         onOpenUnit={unitId => nav.navigate({ screen: 'unit', unitId })}
         onOpenSettings={() => nav.navigate({ screen: 'settings' })}
         onOpenReports={() => nav.navigate({ screen: 'reports' })}

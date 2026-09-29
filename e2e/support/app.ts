@@ -48,14 +48,35 @@ export class App {
     await expect(this.button(S.CONTINUE)).toBeVisible()
   }
 
-  /** Home navigation buttons; their name can include a badge count. */
+  /** Home navigation (settings, reports, leeches); the name can include a badge count. */
   navButton(name: string) {
-    return this.page.locator('.home-nav').getByRole('button', { name })
+    return this.page.getByRole('button', { name })
   }
 
-  /** Unit cards on home that can be opened. */
+  /** Unit headers on home that can be opened. */
   unitCards() {
-    return this.page.locator('.unit-card:not(.unit-card--locked)')
+    return this.page.locator('[data-unit-head]:enabled')
+  }
+
+  /** The lessons on the path of the first unit on home, including its exam. */
+  lessonSteps() {
+    return this.page.getByRole('list', { name: S.UNIT_PATH_HEADER }).first().getByRole('listitem')
+  }
+
+  /** The lesson that is open now on the home path (the only one that can be started). */
+  currentLesson() {
+    return this.page.locator('[aria-current="step"]').first()
+  }
+
+  /** Lessons marked as done on the home path. */
+  doneLessons() {
+    return this.page.locator('[data-lesson-state="done"]')
+  }
+
+  /** From home: start the lesson that is open on the path. */
+  async startCurrentLesson() {
+    await this.currentLesson().click()
+    await expect(this.session()).toHaveAttribute('data-mode', 'lesson')
   }
 
   async openSettings() {
@@ -90,7 +111,7 @@ export class App {
   /** Opens the first unit that is unlocked and returns its title. */
   async openFirstUnit(): Promise<string> {
     const card = this.unitCards().first()
-    const title = (await card.locator('.unit-card-title').textContent()) ?? ''
+    const title = (await card.locator('[data-unit-title]').textContent()) ?? ''
     await card.click()
     await expect(this.heading(title)).toBeVisible()
     return title
@@ -105,20 +126,6 @@ export class App {
     return this.unitSection(S.UNIT_CANDO_HEADER).getByRole('listitem')
   }
 
-  /** The lessons on the unit's path, in order. */
-  lessonSteps() {
-    return this.unitSection(S.UNIT_PATH_HEADER).getByRole('listitem')
-  }
-
-  /** The lesson that is open now (the only one that can be started). */
-  currentLesson() {
-    return this.unitSection(S.UNIT_PATH_HEADER).locator('[aria-current="step"]')
-  }
-
-  /** Lessons marked as done. */
-  doneLessons() {
-    return this.unitSection(S.UNIT_PATH_HEADER).locator('.lesson-step--done')
-  }
 
   /** Buttons that open a dialogue or grammar lesson from the unit screen. */
   unitLinks(header: typeof S.UNIT_DIALOGUES_HEADER | typeof S.UNIT_GRAMMAR_HEADER) {
@@ -150,12 +157,6 @@ export class App {
   async startContinue() {
     await this.button(S.CONTINUE).click()
     await expect(this.session()).toBeVisible()
-  }
-
-  /** From the unit screen. */
-  async startCurrentLesson() {
-    await this.currentLesson().click()
-    await expect(this.session()).toHaveAttribute('data-mode', 'lesson')
   }
 
   /** From the unit screen. */

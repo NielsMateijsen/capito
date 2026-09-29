@@ -116,6 +116,10 @@
   --size-spark: 12px;
   --width-content: 600px;
   --width-path: 350px;
+  --path-swing: 100px;
+  --size-badge: 26px;
+  --size-bubble: 176px;
+  --size-dock-space: 152px;
 
   /* Motion: inside a session at most 150 ms; celebrations only on the end screen */
   --dur-press: 100ms;

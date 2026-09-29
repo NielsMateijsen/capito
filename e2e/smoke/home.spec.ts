@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures.ts'
 import { S } from '../support/app.ts'
+import { runSession } from '../support/session-driver.ts'
 
 test.describe('home', () => {
   test('loads with units and navigation', async ({ app }) => {
@@ -9,6 +10,17 @@ test.describe('home', () => {
     for (const name of [S.NAV_SETTINGS, S.NAV_REPORTS, S.NAV_LEECH]) {
       await expect(app.navButton(name)).toBeVisible()
     }
+  })
+
+  test('the path shows the lessons of the first unit and starts the one that is open', async ({ app }) => {
+    await app.goto()
+    // At least one lesson with words, the final lesson and the exam
+    expect(await app.lessonSteps().count()).toBeGreaterThanOrEqual(3)
+    await expect(app.doneLessons()).toHaveCount(0)
+    await app.startCurrentLesson()
+
+    const run = await runSession(app.page)
+    expect(run.answered).toBeGreaterThan(0)
   })
 
   test('fits a 360px screen without horizontal scrolling', async ({ app }) => {

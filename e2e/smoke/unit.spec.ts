@@ -4,13 +4,10 @@ import { runSession } from '../support/session-driver.ts'
 import { readProgress } from '../support/storage.ts'
 
 test.describe('unit', () => {
-  test('shows can-do goals, the lesson path and words', async ({ app }) => {
+  test('shows can-do goals and words', async ({ app }) => {
     await app.goto()
     await app.openFirstUnit()
     await expect(app.canDoGoals().first()).toBeVisible()
-    // At least one lesson with words and the final lesson
-    expect(await app.lessonSteps().count()).toBeGreaterThanOrEqual(2)
-    await expect(app.currentLesson()).toHaveCount(1)
     await expect(app.heading(S.UNIT_WORDS_HEADER)).toBeVisible()
   })
 
@@ -44,16 +41,9 @@ test.describe('unit', () => {
     await expect(app.heading(unitTitle)).toBeVisible()
   })
 
-  test('the current lesson starts from the path and runs to the end', async ({ app }) => {
-    await app.goto()
-    await app.openFirstUnit()
-    await app.startCurrentLesson()
-
-    const run = await runSession(app.page)
-    expect(run.answered).toBeGreaterThan(0)
-  })
-
   test('the exam can be taken right away (test-out) and shows a result with the can-do goals', async ({ app }) => {
+    // Two whole sessions: the exam and the refresh of every missed question
+    test.slow()
     await app.goto()
     await app.openFirstUnit()
     await app.startExam()
